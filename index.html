@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ja" data-ls-dark="auto">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- 確認用：ユーザーが確かめるまで検索に出さない（公開すると決めたら外す） -->
+<meta name="robots" content="noindex, nofollow">
+<title>くみあわせ｜トーナメントも総当たりも、すぐできる</title>
+<meta name="description" content="くみあわせ（QumiAwase）。チームを入れるだけで、トーナメント・総当たり・グループの組み合わせと日程を作り、結果から勝ち上がりと順位表を出します。カードで送れます。">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="くみあわせ（QumiAwase）">
+<meta property="og:title" content="くみあわせ｜トーナメントも総当たりも、すぐできる">
+<meta property="og:description" content="チームを入れるだけで、トーナメント・総当たりの組み合わせと日程、順位表まで。カードで送れます。">
+<meta property="og:url" content="https://katsuan.github.io/qumiawase/">
+<meta property="og:image" content="https://katsuan.github.io/qumiawase/ogp.png?v=1">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="くみあわせ（QumiAwase）：トーナメントも総当たりも、すぐできる">
+<meta property="og:locale" content="ja_JP">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fff4ea" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#16151a" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="icon" href="icon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://katsuan.github.io/line-share/shared/ui.css?v=202610261000">
+<link rel="stylesheet" href="style.css?v=202610280757">
+</head>
+<body>
+<main class="ls-page ls-stack">
+  <header class="ls-brand">
+    <h1 class="ls-brand-name"><img class="ls-brand-icon" src="icon.svg" alt="" width="30" height="30"><span id="toolName">くみあわせ</span></h1>
+    <img class="ls-brand-logo" src="logo.svg" alt="QumiAwase" width="109" height="28">
+  </header>
+  <p id="toolCopy" class="ls-brand-copy">トーナメントも総当たりも、すぐできる</p>
+
+  <!-- 見る人用のリンクで開いたとき：見るだけ。この端末に保存すると、結果を入れられる -->
+  <section id="viewBanner" class="ls-panel view-banner" hidden>
+    <p class="ls-hint">👀 見るだけのページです。結果を入れるときは、この端末に保存してね。</p>
+    <button id="saveView" class="ls-button is-primary is-block" type="button">＋ この端末に保存する</button>
+  </section>
+
+  <!-- 大会：切りかえ・新しく作る・複製・消す。名前 -->
+  <section id="eventPanel" class="ls-panel event-panel" aria-label="大会">
+    <div class="event-bar">
+      <label class="ls-sr-only" for="eventSelect">大会を切りかえる</label>
+      <select id="eventSelect" class="ls-input event-select"></select>
+      <button id="newEvent" class="ls-button" type="button">＋ 新しく</button>
+    </div>
+    <div class="ls-field">
+      <label class="ls-label" for="eventName">大会の名前（なくてもOK）</label>
+      <input id="eventName" class="ls-input" maxlength="30" placeholder="例：秋のリーグ戦" autocomplete="off" enterkeyhint="done">
+    </div>
+    <div class="ls-chips event-actions">
+      <button id="copyEvent" class="ls-chip" type="button">⧉ 複製</button>
+      <button id="deleteEvent" class="ls-chip" type="button">🗑 消す</button>
+    </div>
+  </section>
+
+  <!-- チーム：名前と色（入力枠の中の左に色の丸。さくせん盤・ろくがと同じ形）・並べかえ・シャッフル -->
+  <details id="teamsFold" class="ls-fold" open>
+    <summary>👥 チーム <span id="teamsMeta" class="ls-fold-meta"></span></summary>
+    <div class="ls-fold-body ls-stack">
+      <p class="ls-hint">上から順にシード（トーナメント）・グループ分けの順。色は、さくせん盤・ろくがにも渡します。</p>
+      <ol id="teamList" class="team-list"></ol>
+      <div class="ls-chips team-tools">
+        <button id="addTeam" class="ls-chip" type="button">＋ チームを足す</button>
+        <button id="shuffleTeams" class="ls-chip" type="button">🔀 シャッフル</button>
+        <button id="bulkToggle" class="ls-chip" type="button" aria-expanded="false" aria-controls="bulkBox">📝 まとめて入れる</button>
+      </div>
+      <div id="bulkBox" class="ls-stack bulk-box" hidden>
+        <label class="ls-label" for="bulkText">1行に1チーム（いまのチームと入れかえます）</label>
+        <textarea id="bulkText" class="ls-input" rows="5" placeholder="FC 青&#10;レッズ&#10;グリーン"></textarea>
+        <button id="bulkApply" class="ls-button is-primary" type="button">入れる</button>
+      </div>
+    </div>
+  </details>
+
+  <!-- 形：トーナメント・総当たり・グループ → 決勝トーナメントと、その設定 -->
+  <details id="formatFold" class="ls-fold" open>
+    <summary>🏆 形 <span id="formatMeta" class="ls-fold-meta"></span></summary>
+    <div class="ls-fold-body ls-stack">
+      <div id="formatChips" class="ls-chips format-chips" role="radiogroup" aria-label="形"></div>
+      <div id="groupOptions" class="ls-stack" hidden>
+        <div class="option-row"><span>グループの数</span><div class="stepper" data-opt="groups"></div></div>
+        <div class="option-row"><span>決勝トーナメントへ上がる数（グループごと）</span><div class="stepper" data-opt="advance"></div></div>
+      </div>
+      <div id="legOptions" class="option-row" hidden>
+        <span>総当たりの回数</span>
+        <div class="ls-chips" role="radiogroup" aria-label="総当たりの回数">
+          <button class="ls-chip" type="button" role="radio" data-legs="1">1回</button>
+          <button class="ls-chip" type="button" role="radio" data-legs="2">2回（ホーム・アウェイ）</button>
+        </div>
+      </div>
+      <label id="thirdOption" class="check-row" hidden><input id="thirdPlace" type="checkbox"> 3位決定戦をする</label>
+      <details id="pointsFold" class="ls-fold inner" hidden>
+        <summary>勝ち点 <span id="pointsMeta" class="ls-fold-meta"></span></summary>
+        <div class="ls-fold-body ls-stack">
+          <div class="option-row"><span>勝ち</span><div class="stepper" data-point="win"></div></div>
+          <div class="option-row"><span>引き分け</span><div class="stepper" data-point="draw"></div></div>
+          <div class="option-row"><span>負け</span><div class="stepper" data-point="loss"></div></div>
+          <p class="ls-hint">順位は 勝ち点 → 得失点差 → 総得点 → 直接対決 の順。PK は勝ち点に入れません。</p>
+        </div>
+      </details>
+    </div>
+  </details>
+
+  <!-- 日程（なくてもOK）：コート数・1試合の時間・はじまりの時刻から、試合ごとの時刻とコートを割りふる -->
+  <details id="schedFold" class="ls-fold">
+    <summary>🕘 日程 <span id="schedMeta" class="ls-fold-meta">なくてもOK</span></summary>
+    <div class="ls-fold-body ls-stack">
+      <label class="check-row"><input id="schedOn" type="checkbox"> 時刻とコートを割りふる</label>
+      <div id="schedBox" class="ls-stack" hidden>
+        <div class="when-row">
+          <label class="ls-field"><span class="ls-label">日にち</span><input id="schedDate" class="ls-input" type="date"></label>
+          <label class="ls-field"><span class="ls-label">はじまり</span><input id="schedStart" class="ls-input" type="time"></label>
+        </div>
+        <div class="option-row"><span>コートの数</span><div class="stepper" data-sched="courts"></div></div>
+        <div class="option-row"><span>1試合（休みもふくめて・分）</span><div class="stepper" data-sched="minutes"></div></div>
+        <label class="ls-field"><span class="ls-label">会場（なくてもOK）</span><input id="schedPlace" class="ls-input" maxlength="30" placeholder="例：市民グラウンド" autocomplete="off" enterkeyhint="done"></label>
+      </div>
+    </div>
+  </details>
+
+  <!-- トーナメント表（トーナメントがあるときだけ。横にスクロール） -->
+  <section id="bracketPanel" class="ls-panel" aria-labelledby="bracketTitle" hidden>
+    <h2 id="bracketTitle" class="ls-panel-title">🗺️ トーナメント表</h2>
+    <div id="champion" class="champion" hidden></div>
+    <div id="bracket" class="bracket" tabindex="0" aria-label="トーナメント表（横にスクロール）"></div>
+  </section>
+
+  <!-- 順位表（総当たり・グループのとき） -->
+  <section id="standingsPanel" class="ls-panel" aria-labelledby="standingsTitle" hidden>
+    <h2 id="standingsTitle" class="ls-panel-title">📊 順位表</h2>
+    <div id="standings" class="ls-stack"></div>
+  </section>
+
+  <!-- 試合と結果：点は − 数 ＋。同点のトーナメントは PK も。試合ごとに、さくせん盤・ろくがで開ける -->
+  <section id="matchesPanel" class="ls-panel" aria-labelledby="matchesTitle">
+    <h2 id="matchesTitle" class="ls-panel-title">📋 試合と結果 <span id="matchesMeta" class="ls-fold-meta"></span></h2>
+    <p id="matchesEmpty" class="ls-hint" hidden>チームを2つ以上入れると、組み合わせができます。</p>
+    <div id="matches" class="ls-stack"></div>
+  </section>
+
+  <!-- 送る・保存する -->
+  <section class="ls-panel ls-stack" aria-label="送る・保存する">
+    <button id="sendCard" class="ls-button is-block line is-oqrn" type="button">カードで送る</button>
+    <div class="share-row">
+      <button id="saveImage" class="ls-button" type="button">📷 画像で保存</button>
+      <button id="shareView" class="ls-button" type="button">🔗 見る人用のリンク</button>
+    </div>
+    <p class="ls-hint">見る人用のリンクには、大会の中身がそのまま入ります（サーバーには送りません）。開いた人は見るだけ。この端末に保存すると、結果を入れられます。</p>
+  </section>
+
+  <div data-tool-share></div>
+</main>
+<script src="https://katsuan.github.io/line-share/shared/oqrn.js"></script>
+<script src="https://katsuan.github.io/line-share/shared/ui.js?v=202610260300" defer></script>
+<script type="module" src="app.js?v=202610280757"></script>
+<script src="https://katsuan.github.io/line-share/shared/tool-share.js" data-tool="qumiawase" defer></script>
+<script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(() => {});</script>
+</body>
+</html>

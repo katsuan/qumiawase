@@ -1,0 +1,16 @@
+{
+  "name": "くみあわせ（QumiAwase）",
+  "short_name": "くみあわせ",
+  "description": "トーナメントも総当たりも、すぐできる。組み合わせと日程、順位表まで。",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#fff4ea",
+  "theme_color": "#d9622b",
+  "lang": "ja",
+  "icons": [
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "apple-touch-icon.png", "sizes": "180x180", "type": "image/png" }
+  ]
+}

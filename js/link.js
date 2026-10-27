@@ -1,0 +1,114 @@
+// くみあわせ：URL の受け渡し。見る人用のリンク（大会の中身を URL にのせる。サーバーなし）・さくせん盤やろくがで開くリンク・
+// さくせん盤から結果を戻すリンク。中身は JSON → UTF-8 → base64url。受けとるときは形を確かめる
+// app.js・js/card.js から読む（import）
+import { LIMITS, ROQGA_URL, SAQSEN_URL, TOOL } from "./settings.js?v=202610280757";
+import { cleanTournament, hexIn, intIn, isObj, resultIn, textIn } from "./store.js?v=202610280757";
+
+// LINE のリンクは 1000 文字まで
+export const LINK_MAX = 1000;
+
+// 中身を JSON → UTF-8 → base64url の文字にして返す
+export function encode(value) {
+  const bytes = new TextEncoder().encode(JSON.stringify(value));
+  let binary = "";
+  bytes.forEach((b) => (binary += String.fromCharCode(b)));
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+// base64url の文字から中身にもどして返す。読めないときは null
+export function decode(text) {
+  if (!text || typeof text !== "string" || text.length > 20000) return null;
+  try {
+    const binary = atob(text.replace(/-/g, "+").replace(/_/g, "/"));
+    return JSON.parse(new TextDecoder().decode(Uint8Array.from(binary, (c) => c.charCodeAt(0))));
+  } catch {
+    return null;
+  }
+}
+
+const FORMAT_CODES = { knockout: "k", league: "l", groups: "g" };
+// 色を URL に入れる短い形（"#22a447" → "22a447"）にして返す
+const shortHex = (hex) => String(hex || "").replace(/^#/, "");
+
+/**
+ * 見る人用のリンクにのせる中身（短い形）を返す。チームの id はのせない（並びの順で t1・t2…）。試合の id はチームの id によらないので、結果はそのまま
+ * { v, n, f, o: [3位決定戦, 回数, グループ数, 上がる数], p: [勝, 分, 負], s: [日程あり, 日にち, はじまり, コート数, 分, 会場], t: [[名前, 色], …], r: [[試合の id, 点, 点, PK, PK], …] }
+ */
+export function packTournament(t) {
+  return {
+    v: 1,
+    n: t.name,
+    f: FORMAT_CODES[t.format] || "k",
+    o: [t.opts.thirdPlace ? 1 : 0, t.opts.legs, t.opts.groups, t.opts.advance],
+    p: [t.points.win, t.points.draw, t.points.loss],
+    s: [t.sched.on ? 1 : 0, t.sched.date, t.sched.start, t.sched.courts, t.sched.minutes, t.sched.place],
+    t: t.teams.map((team) => [team.name, shortHex(team.color)]),
+    r: Object.entries(t.results).map(([id, r]) => [id, ...r.s, ...(r.pk || [])])
+  };
+}
+
+// 見る人用のリンクの中身（packTournament の形）から大会にもどして返す（形を確かめる）。読めなければ null
+export function unpackTournament(data) {
+  if (!isObj(data) || !Array.isArray(data.t) || !data.t.length) return null;
+  const format = Object.keys(FORMAT_CODES).find((k) => FORMAT_CODES[k] === data.f) || "knockout";
+  const o = Array.isArray(data.o) ? data.o : [];
+  const p = Array.isArray(data.p) ? data.p : [];
+  const s = Array.isArray(data.s) ? data.s : [];
+  const results = {};
+  for (const row of Array.isArray(data.r) ? data.r.slice(0, 2000) : []) {
+    if (!Array.isArray(row)) continue;
+    const r = resultIn({ s: row.slice(1, 3), ...(row.length >= 5 ? { pk: row.slice(3, 5) } : {}) });
+    if (r) results[String(row[0])] = r;
+  }
+  return cleanTournament({
+    name: data.n,
+    teams: data.t.filter(Array.isArray).slice(0, LIMITS.teams).map(([name, color], i) => ({ id: `t${i + 1}`, name, color: hexIn(`#${color}`) })),
+    format,
+    opts: { thirdPlace: o[0] === 1, legs: o[1], groups: o[2], advance: o[3] },
+    points: { win: p[0], draw: p[1], loss: p[2] },
+    sched: { on: s[0] === 1, date: s[1], start: s[2], courts: s[3], minutes: s[4], place: s[5] },
+    results
+  });
+}
+
+// 見る人用のリンク（くみあわせの URL ＋ ?view=中身）を返す
+export function viewUrl(t, base = TOOL.url) {
+  return `${base}?view=${encode(packTournament(t))}`;
+}
+
+/**
+ * さくせん盤で開くリンク：2チームの名前と色（と会場・日にち・時刻）と、結果を戻す先（大会の id・試合の id）。
+ * home はさくせん盤の自チーム、away は相手。{ t, o, c, oc, w, d, tm, tid, mid } を ?match= にのせる
+ */
+export function saqsenUrl({ home, away, place = "", date = "", time = "", tid, mid }) {
+  return `${SAQSEN_URL}?match=${encode({ t: home.name, o: away.name, c: home.color, oc: away.color, w: place, d: date, tm: time, tid, mid })}`;
+}
+
+// ろくがで開くリンク：2チームの名前と色（左＝home・右＝away）を ?match= にのせる
+export function roqgaUrl({ home, away }) {
+  return `${ROQGA_URL}?match=${encode({ t: home.name, o: away.name, c: home.color, oc: away.color })}`;
+}
+
+// さくせん盤から戻ってきた結果（?result= の中身）を読む。{ tid, mid, s, pk? } を返す。読めなければ null
+export function readResult(text) {
+  const data = decode(text);
+  if (!isObj(data)) return null;
+  const tid = textIn(data.tid, 40);
+  const mid = textIn(data.mid, 16);
+  const r = resultIn({ s: data.s, ...(data.pk ? { pk: data.pk } : {}) });
+  return tid && mid && r ? { tid, mid, ...r } : null;
+}
+
+// 結果を戻すリンク（くみあわせの URL ＋ ?result=中身）を返す。さくせん盤の側でも同じ形で作る
+export function resultUrl({ tid, mid, s, pk }, base = TOOL.url) {
+  return `${base}?result=${encode({ tid, mid, s, ...(pk ? { pk } : {}) })}`;
+}
+
+// 見る人用のリンクの中身（?view=）を読み、大会にして返す。なければ null
+export function readView(search) {
+  const q = new URLSearchParams(search);
+  return q.has("view") ? unpackTournament(decode(q.get("view"))) : null;
+}
+
+// 数（0〜max）に丸める（さくせん盤と同じ形で点を渡すときに使う）
+export const scoreOf = (v) => intIn(v, 0, LIMITS.score, 0);

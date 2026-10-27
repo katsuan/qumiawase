@@ -1,0 +1,484 @@
+/* くみあわせ：見た目。部品は Q キット（index.html で先に読む ui.css）。ここには、くみあわせの色と、くみあわせにしかない部品（チームの行・形の設定・試合のカード・トーナメント表・順位表）だけを置く
+ * index.html から読む */
+
+:root {
+  --ls-accent: #d9622b;
+  --ls-accent-strong: #b84e1c;
+  --ls-accent-soft: #fbe6d9;
+  --ls-accent-ink: #8a3a14;
+  --qa-win: #1f8a4c;
+  background: var(--ls-bg, #fff8f1);
+}
+
+body {
+  background: var(--ls-bg, #fff8f1);
+}
+
+/* ---- 大会 ---- */
+.event-bar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.event-select {
+  min-width: 0;
+  font-size: 16px;
+}
+
+.event-actions {
+  justify-content: flex-end;
+}
+
+.view-banner {
+  border: 2px dashed var(--ls-accent);
+}
+
+/* ---- チーム ---- */
+.team-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.team-row {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px;
+}
+
+.team-no {
+  color: var(--ls-subtext);
+  font-size: 13px;
+  font-weight: 800;
+  text-align: right;
+}
+
+.team-move {
+  display: flex;
+  gap: 2px;
+}
+
+.team-move .ls-icon-button {
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  font-size: 15px;
+}
+
+.team-row .ls-picker {
+  grid-column: 2 / -1;
+  margin-top: 2px;
+}
+
+/* 色の丸（ls-pickfield のボタンの中・選択肢）。白でも見えるよう、うすい灰色のふち */
+.swatch {
+  position: relative;
+  display: block;
+  width: 26px;
+  height: 26px;
+  border: 2px solid #c9c4bd;
+  border-radius: 999px;
+}
+
+.swatch.is-custom {
+  overflow: hidden;
+  border: 0;
+  background: radial-gradient(circle, var(--c, transparent) 52%, transparent 53%), conic-gradient(#e5484d, #f5a524, #30a46c, #3e7bfa, #6c47ff, #e5484d);
+}
+
+.swatch.is-custom input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.bulk-box textarea {
+  font-size: 16px;
+}
+
+/* ---- 形・日程の設定 ---- */
+.option-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 15px;
+}
+
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.check-row input {
+  width: 22px;
+  height: 22px;
+  accent-color: var(--ls-accent);
+}
+
+.stepper {
+  display: flex;
+  align-items: center;
+  border: 2px solid var(--ls-line-strong);
+  border-radius: 999px;
+  background: var(--ls-surface);
+}
+
+.stepper button {
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--ls-text);
+  font: inherit;
+  font-size: 20px;
+  font-weight: 800;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.stepper button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.stepper output {
+  min-width: 2.2em;
+  font-weight: 800;
+  text-align: center;
+}
+
+/* iPhone で日付・時刻の欄がずれないように（ほかのツールと同じ） */
+.when-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+}
+
+.when-row input {
+  min-width: 0;
+  width: 100%;
+  font-size: 16px;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* ---- 試合のカード ---- */
+.round-head {
+  margin: 8px 0 0;
+  color: var(--ls-subtext);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.match {
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 2px solid var(--ls-line);
+  border-radius: var(--ls-radius-md);
+  background: var(--ls-surface);
+}
+
+.match.is-done {
+  border-color: color-mix(in srgb, var(--ls-accent) 35%, var(--ls-line));
+}
+
+.match-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 8px;
+  color: var(--ls-subtext);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.match-side {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+}
+
+.match-side .dot {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #c9c4bd;
+  border-radius: 999px;
+}
+
+.match-side .name {
+  overflow: hidden;
+  font-weight: 700;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.match-side.is-win .name {
+  color: var(--qa-win);
+  font-weight: 800;
+}
+
+.match-side.is-tbd .name {
+  color: var(--ls-faint);
+  font-weight: 600;
+}
+
+.score-stepper {
+  display: grid;
+  grid-template-columns: 40px 44px 40px;
+  align-items: stretch;
+  overflow: hidden;
+  border: 2px solid var(--ls-line-strong);
+  border-radius: 12px;
+  background: var(--ls-surface);
+}
+
+.score-stepper button {
+  min-height: 40px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ls-subtext);
+  font: inherit;
+  font-size: 20px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.score-stepper button:active {
+  background: var(--ls-accent-soft);
+}
+
+.score-stepper output {
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.pk-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--ls-line);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.pk-row .pk-steppers {
+  display: flex;
+  gap: 6px;
+}
+
+.match-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.match-actions .ls-chip {
+  min-height: 36px;
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.bye-note {
+  color: var(--ls-subtext);
+  font-size: 13px;
+}
+
+/* ---- トーナメント表（横にスクロール） ---- */
+.bracket {
+  display: grid;
+  grid-auto-columns: minmax(150px, 1fr);
+  grid-auto-flow: column;
+  gap: 14px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.bracket-col {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 4px;
+}
+
+/* 列の中の試合は、上下に同じだけあけて並べる（次の回の試合が、前の2試合のまん中に来る） */
+.bracket-col-body {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  gap: 8px;
+}
+
+.bracket-col h3 {
+  margin: 0 0 4px;
+  color: var(--ls-subtext);
+  font-size: 13px;
+}
+
+.bracket-match {
+  display: grid;
+  overflow: hidden;
+  border: 2px solid var(--ls-line);
+  border-radius: 10px;
+  background: var(--ls-surface);
+  font-size: 13px;
+}
+
+.bracket-match > div {
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 0 8px;
+}
+
+.bracket-match > div + div {
+  border-top: 1px solid var(--ls-line);
+}
+
+.bracket-match .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px #c9c4bd;
+}
+
+.bracket-match .name {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.bracket-match .is-win {
+  font-weight: 800;
+}
+
+.bracket-match .is-tbd {
+  color: var(--ls-faint);
+}
+
+.champion {
+  padding: 10px 12px;
+  border-radius: var(--ls-radius-md);
+  background: var(--ls-accent-soft);
+  color: var(--ls-accent-ink);
+  font-weight: 800;
+}
+
+/* ---- 順位表 ---- */
+.standing-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.standing-table caption {
+  margin-bottom: 4px;
+  font-weight: 800;
+  text-align: left;
+}
+
+.standing-table th,
+.standing-table td {
+  padding: 6px 4px;
+  border-bottom: 1px solid var(--ls-line);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.standing-table th {
+  color: var(--ls-subtext);
+  font-size: 12px;
+}
+
+.standing-table .team {
+  overflow: hidden;
+  max-width: 9em;
+  text-align: left;
+  text-overflow: ellipsis;
+}
+
+.standing-table .team .dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 6px;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px #c9c4bd;
+  vertical-align: middle;
+}
+
+.standing-table .pts {
+  font-weight: 800;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+/* ---- 送る・保存 ---- */
+.share-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+}
+
+/* 画像の保存の画面 */
+.image-sheet img {
+  display: block;
+  width: 100%;
+  max-height: 60vh;
+  border-radius: var(--ls-radius-md);
+  object-fit: contain;
+  background: #fff;
+}
+
+/* ---- 暗い表示（index.html の data-ls-dark="auto"。Q キットの色は ui.css が暗くする） ---- */
+@media (prefers-color-scheme: dark) {
+  :root[data-ls-dark="auto"] {
+    --ls-accent: #f08a55;
+    --ls-accent-strong: #ffa576;
+    --ls-accent-soft: color-mix(in srgb, #f08a55 22%, #1c1b21);
+    --ls-accent-ink: #ffd2bb;
+    --qa-win: #6fd59a;
+    background: var(--ls-bg, #16151a);
+  }
+
+  :root[data-ls-dark="auto"] body {
+    background: var(--ls-bg, #16151a);
+  }
+}
+
+/* 見る人用のリンクで開いたとき：見るだけ（チーム・形・日程の編集の欄は出さない） */
+body.is-view #teamsFold,
+body.is-view #formatFold,
+body.is-view #schedFold {
+  display: none;
+}
