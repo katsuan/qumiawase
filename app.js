@@ -1,13 +1,13 @@
 // くみあわせ（QumiAwase）：入口。画面（大会・チーム・形・日程・トーナメント表・順位表・試合と結果・送る）を作り、ボタン・入力を受け、部品（js/）をつなぐ。
 // index.html から読む（type="module"）。組み合わせは js/pairing.js、順位と勝ち上がりは js/stats.js、端末に残すのは js/store.js、
 // リンク（見る人用・さくせん盤・ろくが・結果を戻す）は js/link.js、カードは js/card.js、画像は js/image.js
-import { FORMATS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610280830";
-import { addMinutes, fitOptions, generate, roundName, timeSchedule } from "./js/pairing.js?v=202610280830";
-import { durationLabel, estimate, outcome, podium, resolve, table } from "./js/stats.js?v=202610280830";
-import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610280830";
-import { qronosUrl, readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610280830";
-import { cardParams, dateLabel, formatLabel, matchLine, matchTitle, sideLabel, summaryText, teamName } from "./js/card.js?v=202610280830";
-import { drawTournament } from "./js/image.js?v=202610280830";
+import { FORMATS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610280831";
+import { addMinutes, fitOptions, generate, roundName, timeSchedule } from "./js/pairing.js?v=202610280831";
+import { durationLabel, estimate, outcome, podium, resolve, table } from "./js/stats.js?v=202610280831";
+import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610280831";
+import { qronosUrl, readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610280831";
+import { cardParams, dateLabel, formatLabel, matchLine, matchTitle, sideLabel, summaryText, teamName } from "./js/card.js?v=202610280831";
+import { drawTournament } from "./js/image.js?v=202610280831";
 
 // id から画面の部品を返す
 const $ = (id) => document.getElementById(id);
@@ -91,8 +91,8 @@ function compute() {
 
 // ---- 画面：ページのタブ（準備・試合） ----
 
-// いま開いているページ（"prep"＝準備・"play"＝試合）。結果が入りはじめた大会は試合から
-const page = { now: "" };
+// いま開いているページ（"prep"＝準備・"play"＝試合）と、試合のページで見せる中身（"matches"・"standings"・"bracket"）
+const page = { now: "", play: "matches" };
 
 // ページのタブと、準備・試合のどちらを出すかを描きなおす（見る人用のリンクのときは試合だけ）
 function renderPage() {
@@ -603,6 +603,24 @@ function renderMatches(c) {
 // 試合の時刻か「第N試合」を返す（チーム別の勝ち進みの行に使う）
 const numberOf2 = (c, m) => (c.timeOf[m.id]?.time ? `${c.timeOf[m.id].time}${c.t.sched.courts > 1 ? ` コート${c.timeOf[m.id].court}` : ""}` : `第${c.numberOf[m.id]}試合`);
 
+// 試合のページの、見せる中身のタブを描きなおす（その形にあるものだけ。選んでいる1つだけ出す）
+function renderPlayTabs(c) {
+  const has = {
+    matches: true,
+    standings: c.t.format !== "knockout" && c.gen.matches.length > 0,
+    bracket: c.gen.matches.some((m) => m.stage === "ko")
+  };
+  if (!has[page.play]) page.play = "matches";
+  document.querySelectorAll("[data-play]").forEach((b) => {
+    b.hidden = !has[b.dataset.play];
+    b.setAttribute("aria-selected", String(b.dataset.play === page.play));
+  });
+  $("playTabs").hidden = Object.values(has).filter(Boolean).length < 2;
+  $("matchesPanel").hidden = page.play !== "matches";
+  if (page.play !== "standings") $("standingsPanel").hidden = true;
+  if (page.play !== "bracket") $("bracketPanel").hidden = true;
+}
+
 // トーナメント表・順位表・試合の一覧を描きなおす
 function renderResults() {
   const c = compute();
@@ -610,6 +628,7 @@ function renderResults() {
   renderBracket(c);
   renderStandings(c);
   renderMatches(c);
+  renderPlayTabs(c);
 }
 
 // 画面をまるごと描きなおす
@@ -774,8 +793,8 @@ function printSummary(c) {
     <p>${esc([when, `${formatLabel(t)}・${t.teams.length}チーム`].filter(Boolean).join("　"))}</p>
     <p>${esc(`1試合${t.sched.minutes}分・コート${t.sched.courts}${t.sched.avoid ? `・同じチームの空き時間${t.sched.rest}分` : ""}${t.sched.on ? `・${t.sched.start}〜` : ""}`)}</p>
     <h2>チーム</h2>${teams}
-    ${$("standingsPanel").hidden ? "" : `<h2>順位表</h2>${$("standings").innerHTML}`}
-    ${$("bracketPanel").hidden ? "" : `<h2>トーナメント表</h2><div class="bracket">${$("bracket").innerHTML}</div>`}
+    ${$("standings").innerHTML.trim() ? `<h2>順位表</h2>${$("standings").innerHTML}` : ""}
+    ${gen.matches.some((m) => m.stage === "ko") ? `<h2>トーナメント表</h2><div class="bracket">${$("bracket").innerHTML}</div>` : ""}
     <h2>試合</h2>
     <table class="print-table"><thead><tr><th>No</th><th>時刻</th><th>コート</th><th>試合</th><th>ホーム</th><th>結果</th><th>アウェイ</th></tr></thead><tbody>${rows}</tbody></table>
     <p class="print-foot">${esc(TOOL.name)}（${esc(TOOL.en)}）で作りました</p>`;
@@ -983,6 +1002,13 @@ function bindEvents() {
       renderPage();
       if (page.now === "prep") renderPresets(); // かくれているあいだは横に送れないので、出してから
       window.scrollTo({ top: 0 });
+    })
+  );
+  // 試合のページの、見せる中身のタブ
+  document.querySelectorAll("[data-play]").forEach((b) =>
+    b.addEventListener("click", () => {
+      page.play = b.dataset.play;
+      renderResults();
     })
   );
   // 試合の種類

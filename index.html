@@ -27,7 +27,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://katsuan.github.io/line-share/shared/ui.css?v=202610261000">
-<link rel="stylesheet" href="style.css?v=202610280830">
+<link rel="stylesheet" href="style.css?v=202610280831">
 </head>
 <body>
 <main class="ls-page ls-stack">
@@ -160,6 +160,13 @@
       <p id="playEstimate" class="estimate"></p>
     </section>
 
+    <!-- 見せる中身のタブ：試合と結果・順位表・トーナメント表（ある形のものだけ出す） -->
+    <nav id="playTabs" class="ls-tabs play-tabs" role="tablist" aria-label="見せる中身">
+      <button class="ls-tab" type="button" role="tab" data-play="matches" aria-controls="matchesPanel">📋 試合と結果</button>
+      <button class="ls-tab" type="button" role="tab" data-play="standings" aria-controls="standingsPanel">📊 順位表</button>
+      <button class="ls-tab" type="button" role="tab" data-play="bracket" aria-controls="bracketPanel">🗺️ トーナメント</button>
+    </nav>
+
   <!-- 順位表（総当たり・グループのとき） -->
   <section id="standingsPanel" class="ls-panel" aria-labelledby="standingsTitle" hidden>
     <h2 id="standingsTitle" class="ls-panel-title">📊 順位表</h2>
@@ -208,7 +215,7 @@
 <section id="printArea" class="print-area" aria-hidden="true"></section>
 <script src="https://katsuan.github.io/line-share/shared/oqrn.js"></script>
 <script src="https://katsuan.github.io/line-share/shared/ui.js?v=202610260300" defer></script>
-<script type="module" src="app.js?v=202610280830"></script>
+<script type="module" src="app.js?v=202610280831"></script>
 <script src="https://katsuan.github.io/line-share/shared/tool-share.js" data-tool="qumiawase" defer></script>
 <script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(() => {});</script>
 </body>

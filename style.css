@@ -637,3 +637,16 @@ body.is-view #schedFold {
   margin: 0 0 6px;
   font-weight: 800;
 }
+
+/* 試合のページの、見せる中身のタブ（ページのタブの下に、貼りつけない） */
+.play-tabs {
+  position: static;
+  margin-bottom: 0;
+  padding: 4px;
+  border-radius: 16px;
+  background: var(--ls-tabs-bg, var(--ls-accent-soft));
+}
+
+.play-tabs .ls-tab {
+  font-size: 13px;
+}
