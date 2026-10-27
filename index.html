@@ -27,7 +27,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://katsuan.github.io/line-share/shared/ui.css?v=202610261000">
-<link rel="stylesheet" href="style.css?v=202610280757">
+<link rel="stylesheet" href="style.css?v=202610280822">
 </head>
 <body>
 <main class="ls-page ls-stack">
@@ -84,6 +84,8 @@
     <summary>🏆 形 <span id="formatMeta" class="ls-fold-meta"></span></summary>
     <div class="ls-fold-body ls-stack">
       <div id="formatChips" class="ls-chips format-chips" role="radiogroup" aria-label="形"></div>
+      <!-- 見こみ：試合の数・1チームの最多の試合の数・かかる時間（チーム数・形・時間と日程から） -->
+      <p id="estimate" class="estimate" aria-live="polite"></p>
       <div id="groupOptions" class="ls-stack" hidden>
         <div class="option-row"><span>グループの数</span><div class="stepper" data-opt="groups"></div></div>
         <div class="option-row"><span>決勝トーナメントへ上がる数（グループごと）</span><div class="stepper" data-opt="advance"></div></div>
@@ -108,22 +110,38 @@
     </div>
   </details>
 
-  <!-- 日程（なくてもOK）：コート数・1試合の時間・はじまりの時刻から、試合ごとの時刻とコートを割りふる -->
-  <details id="schedFold" class="ls-fold">
-    <summary>🕘 日程 <span id="schedMeta" class="ls-fold-meta">なくてもOK</span></summary>
+  <!-- 時間と日程：コート数・1試合の時間・連続試合（避けるなら空き時間）。見こみの時間と、試合の順・コートの割りふりに使う。
+       時刻を入れるときは、日にち・はじまり・会場も -->
+  <details id="schedFold" class="ls-fold" open>
+    <summary>🕘 時間と日程 <span id="schedMeta" class="ls-fold-meta"></span></summary>
     <div class="ls-fold-body ls-stack">
-      <label class="check-row"><input id="schedOn" type="checkbox"> 時刻とコートを割りふる</label>
+      <div class="option-row"><span>コートの数</span><div class="stepper" data-sched="courts"></div></div>
+      <div class="option-row"><span>1試合の時間（分）</span><div class="stepper" data-sched="minutes"></div></div>
+      <div class="option-row">
+        <span>同じチームの連続試合</span>
+        <div class="ls-chips" role="radiogroup" aria-label="同じチームの連続試合">
+          <button class="ls-chip" type="button" role="radio" data-avoid="1">避ける</button>
+          <button class="ls-chip" type="button" role="radio" data-avoid="0">続けてもよい</button>
+        </div>
+      </div>
+      <div id="restRow" class="option-row"><span>試合の間の空き時間（分）</span><div class="stepper" data-sched="rest"></div></div>
+      <p id="restHint" class="ls-hint">同じチームは、前の試合が終わってから空き時間をあけて次の試合。足りないときはコートを空けて待ちます。</p>
+      <label class="check-row"><input id="schedOn" type="checkbox"> 時刻を入れる（日にち・はじまり）</label>
       <div id="schedBox" class="ls-stack" hidden>
         <div class="when-row">
           <label class="ls-field"><span class="ls-label">日にち</span><input id="schedDate" class="ls-input" type="date"></label>
           <label class="ls-field"><span class="ls-label">はじまり</span><input id="schedStart" class="ls-input" type="time"></label>
         </div>
-        <div class="option-row"><span>コートの数</span><div class="stepper" data-sched="courts"></div></div>
-        <div class="option-row"><span>1試合（休みもふくめて・分）</span><div class="stepper" data-sched="minutes"></div></div>
         <label class="ls-field"><span class="ls-label">会場（なくてもOK）</span><input id="schedPlace" class="ls-input" maxlength="30" placeholder="例：市民グラウンド" autocomplete="off" enterkeyhint="done"></label>
       </div>
     </div>
   </details>
+
+  <!-- 順位表（総当たり・グループのとき） -->
+  <section id="standingsPanel" class="ls-panel" aria-labelledby="standingsTitle" hidden>
+    <h2 id="standingsTitle" class="ls-panel-title">📊 順位表</h2>
+    <div id="standings" class="ls-stack"></div>
+  </section>
 
   <!-- トーナメント表（トーナメントがあるときだけ。横にスクロール） -->
   <section id="bracketPanel" class="ls-panel" aria-labelledby="bracketTitle" hidden>
@@ -132,16 +150,18 @@
     <div id="bracket" class="bracket" tabindex="0" aria-label="トーナメント表（横にスクロール）"></div>
   </section>
 
-  <!-- 順位表（総当たり・グループのとき） -->
-  <section id="standingsPanel" class="ls-panel" aria-labelledby="standingsTitle" hidden>
-    <h2 id="standingsTitle" class="ls-panel-title">📊 順位表</h2>
-    <div id="standings" class="ls-stack"></div>
-  </section>
-
   <!-- 試合と結果：点は − 数 ＋。同点のトーナメントは PK も。試合ごとに、さくせん盤・ろくがで開ける -->
   <section id="matchesPanel" class="ls-panel" aria-labelledby="matchesTitle">
     <h2 id="matchesTitle" class="ls-panel-title">📋 試合と結果 <span id="matchesMeta" class="ls-fold-meta"></span></h2>
     <p id="matchesEmpty" class="ls-hint" hidden>チームを2つ以上入れると、組み合わせができます。</p>
+    <!-- 試合表の見方：順番（時刻・何試合目）・コート別・チーム別 -->
+    <div id="matchViews" class="ls-chips match-views" role="tablist" aria-label="試合表の見方">
+      <button class="ls-chip" type="button" role="tab" data-view="order">順番</button>
+      <button class="ls-chip" type="button" role="tab" data-view="court">コート別</button>
+      <button class="ls-chip" type="button" role="tab" data-view="team">チーム別</button>
+    </div>
+    <div id="teamPick" class="ls-chips team-pick" role="radiogroup" aria-label="チーム" hidden></div>
+    <div id="teamTools" class="team-tools-row" hidden></div>
     <div id="matches" class="ls-stack"></div>
   </section>
 
@@ -151,15 +171,19 @@
     <div class="share-row">
       <button id="saveImage" class="ls-button" type="button">📷 画像で保存</button>
       <button id="shareView" class="ls-button" type="button">🔗 見る人用のリンク</button>
+      <button id="openSummary" class="ls-button" type="button">📄 大会のまとめ</button>
+      <a id="qronosAll" class="ls-button" href="#" target="_blank" rel="noopener" hidden>⏳ くろのすで<br>カウントダウン</a>
     </div>
     <p class="ls-hint">見る人用のリンクには、大会の中身がそのまま入ります（サーバーには送りません）。開いた人は見るだけ。この端末に保存すると、結果を入れられます。</p>
   </section>
 
   <div data-tool-share></div>
 </main>
+<!-- 印刷・PDF に保存するときだけ出す「大会のまとめ」（app.js の printSummary が中身を入れる） -->
+<section id="printArea" class="print-area" aria-hidden="true"></section>
 <script src="https://katsuan.github.io/line-share/shared/oqrn.js"></script>
 <script src="https://katsuan.github.io/line-share/shared/ui.js?v=202610260300" defer></script>
-<script type="module" src="app.js?v=202610280757"></script>
+<script type="module" src="app.js?v=202610280822"></script>
 <script src="https://katsuan.github.io/line-share/shared/tool-share.js" data-tool="qumiawase" defer></script>
 <script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(() => {});</script>
 </body>

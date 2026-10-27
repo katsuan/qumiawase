@@ -79,3 +79,21 @@ test("グループ → 決勝トーナメント：グループが全部終わる
   assert.equal(r[ko.id].home, firstA, "A組1位が入る");
   assert.equal(r[ko.id].away, null, "B組はまだ");
 });
+
+test("見こみ：試合の数・1チームの最多の試合の数・かかる時間", async () => {
+  const { estimate, durationLabel } = await import("../js/stats.js");
+  const { timeSchedule } = await import("../js/pairing.js");
+  const lg = generate(teams(5), "league");
+  const e = estimate(lg, timeSchedule(lg.matches, { courts: 1, minutes: 20, avoid: false }));
+  assert.deepEqual(e, { matches: 10, most: 4, minutes: 200 });
+  const ko = generate(teams(8), "knockout", { thirdPlace: true });
+  assert.equal(estimate(ko, []).matches, 8);
+  assert.equal(estimate(ko, []).most, 3, "8チームのトーナメントは3試合（決勝・3位決定戦まで）");
+  const ko5 = generate(teams(5), "knockout");
+  assert.equal(estimate(ko5, []).matches, 4);
+  const gr = generate(teams(8), "groups", { groups: 2, advance: 2 });
+  assert.equal(estimate(gr, []).most, 3 + 2, "グループ3試合＋決勝トーナメント2回");
+  assert.equal(durationLabel(110), "約1時間50分");
+  assert.equal(durationLabel(40), "約40分");
+  assert.equal(durationLabel(120), "約2時間");
+});

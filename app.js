@@ -1,13 +1,13 @@
 // くみあわせ（QumiAwase）：入口。画面（大会・チーム・形・日程・トーナメント表・順位表・試合と結果・送る）を作り、ボタン・入力を受け、部品（js/）をつなぐ。
 // index.html から読む（type="module"）。組み合わせは js/pairing.js、順位と勝ち上がりは js/stats.js、端末に残すのは js/store.js、
 // リンク（見る人用・さくせん盤・ろくが・結果を戻す）は js/link.js、カードは js/card.js、画像は js/image.js
-import { FORMATS, LIMITS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610280757";
-import { addMinutes, fitOptions, generate, roundName, schedule } from "./js/pairing.js?v=202610280757";
-import { outcome, podium, resolve, table } from "./js/stats.js?v=202610280757";
-import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610280757";
-import { readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610280757";
-import { cardParams, dateLabel, matchLine, matchTitle, sideLabel, teamName } from "./js/card.js?v=202610280757";
-import { drawTournament } from "./js/image.js?v=202610280757";
+import { FORMATS, LIMITS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610280822";
+import { addMinutes, fitOptions, generate, roundName, timeSchedule } from "./js/pairing.js?v=202610280822";
+import { durationLabel, estimate, outcome, podium, resolve, table } from "./js/stats.js?v=202610280822";
+import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610280822";
+import { qronosUrl, readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610280822";
+import { cardParams, dateLabel, formatLabel, matchLine, matchTitle, sideLabel, summaryText, teamName } from "./js/card.js?v=202610280822";
+import { drawTournament } from "./js/image.js?v=202610280822";
 
 // id から画面の部品を返す
 const $ = (id) => document.getElementById(id);
@@ -73,17 +73,20 @@ function change(fn, message = "") {
 
 // ---- 計算（組み合わせ・日程・勝ち上がり） ----
 
-// いまの大会の組み合わせ・日程・勝ち上がりをまとめて返す。{ t, gen, sched（なければ null）, timeOf, resolved }
+/**
+ * いまの大会の組み合わせ・時間の割りふり・勝ち上がり・見こみをまとめて返す。
+ * { t, gen, plan（試合の順・コート・はじまりからの分。時刻を入れるときは time も）, sched（時刻を入れるときだけ plan、ほかは null）, timeOf, numberOf（何試合目）, resolved, est（見こみ） }
+ */
 function compute() {
   const t = current();
   const gen = generate(t.teams, t.format, t.opts);
-  let sched = null;
-  if (t.sched.on && gen.matches.length) {
-    sched = schedule(gen.matches, { courts: t.sched.courts }).map((s) => ({ ...s, time: addMinutes(t.sched.start, s.slot * t.sched.minutes) }));
-  }
-  const timeOf = Object.fromEntries((sched || []).map((s) => [s.id, s]));
+  const s = t.sched;
+  const plan = timeSchedule(gen.matches, { courts: s.courts, minutes: s.minutes, rest: s.rest, avoid: s.avoid }).map((p) => (s.on ? { ...p, time: addMinutes(s.start, p.start) } : p));
+  const sched = s.on && plan.length ? plan : null;
+  const timeOf = Object.fromEntries((sched || []).map((p) => [p.id, p]));
+  const numberOf = Object.fromEntries(plan.map((p, i) => [p.id, i + 1]));
   const resolved = resolve(gen, t.teams.map((x) => x.id), t.results, t.points);
-  return { t, gen, sched, timeOf, resolved };
+  return { t, gen, plan, sched, timeOf, numberOf, resolved, est: estimate(gen, plan) };
 }
 
 // ---- 画面：大会 ----
@@ -124,14 +127,25 @@ function renderTeams() {
           <button class="ls-pickfield-btn" type="button" aria-label="${esc(teamName(t, team.id))}の色を選ぶ"><span class="swatch" style="background:${esc(team.color)}"></span></button>
           <input class="team-name" maxlength="${LIMITS.name}" placeholder="チーム${i + 1}" autocomplete="off" enterkeyhint="next" aria-label="${i + 1}番目のチーム名">
         </div>
-        <div class="team-move">
-          <button class="ls-icon-button" type="button" data-move="-1" aria-label="上へ" ${i === 0 ? "disabled" : ""}>↑</button>
-          <button class="ls-icon-button" type="button" data-move="1" aria-label="下へ" ${i === t.teams.length - 1 ? "disabled" : ""}>↓</button>
-          <button class="ls-icon-button" type="button" data-remove aria-label="このチームを消す" ${t.teams.length <= 2 ? "disabled" : ""}>✕</button>
-        </div>
+        <button class="ls-icon-button drag-handle" type="button" aria-label="${i + 1}番目。押したまま上下に動かすと並べかえ（↑↓ キーでも）">⠿</button>
+        <button class="ls-icon-button" type="button" data-remove aria-label="このチームを消す" ${t.teams.length <= 2 ? "disabled" : ""}>✕</button>
         <div class="ls-picker" style="--cols: 9" hidden></div>`;
       li.querySelector(".team-name").value = team.name;
       bindTeamColor(li, team);
+      const handle = li.querySelector(".drag-handle");
+      handle.addEventListener("pointerdown", (e) => dragTeam(e, li));
+      // つまみにフォーカスして ↑↓ キー：1つ上・下へ（動かしたあとも、そのチームのつまみにフォーカス）
+      handle.addEventListener("keydown", (e) => {
+        const d = { ArrowUp: -1, ArrowDown: 1 }[e.key];
+        if (!d) return;
+        e.preventDefault();
+        const ids = current().teams.map((x) => x.id);
+        const j = i + d;
+        if (j < 0 || j >= ids.length) return;
+        [ids[i], ids[j]] = [ids[j], ids[i]];
+        reorderTeams(ids);
+        $("teamList").querySelector(`[data-tid="${team.id}"] .drag-handle`)?.focus();
+      });
       return li;
     })
   );
@@ -180,6 +194,47 @@ function bindTeamColor(li, team) {
   };
   const api = window.LineShareUI?.pickField?.({ field, button, input, picker, onOpen: fill });
   if (!api) button.addEventListener("click", () => ((picker.hidden = !picker.hidden), fill()));
+}
+
+// チームの並びを、ids の順にする（並べかえ。組み合わせが変わるので、結果があれば消して「元に戻す」）
+function reorderTeams(ids) {
+  const now = current().teams.map((x) => x.id);
+  if (ids.join() === now.join()) return renderTeams();
+  change((t) => (t.teams = ids.map((id) => t.teams.find((x) => x.id === id))));
+}
+
+// つまみ（⠿）を押したまま上下に動かして、チームの行を並べかえる（指でもマウスでも）。はなしたら、その順にする
+function dragTeam(e, li) {
+  const handle = e.currentTarget;
+  const list = $("teamList");
+  e.preventDefault();
+  try {
+    handle.setPointerCapture(e.pointerId);
+  } catch {
+    // つかめなくても動かせる
+  }
+  li.classList.add("is-dragging");
+  // 指の高さが、となりの行のまん中をこえたら入れかえる（行が動いても行ったり来たりしない）
+  const onMove = (ev) => {
+    const y = ev.clientY;
+    const prev = li.previousElementSibling;
+    const next = li.nextElementSibling;
+    if (prev && y < prev.getBoundingClientRect().top + prev.offsetHeight / 2) list.insertBefore(li, prev);
+    else if (next && y > next.getBoundingClientRect().top + next.offsetHeight / 2) list.insertBefore(next, li);
+    if (y < 60) window.scrollBy(0, -12);
+    else if (y > window.innerHeight - 60) window.scrollBy(0, 12);
+  };
+  // はなしたとき：並んだ順でチームを並べかえる
+  const onUp = () => {
+    handle.removeEventListener("pointermove", onMove);
+    handle.removeEventListener("pointerup", onUp);
+    handle.removeEventListener("pointercancel", onUp);
+    li.classList.remove("is-dragging");
+    reorderTeams([...list.children].map((row) => row.dataset.tid));
+  };
+  handle.addEventListener("pointermove", onMove);
+  handle.addEventListener("pointerup", onUp);
+  handle.addEventListener("pointercancel", onUp);
 }
 
 // チームを id で探して返す
@@ -233,19 +288,30 @@ function renderFormat() {
   $("pointsMeta").textContent = `勝${t.points.win}・分${t.points.draw}・負${t.points.loss}`;
 }
 
-// 日程（なくてもOK）の欄を描きなおす
+// 時間と日程の欄（コート・1試合の時間・連続試合と空き時間・時刻を入れるか）を描きなおす
 function renderSched() {
   const t = current();
   const s = t.sched;
   $("schedOn").checked = s.on;
   $("schedBox").hidden = !s.on;
+  $("restRow").hidden = !s.avoid;
+  $("restHint").hidden = !s.avoid;
+  document.querySelectorAll("[data-avoid]").forEach((b) => b.setAttribute("aria-checked", String((b.dataset.avoid === "1") === s.avoid)));
   if (document.activeElement !== $("schedDate")) $("schedDate").value = s.date;
   if (document.activeElement !== $("schedStart")) $("schedStart").value = s.start;
   if (document.activeElement !== $("schedPlace")) $("schedPlace").value = s.place;
-  $("schedMeta").textContent = s.on ? [dateLabel(s.date), `${s.start}〜`, `コート${s.courts}`, `${s.minutes}分`].filter(Boolean).join("・") : "なくてもOK";
+  $("schedMeta").textContent = [s.on ? `${dateLabel(s.date)} ${s.start}〜`.trim() : "", `コート${s.courts}`, `${s.minutes}分`, s.avoid ? `空き${s.rest}分` : "連続OK"].filter(Boolean).join("・");
   const setSched = (key) => (v) => ((t.sched[key] = v), persist(), renderSched(), renderResults());
   stepper(document.querySelector('[data-sched="courts"]'), { get: () => s.courts, set: setSched("courts"), min: 1, max: LIMITS.courts, label: "コートの数" });
   stepper(document.querySelector('[data-sched="minutes"]'), { get: () => s.minutes, set: setSched("minutes"), min: 5, max: LIMITS.minutes, step: 5, label: "1試合の時間" });
+  stepper(document.querySelector('[data-sched="rest"]'), { get: () => s.rest, set: setSched("rest"), min: 0, max: LIMITS.minutes, step: 5, label: "空き時間" });
+}
+
+// 見こみ（試合の数・1チームの最多の試合の数・かかる時間）を出す
+function renderEstimate({ t, est }) {
+  if (!est.matches) return ($("estimate").textContent = "");
+  const end = t.sched.on ? `・${t.sched.start}〜${addMinutes(t.sched.start, est.minutes)}` : "";
+  $("estimate").textContent = `📏 ${est.matches}試合・1チーム最多${est.most}試合・${durationLabel(est.minutes)}${end}（1試合${t.sched.minutes}分・コート${t.sched.courts}${t.sched.avoid ? `・空き${t.sched.rest}分` : ""}）`;
 }
 
 // ---- 画面：結果（トーナメント表・順位表・試合） ----
@@ -303,12 +369,12 @@ function scoreHtml(mid, kind, k, value, label) {
 }
 
 // 試合1つのカード（見出し・時刻・2チームと点・PK・さくせん盤やろくがで開く）の HTML を返す
-function matchHtml({ t, gen, timeOf, resolved }, m) {
+function matchHtml({ t, gen, timeOf, numberOf, resolved }, m) {
   const r = resolved[m.id] || {};
   const res = t.results[m.id];
   const ready = Boolean(r.home && r.away);
   const s = timeOf[m.id];
-  const when = s ? `${s.time}${t.sched.courts > 1 ? `・コート${s.court}` : ""}` : "";
+  const when = s ? `${s.time}${t.sched.courts > 1 ? `・コート${s.court}` : ""}` : numberOf[m.id] ? `第${numberOf[m.id]}試合` : "";
   const isKo = m.stage === "ko" || m.stage === "third";
   const o = outcome(res);
   const side = (sideDef, id, k) => {
@@ -336,51 +402,156 @@ function matchHtml({ t, gen, timeOf, resolved }, m) {
   return `<article class="match ${res ? "is-done" : ""}" data-mid="${esc(m.id)}"><div class="match-head"><span>${esc(matchTitle(m, gen))}</span><span>${esc(when)}</span></div>${side(m.home, r.home, 0)}${side(m.away, r.away, 1)}${pkRow}${actions}</article>`;
 }
 
-// 試合の一覧を描きなおす（日程があれば時刻の順、なければ回の順。トーナメントの不戦勝は回の見出しの下に1行）
+// 試合表の見方（"order"＝順番・"court"＝コート別・"team"＝チーム別）と、チーム別で選んでいるチーム
+const view = { mode: "order", team: "" };
+
+// 試合のまとまりの見出し（総当たり・グループ・トーナメントの回・3位決定戦）を返す
+function sectionTitle(m, gen) {
+  const total = Math.max(0, ...gen.matches.filter((x) => x.stage === "ko").map((x) => x.round));
+  return m.stage === "third" ? "3位決定戦" : m.stage === "ko" ? roundName(m.round, total) : m.stage === "group" ? "グループの総当たり" : "総当たり";
+}
+
+/**
+ * そのチームの試合を返す：決まっている試合と、トーナメントの勝ち進み（勝てば・負けたら3位決定戦）、グループから上がれたときの決勝トーナメントのはじめ。
+ * [{ m, kind: "fixed"|"win"|"lose"|"advance", mine（勝ち進みのとき、このチームが入る側） }] を、試合の順に返す
+ */
+function teamPath(c, id) {
+  const { gen, resolved, numberOf } = c;
+  const has = (m) => resolved[m.id]?.home === id || resolved[m.id]?.away === id;
+  const out = gen.matches.filter((m) => !m.bye && has(m)).map((m) => ({ m, kind: "fixed" }));
+  const seen = new Set(out.map((x) => x.m.id));
+  // トーナメント：いま勝ち残っている最後の試合（不戦勝もふくむ）から、勝ったら出る試合をたどる
+  const ko = gen.matches.filter((m) => m.stage === "ko" && (has(m) || (m.bye && resolved[m.id]?.winner === id))).sort((a, b) => a.round - b.round);
+  let cur = ko.at(-1);
+  if (cur && resolved[cur.id]?.loser !== id) {
+    for (;;) {
+      const third = gen.matches.find((x) => x.stage === "third" && (x.home.loserOf === cur.id || x.away.loserOf === cur.id));
+      if (third && !seen.has(third.id) && resolved[cur.id]?.winner !== id) {
+        out.push({ m: third, kind: "lose", mine: third.home.loserOf === cur.id ? third.home : third.away });
+        seen.add(third.id);
+      }
+      if (resolved[cur.id]?.winner && resolved[cur.id].winner !== id) break;
+      const next = gen.matches.find((x) => x.stage === "ko" && (x.home.winnerOf === cur.id || x.away.winnerOf === cur.id));
+      if (!next) break;
+      if (!seen.has(next.id)) {
+        out.push({ m: next, kind: "win", mine: next.home.winnerOf === cur.id ? next.home : next.away });
+        seen.add(next.id);
+      }
+      cur = next;
+    }
+  }
+  // グループ：まだ上がるチームが決まっていなければ、決勝トーナメントのいちばん早い試合（上がれば）
+  const inGroup = gen.groups?.some((g) => g.ids.includes(id));
+  if (inGroup && !ko.length) {
+    const first = gen.matches.filter((m) => m.stage === "ko" && !m.bye).sort((a, b) => (numberOf[a.id] ?? 0) - (numberOf[b.id] ?? 0))[0];
+    if (first) out.push({ m: first, kind: "advance" });
+  }
+  return out.sort((a, b) => (numberOf[a.m.id] ?? 0) - (numberOf[b.m.id] ?? 0));
+}
+
+const KIND_LABEL = { fixed: "", win: "（勝てば）", lose: "（負けたら）", advance: "（上がれば）" };
+
+// teamPath の1つの試合の、相手の呼び名を返す（決まっていればチーム名、まだなら「準決勝 2の勝者」など）
+function opponentLabel(c, id, { m, kind, mine }) {
+  const r = c.resolved[m.id] || {};
+  if (kind === "fixed") return teamName(c.t, r.home === id ? r.away : r.home);
+  if (!mine) return "相手は未定";
+  const otherIsHome = m.away === mine;
+  const other = otherIsHome ? m.home : m.away;
+  const known = otherIsHome ? r.home : r.away;
+  return known ? teamName(c.t, known) : sideLabel(other, c.gen);
+}
+
+// 試合の日時（"2026-11-03T09:30"）を返す。時刻を入れていない・日にちがないときは ""
+const atOf = (c, id) => (c.t.sched.on && c.t.sched.date && c.timeOf[id]?.time ? `${c.t.sched.date}T${c.timeOf[id].time}` : "");
+
+// くろのすで、そのチームの試合（勝ち進みもふくむ）のカウントダウンを開くリンクを返す。日時がなければ null
+function teamQronosUrl(c, id) {
+  const entries = teamPath(c, id).map((x) => ({ at: atOf(c, x.m.id), title: `${matchTitle(x.m, c.gen)}${KIND_LABEL[x.kind]} vs ${opponentLabel(c, id, x)}`, emoji: x.kind === "fixed" ? "⚽" : "🏆" }));
+  return qronosUrl(`${teamName(c.t, id)}の試合`, entries);
+}
+
+// くろのすで、大会のカウントダウン（はじまり・3位決定戦・決勝。総当たりは最後の試合）を開くリンクを返す。日時がなければ null
+function allQronosUrl(c) {
+  const list = c.plan.map((p) => c.gen.matches.find((m) => m.id === p.id));
+  if (!list.length) return null;
+  const entries = [{ at: atOf(c, list[0].id), title: "はじまり（第1試合）", emoji: "🏁" }];
+  for (const m of list) if (m.stage === "third" || (m.stage === "ko" && m === list.filter((x) => x.stage === "ko").at(-1))) entries.push({ at: atOf(c, m.id), title: matchTitle(m, c.gen), emoji: m.stage === "third" ? "🥉" : "🏆" });
+  if (!list.some((m) => m.stage === "ko") && list.length > 1) entries.push({ at: atOf(c, list.at(-1).id), title: "最後の試合", emoji: "🏁" });
+  return qronosUrl(c.t.name || "組み合わせ", entries);
+}
+
+// 試合表の見方のボタン・チーム別のチームの選択・くろのすのボタンを描きなおす
+function renderViewTools(c) {
+  const { t } = c;
+  if (view.mode === "court" && t.sched.courts < 2) view.mode = "order";
+  if (!t.teams.some((x) => x.id === view.team)) view.team = t.teams[0]?.id || "";
+  document.querySelectorAll("[data-view]").forEach((b) => {
+    b.setAttribute("aria-selected", String(b.dataset.view === view.mode));
+    b.hidden = b.dataset.view === "court" && t.sched.courts < 2;
+  });
+  $("teamPick").hidden = view.mode !== "team";
+  $("teamTools").hidden = view.mode !== "team";
+  if (view.mode === "team") {
+    $("teamPick").innerHTML = t.teams.map((x) => `<button class="ls-chip" type="button" role="radio" data-team="${esc(x.id)}" aria-checked="${esc(x.id === view.team)}">${dotHtml(x.id)}${esc(teamName(t, x.id))}</button>`).join("");
+    const url = teamQronosUrl(c, view.team);
+    $("teamTools").innerHTML = url
+      ? `<a class="ls-chip" href="${esc(url)}" target="_blank" rel="noopener">⏳ この試合をくろのすでカウントダウン</a>`
+      : `<p class="ls-hint">⏳ 「時刻を入れる」で日にちとはじまりを入れると、このチームの試合をくろのすでカウントダウンできます。</p>`;
+  }
+  const all = allQronosUrl(c);
+  $("qronosAll").hidden = !all;
+  if (all) $("qronosAll").href = all;
+}
+
+// 試合の一覧を描きなおす（見方：順番・コート別・チーム別。順番は時刻か何試合目の順で、まとまりごとに見出し）
 function renderMatches(c) {
-  const { t, gen, sched, resolved } = c;
+  const { t, gen, plan, resolved } = c;
   const play = gen.matches.filter((m) => !m.bye);
   $("matchesEmpty").hidden = gen.matches.length > 0;
+  $("matchViews").hidden = !play.length;
   const done = play.filter((m) => outcome(t.results[m.id])).length;
   $("matchesMeta").textContent = play.length ? `${done} / ${play.length}試合` : "";
+  renderViewTools(c);
+  const byId = Object.fromEntries(gen.matches.map((m) => [m.id, m]));
   const parts = [];
-  if (sched) {
-    const order = [...sched].sort((a, b) => a.slot - b.slot || a.court - b.court);
-    let last = null;
-    for (const s of order) {
-      if (s.slot !== last) parts.push(`<h3 class="round-head">🕘 ${esc(s.time)}</h3>`);
-      last = s.slot;
-      parts.push(matchHtml(c, gen.matches.find((m) => m.id === s.id)));
+  if (view.mode === "team" && view.team) {
+    const path = teamPath(c, view.team);
+    if (!path.length) parts.push(`<p class="ls-hint">このチームの試合はまだ決まっていません。</p>`);
+    for (const x of path) {
+      if (x.kind === "fixed") parts.push(matchHtml(c, x.m));
+      else parts.push(`<p class="path-note">${esc(numberOf2(c, x.m))}　${esc(matchTitle(x.m, gen))}${esc(KIND_LABEL[x.kind])}　vs ${esc(opponentLabel(c, view.team, x))}</p>`);
+    }
+  } else if (view.mode === "court") {
+    for (let court = 1; court <= t.sched.courts; court++) {
+      parts.push(`<h3 class="round-head">🏟️ コート${court}</h3>`);
+      for (const p of plan.filter((x) => x.court === court)) parts.push(matchHtml(c, byId[p.id]));
     }
   } else {
-    const heads = new Map();
-    for (const m of gen.matches) {
-      const key = m.stage === "ko" || m.stage === "third" ? `ko${m.round}${m.stage}` : `lg${m.round}`;
-      if (!heads.has(key)) heads.set(key, []);
-      heads.get(key).push(m);
-    }
-    const total = Math.max(0, ...gen.matches.filter((m) => m.stage === "ko").map((m) => m.round));
-    // 総当たり（節の順）→ トーナメント（回の順。3位決定戦は決勝の前）
-    const order = (list) => [list[0].stage === "ko" || list[0].stage === "third" ? 1 : 0, list[0].round, list[0].stage === "third" ? 0 : 1];
-    const sections = [...heads.values()].sort((a, b) => {
-      const [x, y] = [order(a), order(b)];
-      return x[0] - y[0] || x[1] - y[1] || x[2] - y[2];
-    });
-    for (const list of sections) {
-      const first = list[0];
-      const title = first.stage === "third" ? "3位決定戦" : first.stage === "ko" ? roundName(first.round, total) : `第${first.round}節`;
-      parts.push(`<h3 class="round-head">${esc(title)}</h3>`);
-      const byes = list.filter((m) => m.bye).map((m) => resolved[m.id]?.winner || null);
-      if (byes.length) parts.push(`<p class="bye-note">シード（次の回から）：${byes.map((id) => (id ? esc(teamName(t, id)) : esc(sideLabel(list.find((m) => m.bye)?.home, gen)))).join("・")}</p>`);
-      for (const m of list) if (!m.bye) parts.push(matchHtml(c, m));
+    let last = "";
+    for (const p of plan) {
+      const m = byId[p.id];
+      const head = c.sched ? `🕘 ${p.time}` : sectionTitle(m, gen);
+      if (head !== last) {
+        parts.push(`<h3 class="round-head">${esc(head)}</h3>`);
+        // トーナメントの1回戦の前に：不戦勝で次の回から出るチーム
+        const byes = !c.sched && m.stage === "ko" && m.round === 1 ? gen.matches.filter((x) => x.bye) : [];
+        if (byes.length) parts.push(`<p class="bye-note">シード（次の回から）：${byes.map((x) => esc(resolved[x.id]?.winner ? teamName(t, resolved[x.id].winner) : sideLabel(x.home.empty ? x.away : x.home, gen))).join("・")}</p>`);
+      }
+      last = head;
+      parts.push(matchHtml(c, m));
     }
   }
   $("matches").innerHTML = parts.join("");
 }
 
+// 試合の時刻か「第N試合」を返す（チーム別の勝ち進みの行に使う）
+const numberOf2 = (c, m) => (c.timeOf[m.id]?.time ? `${c.timeOf[m.id].time}${c.t.sched.courts > 1 ? ` コート${c.timeOf[m.id].court}` : ""}` : `第${c.numberOf[m.id]}試合`);
+
 // トーナメント表・順位表・試合の一覧を描きなおす
 function renderResults() {
   const c = compute();
+  renderEstimate(c);
   renderBracket(c);
   renderStandings(c);
   renderMatches(c);
@@ -523,6 +694,73 @@ async function shareView() {
   }
 }
 
+// 印刷・PDF 用の「大会のまとめ」を作る：名前・日にちと会場・形・チーム・順位表・トーナメント表・試合の表（何試合目・時刻・コート・結果）
+function printSummary(c) {
+  const { t, gen, plan, resolved } = c;
+  const byId = Object.fromEntries(gen.matches.map((m) => [m.id, m]));
+  const when = [dateLabel(t.sched.on ? t.sched.date : ""), t.sched.on ? t.sched.place : ""].filter(Boolean).join("　");
+  const rows = plan
+    .map((p, i) => {
+      const m = byId[p.id];
+      const r = resolved[m.id] || {};
+      const res = t.results[m.id];
+      const side = (sideDef, id) => esc(id ? teamName(t, id) : sideLabel(sideDef, gen));
+      const score = res ? `${res.s[0]} - ${res.s[1]}${res.pk ? `（PK ${res.pk[0]}-${res.pk[1]}）` : ""}` : "";
+      return `<tr><td>${esc(i + 1)}</td><td>${esc(p.time || "")}</td><td>${esc(t.sched.courts > 1 ? p.court : "")}</td><td>${esc(matchTitle(m, gen))}</td><td>${side(m.home, r.home)}</td><td class="score">${esc(score)}</td><td>${side(m.away, r.away)}</td></tr>`;
+    })
+    .join("");
+  const teams = gen.groups?.length
+    ? gen.groups.map((g) => `<p><b>${esc(g.key)}組</b>：${g.ids.map((id) => esc(teamName(t, id))).join("・")}</p>`).join("")
+    : `<p>${t.teams.map((x, i) => `${esc(i + 1)}. ${esc(teamName(t, x.id))}`).join("　")}</p>`;
+  $("printArea").innerHTML = `
+    <h1>🏆 ${esc(t.name || "組み合わせ")}</h1>
+    <p>${esc([when, `${formatLabel(t)}・${t.teams.length}チーム`].filter(Boolean).join("　"))}</p>
+    <p>${esc(`1試合${t.sched.minutes}分・コート${t.sched.courts}${t.sched.avoid ? `・同じチームの空き時間${t.sched.rest}分` : ""}${t.sched.on ? `・${t.sched.start}〜` : ""}`)}</p>
+    <h2>チーム</h2>${teams}
+    ${$("standingsPanel").hidden ? "" : `<h2>順位表</h2>${$("standings").innerHTML}`}
+    ${$("bracketPanel").hidden ? "" : `<h2>トーナメント表</h2><div class="bracket">${$("bracket").innerHTML}</div>`}
+    <h2>試合</h2>
+    <table class="print-table"><thead><tr><th>No</th><th>時刻</th><th>コート</th><th>試合</th><th>ホーム</th><th>結果</th><th>アウェイ</th></tr></thead><tbody>${rows}</tbody></table>
+    <p class="print-foot">${esc(TOOL.name)}（${esc(TOOL.en)}）で作りました</p>`;
+}
+
+// 📄 大会のまとめ：印刷・PDF に保存するか、文でコピーするかを選ぶ窓を出す
+function openSummary() {
+  const c = compute();
+  if (!c.gen.matches.length) return toast("チームを2つ以上入れると作れます");
+  const sheet = document.createElement("div");
+  sheet.className = "ls-sheet";
+  sheet.innerHTML = `<div class="ls-sheet-card" role="dialog" aria-modal="true" aria-labelledby="summaryTitle">
+    <p id="summaryTitle" class="ls-sheet-title">📄 大会のまとめ</p>
+    <p class="ls-hint">名前・日程・チーム・順位表・トーナメント表・試合の表を1つに。印刷の画面で「PDF に保存」を選ぶと PDF になります（iPhone は印刷の画面で共有 → ファイルに保存）。</p>
+    <button class="ls-button is-primary is-block" type="button" data-print>🖨️ 印刷・PDF に保存</button>
+    <button class="ls-button is-block" type="button" data-copy>📋 文でコピー（LINE・メモに貼る）</button>
+    <button class="ls-button is-block" type="button" data-close>閉じる</button>
+  </div>`;
+  // 窓を閉じる
+  const close = () => sheet.remove();
+  sheet.addEventListener("click", async (e) => {
+    if (e.target === sheet || e.target.closest("[data-close]")) return close();
+    if (e.target.closest("[data-print]")) {
+      close();
+      printSummary(c);
+      if (typeof window.print === "function") window.print();
+      else toast("このブラウザでは印刷できません。Safari・Chrome で開いてね");
+    }
+    if (e.target.closest("[data-copy]")) {
+      try {
+        await navigator.clipboard.writeText(summaryText(c.t, c.gen, c.resolved, c.plan));
+        close();
+        toast("大会のまとめをコピーしました");
+      } catch {
+        close();
+        window.LineShareUI?.ask({ title: "大会のまとめ", text: "長押しでコピーしてね", input: summaryText(c.t, c.gen, c.resolved, c.plan), readonly: true, ok: "閉じる", cancel: null });
+      }
+    }
+  });
+  document.body.append(sheet);
+}
+
 // カードで送る：組み合わせ・順位をおくるんのカードにして開く
 function sendCard() {
   const c = compute();
@@ -604,16 +842,6 @@ function bindEvents() {
   });
   $("teamList").addEventListener("click", (e) => {
     const li = e.target.closest(".team-row");
-    const move = e.target.closest("[data-move]");
-    if (li && move) {
-      const d = Number(move.dataset.move);
-      change((t) => {
-        const i = t.teams.findIndex((x) => x.id === li.dataset.tid);
-        const j = i + d;
-        if (j < 0 || j >= t.teams.length) return;
-        [t.teams[i], t.teams[j]] = [t.teams[j], t.teams[i]];
-      });
-    }
     if (li && e.target.closest("[data-remove]")) {
       const name = teamName(current(), li.dataset.tid);
       change((t) => (t.teams = t.teams.filter((x) => x.id !== li.dataset.tid)), `「${name}」を消しました`);
@@ -659,7 +887,15 @@ function bindEvents() {
   $("thirdPlace").addEventListener("change", (e) => change((t) => (t.opts.thirdPlace = e.target.checked)));
   document.querySelectorAll("[data-legs]").forEach((b) => b.addEventListener("click", () => change((t) => (t.opts.legs = Number(b.dataset.legs)))));
 
-  // 日程
+  // 時間と日程：連続試合を避ける・続けてもよい
+  document.querySelectorAll("[data-avoid]").forEach((b) =>
+    b.addEventListener("click", () => {
+      current().sched.avoid = b.dataset.avoid === "1";
+      persist();
+      renderSched();
+      renderResults();
+    })
+  );
   $("schedOn").addEventListener("change", (e) => {
     current().sched.on = e.target.checked;
     persist();
@@ -683,7 +919,17 @@ function bindEvents() {
     if (clear) clearScore(clear.dataset.clear);
   });
 
+  // 試合表の見方・チーム別のチーム
+  document.querySelectorAll("[data-view]").forEach((b) => b.addEventListener("click", () => ((view.mode = b.dataset.view), renderResults())));
+  $("teamPick").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-team]");
+    if (!b) return;
+    view.team = b.dataset.team;
+    renderResults();
+  });
+
   // 送る・保存
+  $("openSummary").addEventListener("click", openSummary);
   $("sendCard").addEventListener("click", sendCard);
   $("saveImage").addEventListener("click", saveImage);
   $("shareView").addEventListener("click", shareView);

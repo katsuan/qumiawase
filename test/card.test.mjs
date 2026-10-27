@@ -56,3 +56,18 @@ test("日にちの文字", () => {
   assert.equal(dateLabel("2026-11-03"), "11/3（火）");
   assert.equal(dateLabel(""), "");
 });
+
+test("大会のまとめ：名前・形・チーム・試合（何試合目）・順位・優勝を文に", async () => {
+  const { summaryText, formatLabel } = await import("../js/card.js");
+  const { timeSchedule } = await import("../js/pairing.js");
+  const g = make(6, "groups", { groups: 2, advance: 1, thirdPlace: false });
+  const order = timeSchedule(g.gen.matches, { courts: 1, minutes: 20, rest: 10 });
+  for (const m of g.gen.matches.filter((x) => x.stage === "group")) g.t.results[m.id] = { s: [1, 0] };
+  const text = summaryText(g.t, g.gen, resolve(g.gen, g.t.teams.map((x) => x.id), g.t.results, g.t.points), order);
+  assert.match(text, /^🏆 秋の大会\n/);
+  assert.match(text, new RegExp(formatLabel(g.t)));
+  assert.match(text, /【チーム】\nA組：チームあ・チームえ・チームお\nB組：チームい・チームう・チームか/);
+  assert.match(text, /第1試合　A組 第1節/);
+  assert.match(text, /【順位】\n【A組】\n1位/);
+  assert.equal((text.match(/第\d+試合/g) || []).length, g.gen.matches.filter((m) => !m.bye).length);
+});

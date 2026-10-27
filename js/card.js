@@ -1,9 +1,9 @@
 // くみあわせ：おくるんのお知らせカード（OQRN.cardUrl）に渡す中身（組み合わせ表・順位表を文で）と、試合や順位の言い方。画面には触らない（テストで呼ぶ）
 // app.js・js/image.js から読む（import）
-import { FORMATS, TOOL } from "./settings.js?v=202610280757";
-import { roundName } from "./pairing.js?v=202610280757";
-import { podium, table } from "./stats.js?v=202610280757";
-import { LINK_MAX, viewUrl } from "./link.js?v=202610280757";
+import { FORMATS, TOOL } from "./settings.js?v=202610280822";
+import { roundName } from "./pairing.js?v=202610280822";
+import { podium, table } from "./stats.js?v=202610280822";
+import { LINK_MAX, viewUrl } from "./link.js?v=202610280822";
 
 export const CARD_COLOR = "#D9622B"; // くみあわせの色（ロゴのオレンジ）
 const DETAIL_MAX = 600;
@@ -110,4 +110,39 @@ export function cardParams(t, gen, resolved) {
     actionUrl: link.length <= LINK_MAX ? link : TOOL.url,
     from: TOOL.key
   });
+}
+
+// 形の説明（「トーナメント（3位決定戦あり）」「総当たり 2回」「グループ 3つ → 各2チームが決勝トーナメントへ」）を返す
+export function formatLabel(t) {
+  const o = t.opts;
+  if (t.format === "league") return `総当たり${o.legs === 2 ? " 2回（ホーム・アウェイ）" : ""}`;
+  if (t.format === "groups") return `グループ ${o.groups}つの総当たり${o.legs === 2 ? " 2回" : ""} → 各${o.advance}チームが決勝トーナメントへ${o.thirdPlace ? "（3位決定戦あり）" : ""}`;
+  return `トーナメント${o.thirdPlace ? "（3位決定戦あり）" : ""}`;
+}
+
+/**
+ * 大会のまとめ（文。LINE・メモに貼る・印刷にも使う）を返す：名前・日にちと会場・形・チーム・試合（何試合目・時刻・コート・結果）・順位・優勝。
+ * order は試合の順（[{ id, slot, court, time? }]。日程がなければ時刻なし）
+ */
+export function summaryText(t, gen, resolved, order) {
+  const lines = [`🏆 ${t.name || "組み合わせ"}`];
+  const when = [dateLabel(t.sched.on ? t.sched.date : ""), t.sched.on ? t.sched.place : ""].filter(Boolean).join(" ");
+  if (when) lines.push(when);
+  lines.push(`${formatLabel(t)}・${t.teams.length}チーム`);
+  if (t.sched.on) lines.push(`日程：${t.sched.start}〜・コート${t.sched.courts}・1試合${t.sched.minutes}分`);
+  if (t.format !== "knockout") lines.push(`勝ち点：勝${t.points.win}・分${t.points.draw}・負${t.points.loss}`);
+  lines.push("", "【チーム】");
+  if (gen.groups?.length) for (const g of gen.groups) lines.push(`${g.key}組：${g.ids.map((id) => teamName(t, id)).join("・")}`);
+  else t.teams.forEach((x, i) => lines.push(`${i + 1}. ${teamName(t, x.id)}`));
+  lines.push("", "【試合】");
+  const byId = Object.fromEntries(gen.matches.map((m) => [m.id, m]));
+  [...order].sort((a, b) => a.slot - b.slot || a.court - b.court).forEach((s, i) => {
+    const when2 = s.time ? `${s.time}${t.sched.courts > 1 ? ` コート${s.court}` : ""}` : `第${i + 1}試合`;
+    lines.push(`${when2}　${matchLine(t, gen, resolved, byId[s.id])}`);
+  });
+  const standings = standingLines(t, gen);
+  if (standings.length) lines.push("", "【順位】", ...standings);
+  const p = podium(gen, resolved);
+  if (p.first) lines.push("", `【結果】優勝 ${teamName(t, p.first)}${p.second ? `・準優勝 ${teamName(t, p.second)}` : ""}${p.third ? `・3位 ${teamName(t, p.third)}` : ""}`);
+  return lines.join("\n");
 }

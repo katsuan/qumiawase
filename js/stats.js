@@ -121,3 +121,25 @@ export function podium(gen, resolved) {
   const third = gen.matches.find((m) => m.stage === "third");
   return { first: resolved[final.id]?.winner || null, second: resolved[final.id]?.loser || null, third: third ? resolved[third.id]?.winner || null : null };
 }
+
+/**
+ * 見こみ：試合の数（不戦勝はのぞく）・1チームのいちばん多い試合の数（総当たりの数 ＋ トーナメントを勝ちつづけたときの数）・かかる時間（分。plan の最後の終わり）を返す。
+ * plan は js/pairing.js の timeSchedule の返り値（[{ id, start, end }]）
+ */
+export function estimate(gen, plan) {
+  const play = gen.matches.filter((m) => !m.bye);
+  const perTeam = {};
+  for (const m of play) if (m.stage === "league" || m.stage === "group") for (const side of [m.home, m.away]) perTeam[side.team] = (perTeam[side.team] || 0) + 1;
+  const leagueMax = Math.max(0, ...Object.values(perTeam));
+  // トーナメント（決勝トーナメント）：シードのないチームが決勝まで勝ちつづけると、試合のある回の数だけ
+  const koRounds = new Set(play.filter((m) => m.stage === "ko").map((m) => m.round)).size;
+  const minutes = plan.length ? Math.max(...plan.map((p) => p.end)) : 0;
+  return { matches: play.length, most: leagueMax + koRounds, minutes };
+}
+
+// 分を「約1時間50分」「約40分」の文字にして返す
+export function durationLabel(minutes) {
+  const h = Math.floor(minutes / 60);
+  const m = Math.round(minutes % 60);
+  return `約${h ? `${h}時間` : ""}${m || !h ? `${m}分` : ""}`;
+}

@@ -34,19 +34,6 @@ export function roundName(round, total) {
 // グループの呼び名（0 → "A"）を返す
 export const groupKey = (index) => String.fromCharCode(65 + index);
 
-// 側の見分け（同じ時間に同じチームが2試合しないように使う）を返す。相手なしは null
-function sideKey(side) {
-  if (!side || side.empty) return null;
-  if (side.team) return `t:${side.team}`;
-  if (side.winnerOf) return `w:${side.winnerOf}`;
-  if (side.loserOf) return `l:${side.loserOf}`;
-  if (side.groupRank) return `g:${side.groupRank.join("")}`;
-  return null;
-}
-
-// 試合に出る側の見分けのならびを返す
-export const matchKeys = (match) => [sideKey(match.home), sideKey(match.away)].filter(Boolean);
-
 /**
  * トーナメントを作る。entrants はシードの順（1 番が先）の側。2のべき乗に足りないぶんは、上のシードが不戦勝（1回戦なし）。
  * thirdPlace で3位決定戦。prefix は試合の id の頭（グループのあとの決勝トーナメントは "K"）。試合のならびを返す
@@ -195,38 +182,57 @@ function phasesOf(matches) {
 }
 
 /**
- * 試合を時間の枠（slot）とコートに割りふる。同じ枠には同じチームを入れず、なるべく続けて出ないように（前の枠に出たチームは後まわし）。
- * 不戦勝の試合は入れない。[{ id, slot, court }]（slot は 0 から、court は 1 から）を、試合の順に返す
+ * 日程の時刻を決める：コートごとに、空いた時刻から試合を入れていく。1試合は minutes 分。
+ * avoid が true なら、同じチームは前の試合が終わってから rest 分あける（そのぶんコートを空けて待つ＝バッファ）。false ならすぐ次でもよい。
+ * トーナメントの回は、前の回の試合が全部終わってから（勝ち上がったチームにも rest をとる）。グループの順位で上がるチームは、そのグループの最後の試合のあと。
+ * 入れる順：始められる時刻がいちばん早い試合から（同じなら回の順）。不戦勝は入れない。
+ * [{ id, start（はじまりからの分）, end, court（1 から）, slot（同じ時刻のまとまりの番号。0 から） }] を、時刻の順に返す
  */
-export function schedule(matches, { courts = 1 } = {}) {
+export function timeSchedule(matches, { courts = 1, minutes = 20, rest = 0, avoid = true } = {}) {
   const per = Math.max(1, Math.floor(courts));
+  const len = Math.max(1, minutes);
+  const gap = avoid ? Math.max(0, rest) : 0;
+  const courtFree = Array(per).fill(0);
+  const teamFree = new Map(); // チームの見分け → 次に出られる時刻
+  const endOf = {}; // 試合の id → 終わる時刻
+  const groupEnd = {}; // グループ → いちばん遅い試合の終わる時刻
   const out = [];
-  let slot = 0;
+  // 側が、次に出られる時刻（チームなら前の試合のあと、勝者・敗者ならその試合のあと、グループの順位ならそのグループの最後のあと）
+  const readyOf = (side) => {
+    if (!side || side.empty) return 0;
+    if (side.team) return teamFree.get(side.team) || 0;
+    if (side.winnerOf || side.loserOf) return (endOf[side.winnerOf || side.loserOf] ?? 0) + gap;
+    if (side.groupRank) return (groupEnd[side.groupRank[0]] ?? 0) + gap;
+    return 0;
+  };
+  let phaseStart = 0;
   for (const phase of phasesOf(matches)) {
     let remaining = [...phase];
-    let prev = new Set();
+    let phaseEnd = phaseStart;
     while (remaining.length) {
-      const chosen = [];
-      const used = new Set();
-      for (const strict of [true, false]) {
-        for (const m of remaining) {
-          if (chosen.length >= per) break;
-          if (chosen.includes(m)) continue;
-          const keys = matchKeys(m);
-          if (keys.some((k) => used.has(k))) continue;
-          if (strict && keys.some((k) => prev.has(k))) continue;
-          chosen.push(m);
-          keys.forEach((k) => used.add(k));
-        }
-        if (chosen.length >= per) break;
+      // いちばん早く始められる試合（同じなら先の回）と、そのとき空くコート
+      let best = null;
+      for (const m of remaining) {
+        const court = courtFree.indexOf(Math.min(...courtFree));
+        const start = Math.max(phaseStart, courtFree[court], readyOf(m.home), readyOf(m.away));
+        if (!best || start < best.start) best = { m, start, court };
       }
-      chosen.forEach((m, i) => out.push({ id: m.id, slot, court: i + 1 }));
-      remaining = remaining.filter((m) => !chosen.includes(m));
-      prev = used;
-      slot += 1;
+      const { m, start, court } = best;
+      const end = start + len;
+      courtFree[court] = end;
+      endOf[m.id] = end;
+      for (const side of [m.home, m.away]) if (side.team) teamFree.set(side.team, end + gap);
+      if (m.group) groupEnd[m.group] = Math.max(groupEnd[m.group] ?? 0, end);
+      out.push({ id: m.id, start, end, court: court + 1 });
+      phaseEnd = Math.max(phaseEnd, end);
+      remaining = remaining.filter((x) => x !== m);
     }
+    phaseStart = phaseEnd; // 次の回は、この回が全部終わってから
+    courtFree.fill(phaseStart);
   }
-  return out;
+  out.sort((a, b) => a.start - b.start || a.court - b.court);
+  const starts = [...new Set(out.map((o) => o.start))];
+  return out.map((o) => ({ ...o, slot: starts.indexOf(o.start) }));
 }
 
 // 時刻の文字（"09:30"）に分を足した時刻の文字を返す。読めないときは ""

@@ -16,7 +16,7 @@ const sample = () => {
   t.format = "league";
   t.opts.legs = 2;
   t.points = { win: 2, draw: 1, loss: 0 };
-  t.sched = { on: true, date: "2026-11-03", start: "09:30", courts: 2, minutes: 15, place: "市民グラウンド" };
+  t.sched = { on: true, date: "2026-11-03", start: "09:30", courts: 2, minutes: 15, place: "市民グラウンド", avoid: false, rest: 25 };
   t.results = { "L1-1": { s: [2, 1] }, "L2-1": { s: [0, 0], pk: [4, 3] } };
   return t;
 };

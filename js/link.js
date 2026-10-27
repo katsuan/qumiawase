@@ -1,8 +1,8 @@
 // くみあわせ：URL の受け渡し。見る人用のリンク（大会の中身を URL にのせる。サーバーなし）・さくせん盤やろくがで開くリンク・
 // さくせん盤から結果を戻すリンク。中身は JSON → UTF-8 → base64url。受けとるときは形を確かめる
 // app.js・js/card.js から読む（import）
-import { LIMITS, ROQGA_URL, SAQSEN_URL, TOOL } from "./settings.js?v=202610280757";
-import { cleanTournament, hexIn, intIn, isObj, resultIn, textIn } from "./store.js?v=202610280757";
+import { LIMITS, QRONOS_URL, ROQGA_URL, SAQSEN_URL, TOOL } from "./settings.js?v=202610280822";
+import { cleanTournament, hexIn, intIn, isObj, resultIn, textIn } from "./store.js?v=202610280822";
 
 // LINE のリンクは 1000 文字まで
 export const LINK_MAX = 1000;
@@ -32,7 +32,7 @@ const shortHex = (hex) => String(hex || "").replace(/^#/, "");
 
 /**
  * 見る人用のリンクにのせる中身（短い形）を返す。チームの id はのせない（並びの順で t1・t2…）。試合の id はチームの id によらないので、結果はそのまま
- * { v, n, f, o: [3位決定戦, 回数, グループ数, 上がる数], p: [勝, 分, 負], s: [日程あり, 日にち, はじまり, コート数, 分, 会場], t: [[名前, 色], …], r: [[試合の id, 点, 点, PK, PK], …] }
+ * { v, n, f, o: [3位決定戦, 回数, グループ数, 上がる数], p: [勝, 分, 負], s: [時刻を入れる, 日にち, はじまり, コート数, 分, 会場, 連続試合を避ける, 空き時間], t: [[名前, 色], …], r: [[試合の id, 点, 点, PK, PK], …] }
  */
 export function packTournament(t) {
   return {
@@ -41,7 +41,7 @@ export function packTournament(t) {
     f: FORMAT_CODES[t.format] || "k",
     o: [t.opts.thirdPlace ? 1 : 0, t.opts.legs, t.opts.groups, t.opts.advance],
     p: [t.points.win, t.points.draw, t.points.loss],
-    s: [t.sched.on ? 1 : 0, t.sched.date, t.sched.start, t.sched.courts, t.sched.minutes, t.sched.place],
+    s: [t.sched.on ? 1 : 0, t.sched.date, t.sched.start, t.sched.courts, t.sched.minutes, t.sched.place, t.sched.avoid ? 1 : 0, t.sched.rest],
     t: t.teams.map((team) => [team.name, shortHex(team.color)]),
     r: Object.entries(t.results).map(([id, r]) => [id, ...r.s, ...(r.pk || [])])
   };
@@ -66,7 +66,7 @@ export function unpackTournament(data) {
     format,
     opts: { thirdPlace: o[0] === 1, legs: o[1], groups: o[2], advance: o[3] },
     points: { win: p[0], draw: p[1], loss: p[2] },
-    sched: { on: s[0] === 1, date: s[1], start: s[2], courts: s[3], minutes: s[4], place: s[5] },
+    sched: { on: s[0] === 1, date: s[1], start: s[2], courts: s[3], minutes: s[4], place: s[5], avoid: s[6] !== 0, rest: s[7] },
     results
   });
 }
@@ -112,3 +112,21 @@ export function readView(search) {
 
 // 数（0〜max）に丸める（さくせん盤と同じ形で点を渡すときに使う）
 export const scoreOf = (v) => intIn(v, 0, LIMITS.score, 0);
+
+/**
+ * くろのす（カウントダウン）のボードを開くリンクを返す：試合ごとの「あと◯分」を並べる（12件まで）。
+ * entries は [{ at: "2026-11-03T09:30", title, emoji }]。くろのすの ?z= の形（項目は \x1f、行は \x1e でつなぎ、UTF-8 → base64url）。
+ * 種類は u（その日まで）、日付は数字だけ（202611030930）。日時のある項目が1件もないときは null
+ */
+export function qronosUrl(name, entries) {
+  const clean = (v) => String(v ?? "").replace(/[\x1e\x1f]/g, " ").trim();
+  const rows = entries
+    .filter((e) => /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(e.at))
+    .slice(0, 12)
+    .map((e) => ["u", e.at.replace(/[-T:]/g, ""), clean(e.title).slice(0, 60), clean(e.emoji)].join("\x1f"));
+  if (!rows.length) return null;
+  const bytes = new TextEncoder().encode([clean(name).slice(0, 40), ...rows].join("\x1e"));
+  let binary = "";
+  bytes.forEach((b) => (binary += String.fromCharCode(b)));
+  return `${QRONOS_URL}?z=${btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "")}`;
+}

@@ -2,8 +2,9 @@
 // app.js・js/link.js から読む（import）
 //
 // 大会の形：{ id, name, createdAt, updatedAt, teams: [{ id, name, color }], format, opts: { thirdPlace, legs, groups, advance },
-//            points: { win, draw, loss }, sched: { on, date, start, courts, minutes, place }, results: { 試合の id: { s, pk? } } }
-import { DEFAULT_POINTS, LIMITS, TEAM_COLORS, TOOL } from "./settings.js?v=202610280757";
+//            points: { win, draw, loss }, sched: { on（時刻を入れる）, date, start, courts, minutes, place, avoid（連続試合を避ける）, rest（同じチームの空き時間・分） },
+//            results: { 試合の id: { s, pk? } } }
+import { DEFAULT_POINTS, LIMITS, TEAM_COLORS, TOOL } from "./settings.js?v=202610280822";
 
 export const STORE_KEY = `${TOOL.key}:tournaments`; // { list: [大会…], current: いま開いている大会の id }
 export const INBOX_KEY = `${TOOL.key}:inbox`; // さくせん盤から戻ってきた結果（同じ端末のとき）
@@ -42,7 +43,7 @@ export function blankTournament(name = "") {
     format: "knockout",
     opts: { thirdPlace: false, legs: 1, groups: 2, advance: 2 },
     points: { ...DEFAULT_POINTS },
-    sched: { on: false, date: "", start: "09:00", courts: 1, minutes: 20, place: "" },
+    sched: { on: false, date: "", start: "09:00", courts: 1, minutes: 20, place: "", avoid: true, rest: 10 },
     results: {}
   };
 }
@@ -100,7 +101,9 @@ export function cleanTournament(v) {
       start: timeIn(sched.start) || "09:00",
       courts: intIn(sched.courts, 1, LIMITS.courts, 1),
       minutes: intIn(sched.minutes, 1, LIMITS.minutes, 20),
-      place: textIn(sched.place, LIMITS.place)
+      place: textIn(sched.place, LIMITS.place),
+      avoid: sched.avoid !== false,
+      rest: intIn(sched.rest, 0, LIMITS.minutes, 10)
     },
     results
   };

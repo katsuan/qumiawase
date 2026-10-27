@@ -45,9 +45,29 @@ body {
 
 .team-row {
   display: grid;
-  grid-template-columns: 22px minmax(0, 1fr) auto;
+  grid-template-columns: 20px minmax(0, 1fr) 44px 44px;
   align-items: center;
   gap: 6px;
+}
+
+/* つまみ：押したまま上下に動かすと並べかえ（スクロールにしない） */
+.drag-handle {
+  touch-action: none;
+  cursor: grab;
+  font-size: 20px;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.team-row.is-dragging {
+  position: relative;
+  z-index: 2;
+  opacity: 0.9;
+}
+
+.team-row.is-dragging .ls-pickfield {
+  border-color: var(--ls-accent);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
 }
 
 .team-no {
@@ -55,18 +75,6 @@ body {
   font-size: 13px;
   font-weight: 800;
   text-align: right;
-}
-
-.team-move {
-  display: flex;
-  gap: 2px;
-}
-
-.team-move .ls-icon-button {
-  width: 36px;
-  min-width: 36px;
-  height: 36px;
-  font-size: 15px;
 }
 
 .team-row .ls-picker {
@@ -481,4 +489,119 @@ body.is-view #teamsFold,
 body.is-view #formatFold,
 body.is-view #schedFold {
   display: none;
+}
+
+/* ---- 見こみ・試合表の見方・チーム別 ---- */
+.estimate {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: var(--ls-radius-md);
+  background: var(--ls-accent-soft);
+  color: var(--ls-accent-ink);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.estimate:empty {
+  display: none;
+}
+
+.match-views,
+.team-pick {
+  margin-bottom: 4px;
+}
+
+.team-pick .ls-chip {
+  gap: 6px;
+}
+
+.team-pick .dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px #c9c4bd;
+}
+
+.team-tools-row .ls-chip {
+  text-decoration: none;
+}
+
+.path-note {
+  margin: 0;
+  padding: 8px 10px;
+  border: 2px dashed var(--ls-line);
+  border-radius: var(--ls-radius-md);
+  color: var(--ls-subtext);
+  font-size: 14px;
+}
+
+.share-row a.ls-button {
+  text-align: center;
+  text-decoration: none;
+  line-height: 1.3;
+}
+
+/* ---- 印刷・PDF（大会のまとめだけを出す） ---- */
+.print-area {
+  display: none;
+}
+
+@media print {
+  body > main,
+  body > .ls-sheet,
+  body > .ls-toast {
+    display: none !important;
+  }
+
+  .print-area {
+    display: block;
+    color: #1f1f1c;
+    font-size: 11pt;
+  }
+
+  .print-area h1 {
+    font-size: 18pt;
+  }
+
+  .print-area h2 {
+    margin: 14pt 0 4pt;
+    font-size: 13pt;
+    break-after: avoid;
+  }
+
+  .print-area .bracket {
+    display: grid;
+    grid-auto-columns: minmax(0, 1fr);
+    grid-auto-flow: column;
+    overflow: visible;
+  }
+
+  .print-area .bracket-match,
+  .print-area .standing-table {
+    break-inside: avoid;
+  }
+
+  .print-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .print-table th,
+  .print-table td {
+    padding: 3pt 4pt;
+    border-bottom: 0.5pt solid #ccc;
+    text-align: left;
+  }
+
+  .print-table .score {
+    font-weight: 800;
+    white-space: nowrap;
+  }
+
+  .print-foot {
+    margin-top: 12pt;
+    color: #888;
+    font-size: 9pt;
+  }
 }

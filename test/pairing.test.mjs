@@ -1,7 +1,7 @@
 // 組み合わせ（js/pairing.js）のテスト。node --test test/
 import test from "node:test";
 import assert from "node:assert";
-import { generate, knockout, league, matchKeys, nextPow2, roundName, roundRobinRounds, schedule, seedOrder, splitGroups, addMinutes, fitOptions } from "../js/pairing.js";
+import { generate, knockout, league, nextPow2, roundName, roundRobinRounds, timeSchedule, seedOrder, splitGroups, addMinutes, fitOptions } from "../js/pairing.js";
 
 const teams = (n) => Array.from({ length: n }, (_, i) => ({ id: `t${i + 1}` }));
 const ids = (n) => teams(n).map((t) => t.id);
@@ -83,52 +83,14 @@ test("総当たり：ホームの数がかたよらない（差は 1 まで）",
   }
 });
 
-// 日程の順で、続けて出るチームの数（同じチームが前の試合にも出ている回数）
-function backToBack(order, matches) {
-  const byId = Object.fromEntries(matches.map((m) => [m.id, m]));
-  let count = 0;
-  for (let i = 1; i < order.length; i++) {
-    const prev = matchKeys(byId[order[i - 1].id]);
-    if (matchKeys(byId[order[i].id]).some((k) => prev.includes(k))) count += 1;
-  }
-  return count;
+// 1試合 20 分・空き時間 10 分で、コート1つに入れたときの、すきま（コートが空いて待つ時間）の合計を返す。0 なら、続けて出ないまま詰めて並べられた
+function idleOf(matches, opts = {}) {
+  const plan = timeSchedule(matches, { courts: 1, minutes: 20, rest: 10, avoid: true, ...opts });
+  return Math.max(...plan.map((p) => p.end)) - plan.length * 20;
 }
 
-test("日程（コート1つ）：総当たりは 5 チーム以上なら、同じチームが続けて出ない", () => {
-  for (let n = 5; n <= 32; n++) {
-    const ms = league(ids(n));
-    const order = schedule(ms, { courts: 1 });
-    assert.equal(order.length, ms.length);
-    assert.equal(backToBack(order, ms), 0, `n=${n}`);
-  }
-});
-
-test("日程（コート2つ以上）：同じ時間に同じチームは出ない。全部の試合が入る", () => {
-  for (const courts of [2, 3, 4]) {
-    for (let n = 4; n <= 20; n++) {
-      const { matches } = generate(teams(n), "league");
-      const order = schedule(matches, { courts });
-      assert.equal(order.length, matches.length);
-      const bySlot = {};
-      for (const o of order) (bySlot[o.slot] ||= []).push(o);
-      for (const list of Object.values(bySlot)) {
-        assert.ok(list.length <= courts);
-        const keys = list.flatMap((o) => matchKeys(matches.find((m) => m.id === o.id)));
-        assert.equal(new Set(keys).size, keys.length, `courts=${courts} n=${n} 同じ時間に2試合`);
-      }
-    }
-  }
-});
-
-test("日程：トーナメントは回の順（前の回が全部終わってから次の回）。不戦勝は入れない", () => {
-  const { matches } = generate(teams(6), "knockout", { thirdPlace: true });
-  const order = schedule(matches, { courts: 2 });
-  const slotOf = Object.fromEntries(order.map((o) => [o.id, o.slot]));
-  const play = matches.filter((m) => !m.bye);
-  assert.equal(order.length, play.length);
-  for (const m of play) for (const n of play) if (m.round < n.round && m.stage !== "third") assert.ok(slotOf[m.id] < slotOf[n.id], `${m.id} < ${n.id}`);
-  const final = play.find((m) => m.stage === "ko" && m.round === 3);
-  assert.ok(slotOf.K3 <= slotOf[final.id], "3位決定戦は決勝より前か同じ時間");
+test("連続試合を避ける（コート1つ）：総当たりは 5 チーム以上なら、待ち時間なしで、同じチームが続けて出ない順に並ぶ", () => {
+  for (let n = 5; n <= 32; n++) assert.equal(idleOf(league(ids(n))), 0, `n=${n}`);
 });
 
 test("グループ：分け方は行って帰ってくる順。決勝トーナメントのはじめは、ちがうグループどうし", () => {
@@ -160,4 +122,74 @@ test("時刻に分を足す", () => {
   assert.equal(addMinutes("09:00", 25), "09:25");
   assert.equal(addMinutes("23:50", 20), "00:10");
   assert.equal(addMinutes("x", 5), "");
+});
+
+test("連続試合を避ける（コート1つ）：グループの総当たりも、グループをまぜて、待ち時間なしで並ぶ", () => {
+  for (const [n, groups] of [[8, 2], [9, 3], [10, 2], [12, 3], [12, 4], [16, 4], [20, 4], [24, 6]]) {
+    const { matches } = generate(teams(n), "groups", { groups, advance: 2 });
+    assert.equal(idleOf(matches.filter((m) => m.stage === "group")), 0, `n=${n} groups=${groups}`);
+  }
+});
+
+// 日程の時刻の確かめ：同じチームが重ならない・コートが重ならない・全部入る。チームの試合の間（前の終わり → 次の始まり）の最小を返す
+function checkTimes(matches, plan, courts) {
+  const byId = Object.fromEntries(matches.map((m) => [m.id, m]));
+  assert.equal(plan.length, matches.filter((m) => !m.bye).length, "全部の試合が入る");
+  for (let c = 1; c <= courts; c++) {
+    const list = plan.filter((p) => p.court === c).sort((a, b) => a.start - b.start);
+    for (let i = 1; i < list.length; i++) assert.ok(list[i].start >= list[i - 1].end, `コート${c}が重なる`);
+  }
+  let minGap = Infinity;
+  const byTeam = {};
+  for (const p of plan) for (const side of [byId[p.id].home, byId[p.id].away]) if (side.team) (byTeam[side.team] ||= []).push(p);
+  for (const list of Object.values(byTeam)) {
+    list.sort((a, b) => a.start - b.start);
+    for (let i = 1; i < list.length; i++) {
+      assert.ok(list[i].start >= list[i - 1].end, "同じチームが重なる");
+      minGap = Math.min(minGap, list[i].start - list[i - 1].end);
+    }
+  }
+  return minGap;
+}
+
+test("日程の時刻（連続試合を避ける）：同じチームは、前の試合のあと空き時間をあける。コート・チームは重ならない", async () => {
+  for (const courts of [1, 2, 3, 4]) {
+    for (const rest of [5, 10, 20, 45]) {
+      for (const n of [2, 3, 4, 5, 6, 9, 12, 17, 32]) {
+        const { matches } = generate(teams(n), "league");
+        const plan = timeSchedule(matches, { courts, minutes: 20, rest, avoid: true });
+        assert.ok(checkTimes(matches, plan, courts) >= rest, `courts=${courts} rest=${rest} n=${n}`);
+      }
+    }
+  }
+});
+
+test("日程の時刻（続けてもよい）：重ならないだけで詰める（空き時間なし）", async () => {
+  const { matches } = generate(teams(4), "league");
+  const plan = timeSchedule(matches, { courts: 1, minutes: 20, rest: 30, avoid: false });
+  checkTimes(matches, plan, 1);
+  assert.equal(Math.max(...plan.map((p) => p.end)), 6 * 20, "コート1つで6試合ぶん、すきまなし");
+});
+
+test("日程の時刻：トーナメントの次の回は、前の回が終わってから。勝ち上がったチームにも空き時間", async () => {
+  const { matches } = generate(teams(8), "knockout", { thirdPlace: true });
+  const plan = timeSchedule(matches, { courts: 2, minutes: 15, rest: 20, avoid: true });
+  const at = Object.fromEntries(plan.map((p) => [p.id, p]));
+  const r1End = Math.max(...matches.filter((m) => m.round === 1).map((m) => at[m.id].end));
+  for (const m of matches.filter((x) => x.round === 2)) {
+    assert.ok(at[m.id].start >= r1End, `${m.id} は1回戦が全部終わってから`);
+    for (const side of [m.home, m.away]) assert.ok(at[m.id].start >= at[side.winnerOf].end + 20, `${m.id} は勝ち上がったチームの空き時間のあと`);
+  }
+  // グループの順位で上がるチームは、そのグループが終わってから
+  const g = generate(teams(8), "groups", { groups: 2, advance: 2 });
+  const gp = timeSchedule(g.matches, { courts: 2, minutes: 15, rest: 10, avoid: true });
+  const gat = Object.fromEntries(gp.map((p) => [p.id, p]));
+  const groupEnd = Math.max(...g.matches.filter((m) => m.stage === "group").map((m) => gat[m.id].end));
+  for (const m of g.matches.filter((x) => x.stage === "ko" && x.round === 1)) assert.ok(gat[m.id].start >= groupEnd, m.id);
+});
+
+test("続けてもよい：回の順のまま、すきまなく詰める", () => {
+  const ms = league(ids(6));
+  const plan = timeSchedule(ms, { courts: 1, minutes: 20, rest: 30, avoid: false });
+  assert.deepEqual(plan.map((o) => o.id), ms.map((m) => m.id));
 });
