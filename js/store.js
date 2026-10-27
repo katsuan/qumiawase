@@ -4,7 +4,7 @@
 // 大会の形：{ id, name, createdAt, updatedAt, teams: [{ id, name, color }], format, opts: { thirdPlace, legs, groups, advance },
 //            points: { win, draw, loss }, sched: { on（時刻を入れる）, date, start, courts, minutes, place, avoid（連続試合を避ける）, rest（同じチームの空き時間・分） },
 //            results: { 試合の id: { s, pk? } } }
-import { DEFAULT_POINTS, LIMITS, TEAM_COLORS, TOOL } from "./settings.js?v=202610280822";
+import { DEFAULT_POINTS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./settings.js?v=202610280830";
 
 export const STORE_KEY = `${TOOL.key}:tournaments`; // { list: [大会…], current: いま開いている大会の id }
 export const INBOX_KEY = `${TOOL.key}:inbox`; // さくせん盤から戻ってきた結果（同じ端末のとき）
@@ -40,6 +40,7 @@ export function blankTournament(name = "") {
     createdAt: now,
     updatedAt: now,
     teams: Array.from({ length: 4 }, (_, i) => ({ id: `t${i + 1}`, name: "", color: colorAt(i) })),
+    preset: "", // 試合の種類（PRESETS の key。"" は自分で決めた）
     format: "knockout",
     opts: { thirdPlace: false, legs: 1, groups: 2, advance: 2 },
     points: { ...DEFAULT_POINTS },
@@ -87,6 +88,7 @@ export function cleanTournament(v) {
     createdAt: Number(v.createdAt) || base.createdAt,
     updatedAt: Number(v.updatedAt) || base.updatedAt,
     teams: teams.length ? teams : base.teams,
+    preset: PRESETS.some((p) => p.key === v.preset) ? v.preset : "",
     format: ["knockout", "league", "groups"].includes(v.format) ? v.format : "knockout",
     opts: {
       thirdPlace: opts.thirdPlace === true,

@@ -48,3 +48,14 @@ export const FORMATS = {
   league: "総当たり",
   groups: "グループ → 決勝トーナメント"
 };
+
+// 試合の種類の初期設定（タブで選ぶ）。1試合の時間（ハーフタイム・入れかえもふくむ）・同じチームの空き時間・勝ち点・3位決定戦。
+// どれも目安で、選んだあとに変えられる。note は画面に出す中身の説明
+export const PRESETS = [
+  { key: "soccer8", label: "⚽ サッカー 8人制", minutes: 40, rest: 20, points: { win: 3, draw: 1, loss: 0 }, thirdPlace: true, note: "15分ハーフ・ハーフタイム5分・入れかえ5分" },
+  { key: "soccer11", label: "⚽ サッカー 11人制", minutes: 60, rest: 30, points: { win: 3, draw: 1, loss: 0 }, thirdPlace: true, note: "25分ハーフ・ハーフタイム5分・入れかえ5分" },
+  { key: "futsal", label: "🥅 フットサル", minutes: 25, rest: 10, points: { win: 3, draw: 1, loss: 0 }, thirdPlace: false, note: "10分ハーフ・ハーフタイム3分・入れかえ2分" },
+  { key: "minibasket", label: "🏀 ミニバス", minutes: 50, rest: 20, points: { win: 2, draw: 1, loss: 1 }, thirdPlace: false, note: "6分×4ピリオド・休み・入れかえ" },
+  { key: "volley", label: "🏐 バレー", minutes: 30, rest: 15, points: { win: 3, draw: 0, loss: 0 }, thirdPlace: false, note: "2セット先取の目安" },
+  { key: "racket", label: "🏓 卓球・テニス", minutes: 20, rest: 10, points: { win: 1, draw: 0, loss: 0 }, thirdPlace: false, note: "1試合の目安（勝ち数で順位）" }
+];

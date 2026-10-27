@@ -1,13 +1,13 @@
 // くみあわせ（QumiAwase）：入口。画面（大会・チーム・形・日程・トーナメント表・順位表・試合と結果・送る）を作り、ボタン・入力を受け、部品（js/）をつなぐ。
 // index.html から読む（type="module"）。組み合わせは js/pairing.js、順位と勝ち上がりは js/stats.js、端末に残すのは js/store.js、
 // リンク（見る人用・さくせん盤・ろくが・結果を戻す）は js/link.js、カードは js/card.js、画像は js/image.js
-import { FORMATS, LIMITS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610280822";
-import { addMinutes, fitOptions, generate, roundName, timeSchedule } from "./js/pairing.js?v=202610280822";
-import { durationLabel, estimate, outcome, podium, resolve, table } from "./js/stats.js?v=202610280822";
-import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610280822";
-import { qronosUrl, readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610280822";
-import { cardParams, dateLabel, formatLabel, matchLine, matchTitle, sideLabel, summaryText, teamName } from "./js/card.js?v=202610280822";
-import { drawTournament } from "./js/image.js?v=202610280822";
+import { FORMATS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610280830";
+import { addMinutes, fitOptions, generate, roundName, timeSchedule } from "./js/pairing.js?v=202610280830";
+import { durationLabel, estimate, outcome, podium, resolve, table } from "./js/stats.js?v=202610280830";
+import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610280830";
+import { qronosUrl, readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610280830";
+import { cardParams, dateLabel, formatLabel, matchLine, matchTitle, sideLabel, summaryText, teamName } from "./js/card.js?v=202610280830";
+import { drawTournament } from "./js/image.js?v=202610280830";
 
 // id から画面の部品を返す
 const $ = (id) => document.getElementById(id);
@@ -87,6 +87,50 @@ function compute() {
   const numberOf = Object.fromEntries(plan.map((p, i) => [p.id, i + 1]));
   const resolved = resolve(gen, t.teams.map((x) => x.id), t.results, t.points);
   return { t, gen, plan, sched, timeOf, numberOf, resolved, est: estimate(gen, plan) };
+}
+
+// ---- 画面：ページのタブ（準備・試合） ----
+
+// いま開いているページ（"prep"＝準備・"play"＝試合）。結果が入りはじめた大会は試合から
+const page = { now: "" };
+
+// ページのタブと、準備・試合のどちらを出すかを描きなおす（見る人用のリンクのときは試合だけ）
+function renderPage() {
+  if (viewing) page.now = "play";
+  if (!page.now) page.now = Object.keys(current().results).length ? "play" : "prep";
+  $("pageTabs").hidden = Boolean(viewing);
+  document.querySelectorAll("[data-page]").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.page === page.now)));
+  $("pagePrep").hidden = page.now !== "prep";
+  $("pagePlay").hidden = page.now !== "play";
+}
+
+// ---- 画面：試合の種類（初期設定のタブ） ----
+
+// 試合の種類のタブと、選んでいる種類の説明を描きなおす
+function renderPresets() {
+  const t = current();
+  const tabs = [...PRESETS, { key: "", label: "✏️ 自分で決める" }];
+  $("presetTabs").innerHTML = tabs.map((p) => `<button class="ls-chip" type="button" role="tab" data-preset="${esc(p.key)}" aria-selected="${esc(t.preset === p.key)}">${esc(p.label)}</button>`).join("");
+  // 選んでいるタブが見えるよう、横に送る（ページは動かさない）
+  const box = $("presetTabs");
+  const sel = box.querySelector('[aria-selected="true"]');
+  if (sel && (sel.offsetLeft < box.scrollLeft || sel.offsetLeft + sel.offsetWidth > box.scrollLeft + box.clientWidth)) box.scrollLeft = sel.offsetLeft - 12;
+  const p = PRESETS.find((x) => x.key === t.preset);
+  $("presetNote").textContent = p
+    ? `${p.note} → 1試合${p.minutes}分・空き${p.rest}分・勝ち点 勝${p.points.win}・分${p.points.draw}・負${p.points.loss}（目安。下で変えられます）`
+    : "1試合の時間・空き時間・勝ち点は、下の「形」「時間と日程」で決めます。";
+}
+
+// 試合の種類を選ぶ：1試合の時間・空き時間・勝ち点・3位決定戦の初期設定を入れる（「元に戻す」で戻せる）
+function applyPreset(key) {
+  const p = PRESETS.find((x) => x.key === key);
+  if (!p) return change((t) => (t.preset = ""));
+  change((t) => {
+    t.preset = p.key;
+    Object.assign(t.sched, { minutes: p.minutes, rest: p.rest, avoid: true });
+    t.points = { ...p.points };
+    t.opts.thirdPlace = p.thirdPlace;
+  }, `${p.label}の初期設定にしました`);
 }
 
 // ---- 画面：大会 ----
@@ -283,7 +327,7 @@ function renderFormat() {
   stepper(document.querySelector('[data-opt="groups"]'), { get: () => opts.groups, set: (v) => change((x) => (x.opts.groups = v)), min: 1, max: maxGroups, label: "グループの数" });
   stepper(document.querySelector('[data-opt="advance"]'), { get: () => opts.advance, set: (v) => change((x) => (x.opts.advance = v)), min: 1, max: Math.max(1, Math.floor(t.teams.length / opts.groups)), label: "上がる数" });
   for (const key of ["win", "draw", "loss"]) {
-    stepper(document.querySelector(`[data-point="${key}"]`), { get: () => t.points[key], set: (v) => ((t.points[key] = v), persist(), renderFormat(), renderResults()), min: 0, max: 9, label: "勝ち点" });
+    stepper(document.querySelector(`[data-point="${key}"]`), { get: () => t.points[key], set: (v) => ((t.points[key] = v), (t.preset = ""), persist(), renderPresets(), renderFormat(), renderResults()), min: 0, max: 9, label: "勝ち点" });
   }
   $("pointsMeta").textContent = `勝${t.points.win}・分${t.points.draw}・負${t.points.loss}`;
 }
@@ -301,17 +345,28 @@ function renderSched() {
   if (document.activeElement !== $("schedStart")) $("schedStart").value = s.start;
   if (document.activeElement !== $("schedPlace")) $("schedPlace").value = s.place;
   $("schedMeta").textContent = [s.on ? `${dateLabel(s.date)} ${s.start}〜`.trim() : "", `コート${s.courts}`, `${s.minutes}分`, s.avoid ? `空き${s.rest}分` : "連続OK"].filter(Boolean).join("・");
-  const setSched = (key) => (v) => ((t.sched[key] = v), persist(), renderSched(), renderResults());
+  // 時間を変える（1試合の時間・空き時間を手で変えたら、試合の種類は「自分で決める」に）
+  const setSched = (key) => (v) => {
+    t.sched[key] = v;
+    if (key === "minutes" || key === "rest") t.preset = "";
+    persist();
+    renderPresets();
+    renderSched();
+    renderResults();
+  };
   stepper(document.querySelector('[data-sched="courts"]'), { get: () => s.courts, set: setSched("courts"), min: 1, max: LIMITS.courts, label: "コートの数" });
   stepper(document.querySelector('[data-sched="minutes"]'), { get: () => s.minutes, set: setSched("minutes"), min: 5, max: LIMITS.minutes, step: 5, label: "1試合の時間" });
   stepper(document.querySelector('[data-sched="rest"]'), { get: () => s.rest, set: setSched("rest"), min: 0, max: LIMITS.minutes, step: 5, label: "空き時間" });
 }
 
-// 見こみ（試合の数・1チームの最多の試合の数・かかる時間）を出す
+// 見こみ（試合の数・1チームの最多の試合の数・かかる時間）を、形の下と試合のタブの見出しに出す
 function renderEstimate({ t, est }) {
-  if (!est.matches) return ($("estimate").textContent = "");
   const end = t.sched.on ? `・${t.sched.start}〜${addMinutes(t.sched.start, est.minutes)}` : "";
-  $("estimate").textContent = `📏 ${est.matches}試合・1チーム最多${est.most}試合・${durationLabel(est.minutes)}${end}（1試合${t.sched.minutes}分・コート${t.sched.courts}${t.sched.avoid ? `・空き${t.sched.rest}分` : ""}）`;
+  const text = est.matches ? `📏 ${est.matches}試合・1チーム最多${est.most}試合・${durationLabel(est.minutes)}${end}（1試合${t.sched.minutes}分・コート${t.sched.courts}${t.sched.avoid ? `・空き${t.sched.rest}分` : ""}）` : "";
+  $("estimate").textContent = text;
+  $("playEstimate").textContent = text;
+  const when = [dateLabel(t.sched.on ? t.sched.date : ""), t.sched.on ? t.sched.place : ""].filter(Boolean).join(" ");
+  $("playTitle").textContent = `🏆 ${t.name || "組み合わせ"}　${[when, FORMATS[t.format], `${t.teams.length}チーム`].filter(Boolean).join("・")}`;
 }
 
 // ---- 画面：結果（トーナメント表・順位表・試合） ----
@@ -559,6 +614,8 @@ function renderResults() {
 
 // 画面をまるごと描きなおす
 function renderAll() {
+  renderPage();
+  renderPresets();
   renderEvents();
   renderTeams();
   renderFormat();
@@ -917,6 +974,21 @@ function bindEvents() {
     if (b && !viewing) return setScore(b.dataset.mid, b.dataset.score, Number(b.dataset.k), Number(b.dataset.d));
     const clear = e.target.closest("[data-clear]");
     if (clear) clearScore(clear.dataset.clear);
+  });
+
+  // ページのタブ（準備・試合）。切りかえたら上へ
+  document.querySelectorAll("[data-page]").forEach((b) =>
+    b.addEventListener("click", () => {
+      page.now = b.dataset.page;
+      renderPage();
+      if (page.now === "prep") renderPresets(); // かくれているあいだは横に送れないので、出してから
+      window.scrollTo({ top: 0 });
+    })
+  );
+  // 試合の種類
+  $("presetTabs").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-preset]");
+    if (b) applyPreset(b.dataset.preset);
   });
 
   // 試合表の見方・チーム別のチーム

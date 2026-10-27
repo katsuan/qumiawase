@@ -93,3 +93,16 @@ test("リンクの中身は 32 チームでも作れる（見る人用は長く�
   assert.equal(back.teams.length, 32);
   assert.ok(packTournament(t).t.length === 32);
 });
+
+test("試合の種類の初期設定：時間は5分きざみで上限まで、勝ち点は 0〜9。覚えた種類は形を確かめて読む", async () => {
+  const { PRESETS, LIMITS } = await import("../js/settings.js");
+  assert.equal(new Set(PRESETS.map((p) => p.key)).size, PRESETS.length);
+  for (const p of PRESETS) {
+    assert.ok(p.minutes % 5 === 0 && p.minutes >= 5 && p.minutes <= LIMITS.minutes, p.key);
+    assert.ok(p.rest % 5 === 0 && p.rest >= 0 && p.rest <= LIMITS.minutes, p.key);
+    for (const v of Object.values(p.points)) assert.ok(v >= 0 && v <= 9, p.key);
+    assert.ok(p.note && p.label);
+  }
+  assert.equal(cleanTournament({ preset: "futsal", teams: [{ name: "a" }, { name: "b" }] }).preset, "futsal");
+  assert.equal(cleanTournament({ preset: "<x>", teams: [{ name: "a" }] }).preset, "");
+});

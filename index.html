@@ -27,7 +27,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://katsuan.github.io/line-share/shared/ui.css?v=202610261000">
-<link rel="stylesheet" href="style.css?v=202610280822">
+<link rel="stylesheet" href="style.css?v=202610280830">
 </head>
 <body>
 <main class="ls-page ls-stack">
@@ -43,6 +43,13 @@
     <button id="saveView" class="ls-button is-primary is-block" type="button">＋ この端末に保存する</button>
   </section>
 
+  <!-- ページのタブ：準備（大会・試合の種類・チーム・形・時間）と、試合（順位表・トーナメント表・試合と結果・送る） -->
+  <nav id="pageTabs" class="ls-tabs page-tabs" role="tablist" aria-label="ページ">
+    <button class="ls-tab" type="button" role="tab" data-page="prep" aria-controls="pagePrep">⚙️ 準備</button>
+    <button class="ls-tab" type="button" role="tab" data-page="play" aria-controls="pagePlay">📋 試合</button>
+  </nav>
+
+  <div id="pagePrep" class="ls-stack" role="tabpanel" aria-labelledby="pageTabs">
   <!-- 大会：切りかえ・新しく作る・複製・消す。名前 -->
   <section id="eventPanel" class="ls-panel event-panel" aria-label="大会">
     <div class="event-bar">
@@ -58,6 +65,13 @@
       <button id="copyEvent" class="ls-chip" type="button">⧉ 複製</button>
       <button id="deleteEvent" class="ls-chip" type="button">🗑 消す</button>
     </div>
+  </section>
+
+  <!-- 試合の種類：押すと、1試合の時間・空き時間・勝ち点などの初期設定が入る（目安。あとで変えられる） -->
+  <section class="ls-panel ls-stack" aria-labelledby="presetTitle">
+    <h2 id="presetTitle" class="ls-panel-title">🏷️ 試合の種類</h2>
+    <div id="presetTabs" class="ls-chips preset-tabs" role="tablist" aria-label="試合の種類"></div>
+    <p id="presetNote" class="ls-hint"></p>
   </section>
 
   <!-- チーム：名前と色（入力枠の中の左に色の丸。さくせん盤・ろくがと同じ形）・並べかえ・シャッフル -->
@@ -137,6 +151,15 @@
     </div>
   </details>
 
+  </div>
+
+  <div id="pagePlay" class="ls-stack" role="tabpanel" aria-labelledby="pageTabs" hidden>
+    <!-- 大会の見出し：名前・形・見こみ（試合のタブのいちばん上） -->
+    <section class="ls-panel play-head" aria-label="大会">
+      <p id="playTitle" class="play-title"></p>
+      <p id="playEstimate" class="estimate"></p>
+    </section>
+
   <!-- 順位表（総当たり・グループのとき） -->
   <section id="standingsPanel" class="ls-panel" aria-labelledby="standingsTitle" hidden>
     <h2 id="standingsTitle" class="ls-panel-title">📊 順位表</h2>
@@ -177,13 +200,15 @@
     <p class="ls-hint">見る人用のリンクには、大会の中身がそのまま入ります（サーバーには送りません）。開いた人は見るだけ。この端末に保存すると、結果を入れられます。</p>
   </section>
 
+  </div>
+
   <div data-tool-share></div>
 </main>
 <!-- 印刷・PDF に保存するときだけ出す「大会のまとめ」（app.js の printSummary が中身を入れる） -->
 <section id="printArea" class="print-area" aria-hidden="true"></section>
 <script src="https://katsuan.github.io/line-share/shared/oqrn.js"></script>
 <script src="https://katsuan.github.io/line-share/shared/ui.js?v=202610260300" defer></script>
-<script type="module" src="app.js?v=202610280822"></script>
+<script type="module" src="app.js?v=202610280830"></script>
 <script src="https://katsuan.github.io/line-share/shared/tool-share.js" data-tool="qumiawase" defer></script>
 <script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(() => {});</script>
 </body>

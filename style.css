@@ -605,3 +605,35 @@ body.is-view #schedFold {
     font-size: 9pt;
   }
 }
+
+/* ---- ページのタブ・試合の種類・試合のタブの見出し ---- */
+.page-tabs {
+  margin-bottom: 0;
+  padding: 4px;
+  border-radius: 16px;
+  background: var(--ls-tabs-bg, var(--ls-accent-soft));
+}
+
+/* 試合の種類：横に1列で、はみ出すぶんは横にスクロール */
+.preset-tabs {
+  position: relative;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.preset-tabs .ls-chip {
+  flex: none;
+}
+
+.preset-tabs .ls-chip[aria-selected="true"] {
+  border-color: var(--ls-accent);
+  background: var(--ls-accent-soft);
+  color: var(--ls-accent-ink);
+}
+
+.play-title {
+  margin: 0 0 6px;
+  font-weight: 800;
+}
