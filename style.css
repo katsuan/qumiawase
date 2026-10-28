@@ -514,30 +514,16 @@ body {
   border-color: #d9622b;
 }
 
-.match-tools > summary {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 36px;
-  color: var(--ls-subtext);
-  font-size: 13px;
-  font-weight: 700;
+/* さくせん盤・ろくがは、試合のカードを押すと出る */
+.match.has-tools {
   cursor: pointer;
-  list-style: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.match-tools > summary::-webkit-details-marker {
-  display: none;
-}
-
-.match-tools > summary::after {
-  content: "＋";
-  margin-left: auto;
-  font-size: 15px;
-}
-
-.match-tools[open] > summary::after {
-  content: "−";
+.match-head[data-tools]:focus-visible {
+  outline: 2px solid var(--ls-accent);
+  outline-offset: 2px;
+  border-radius: 6px;
 }
 
 .match-actions {

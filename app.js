@@ -1,13 +1,13 @@
 // くみあわせ（QumiAwase）：入口。画面（大会・チーム・形・日程・トーナメント表・順位表・試合と結果・送る）を作り、ボタン・入力を受け、部品（js/）をつなぐ。
 // index.html から読む（type="module"）。組み合わせは js/pairing.js、順位と勝ち上がりは js/stats.js、端末に残すのは js/store.js、
 // リンク（見る人用・さくせん盤・ろくが・結果を戻す）は js/link.js、カードは js/card.js、画像は js/image.js
-import { FORMATS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610282119";
-import { addMinutes, autoReferees, fitOptions, generate, refereeOptions, roundName, timeSchedule } from "./js/pairing.js?v=202610282119";
-import { durationLabel, estimate, outcome, podium, resolve, table } from "./js/stats.js?v=202610282119";
-import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610282119";
-import { LINK_MAX, qronosUrl, readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610282119";
-import { cardParams, dateLabel, formatLabel, matchLine, matchTitle, sideLabel, summaryText, teamName } from "./js/card.js?v=202610282119";
-import { drawTournament } from "./js/image.js?v=202610282119";
+import { FORMATS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610282127";
+import { addMinutes, autoReferees, fitOptions, generate, refereeOptions, roundName, timeSchedule } from "./js/pairing.js?v=202610282127";
+import { durationLabel, estimate, outcome, podium, resolve, table } from "./js/stats.js?v=202610282127";
+import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610282127";
+import { LINK_MAX, qronosUrl, readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610282127";
+import { cardParams, dateLabel, formatLabel, matchLine, matchTitle, sideLabel, summaryText, teamName } from "./js/card.js?v=202610282127";
+import { drawTournament } from "./js/image.js?v=202610282127";
 
 // id から画面の部品を返す
 const $ = (id) => document.getElementById(id);
@@ -550,6 +550,18 @@ function scoreHtml(mid, kind, k, value, label) {
 // 試合ごとの「さくせん盤・ろくが」の開け閉め（試合の id → 開いているか）。描きなおしても戻らないように
 const toolsOpen = new Map();
 
+// 試合のカードの「さくせん盤・ろくが」を広げる／たたむ（描きなおさず、その場で）
+function toggleTools(card) {
+  const head = card?.querySelector("[data-tools]");
+  const box = card?.querySelector(".match-actions");
+  if (!head || !box) return;
+  const open = box.hidden;
+  box.hidden = !open;
+  toolsOpen.set(head.dataset.tools, open);
+  head.setAttribute("aria-expanded", String(open));
+  head.setAttribute("aria-label", head.getAttribute("aria-label").replace(/(出す|閉じる)$/, open ? "閉じる" : "出す"));
+}
+
 // 試合1つのカード（見出し・時刻・2チームと点・PK・さくせん盤やろくがで開く）の HTML を返す
 function matchHtml(c, m) {
   const { t, gen, timeOf, numberOf, resolved } = c;
@@ -582,16 +594,17 @@ function matchHtml(c, m) {
     const away = teamById(r.away);
     const named = (x) => ({ name: teamName(t, x.id), color: x.color });
     const saqsen = saqsenUrl({ home: named(home), away: named(away), place: t.sched.on ? t.sched.place : "", date: t.sched.on ? t.sched.date : "", time: s?.time || "", tid: t.id, mid: m.id });
-    // 毎回並ぶとくどいので、たたむ（次の試合だけ開いておく。開け閉めは覚えておく）
-    const open = toolsOpen.has(m.id) ? toolsOpen.get(m.id) : next;
-    actions = `<details class="match-tools" data-tools="${esc(m.id)}" ${open ? "open" : ""}><summary>⚽ さくせん盤・📹 ろくが</summary><div class="match-actions">
+    // 毎回並ぶとくどいので、はじめは出さない。試合のカードを押すと広がる（開け閉めは覚えておく）
+    const open = toolsOpen.get(m.id) || false;
+    actions = `<div class="match-actions" id="tools-${esc(m.id)}" ${open ? "" : "hidden"}>
       <a class="ls-chip" href="${esc(saqsen)}" target="_blank" rel="noopener">⚽ さくせん盤で開く</a>
       <a class="ls-chip" href="${esc(roqgaUrl({ home: named(home), away: named(away) }))}" target="_blank" rel="noopener">📹 ろくがで撮る</a>
       ${res && !viewing ? `<button class="ls-chip" type="button" data-clear="${esc(m.id)}">結果を消す</button>` : ""}
-    </div></details>`;
+    </div>`;
   }
   const badge = next ? `<span class="next-badge">▶ 次の試合</span>` : done ? `<span class="done-badge">✓ 終わり</span>` : "";
-  return `<article class="match ${done ? "is-done" : ""} ${next ? "is-next" : ""}" data-mid="${esc(m.id)}"><div class="match-head"><span>${badge}${esc(matchTitle(m, gen))}</span><span>${esc(when)}${clearBtn}</span></div>${side(m.home, r.home, 0)}${side(m.away, r.away, 1)}${pkRow}${refereeHtml(c, m)}${actions}</article>`;
+  const tools = actions ? ` data-tools="${esc(m.id)}" role="button" tabindex="0" aria-expanded="${toolsOpen.get(m.id) ? "true" : "false"}" aria-controls="tools-${esc(m.id)}" aria-label="${esc(matchTitle(m, gen))}：さくせん盤・ろくがを${toolsOpen.get(m.id) ? "閉じる" : "出す"}"` : "";
+  return `<article class="match ${done ? "is-done" : ""} ${next ? "is-next" : ""} ${actions ? "has-tools" : ""}" data-mid="${esc(m.id)}"><div class="match-head"${tools}><span>${badge}${esc(matchTitle(m, gen))}</span><span>${esc(when)}${clearBtn}</span></div>${side(m.home, r.home, 0)}${side(m.away, r.away, 1)}${pkRow}${refereeHtml(c, m)}${actions}</article>`;
 }
 
 /**
@@ -1141,19 +1154,19 @@ function bindEvents() {
     const b = e.target.closest("[data-score]");
     if (b && !viewing) return setScore(b.dataset.mid, b.dataset.score, Number(b.dataset.k), Number(b.dataset.d));
     const clear = e.target.closest("[data-clear]");
-    if (clear) clearScore(clear.dataset.clear);
+    if (clear) return clearScore(clear.dataset.clear);
+    // 点・審判・リンクのほかを押したら、その試合の「さくせん盤・ろくが」を広げる／たたむ
+    if (e.target.closest("button, a, select, input, label, .match-actions")) return;
+    toggleTools(e.target.closest(".match.has-tools"));
+  });
+  $("matches").addEventListener("keydown", (e) => {
+    const head = e.target.closest("[data-tools]");
+    if (!head || (e.key !== "Enter" && e.key !== " ")) return;
+    e.preventDefault();
+    toggleTools(head.closest(".match"));
   });
 
   // 審判を選ぶ（「−」はなし）
-  // toggle は泡立たないので、つかまえる側で受ける
-  $("matches").addEventListener(
-    "toggle",
-    (e) => {
-      const d = e.target.closest?.("[data-tools]");
-      if (d) toolsOpen.set(d.dataset.tools, d.open);
-    },
-    true
-  );
   $("matches").addEventListener("change", (e) => {
     const sel = e.target.closest("[data-referee]");
     if (!sel || viewing) return;
