@@ -859,6 +859,27 @@ body {
   color: var(--ls-accent-ink);
 }
 
+/* 総当たり表から開く「点を入れる」窓 */
+.score-sheet-sub {
+  margin: -4px 0 8px;
+  color: var(--ls-subtext);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.score-sheet-sides {
+  display: grid;
+  gap: 8px;
+}
+
+.score-sheet-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 12px;
+}
+
 /* 総当たり表から動いてきた試合を少し光らせる */
 .match.is-flash {
   animation: match-flash 1.6s ease-out;

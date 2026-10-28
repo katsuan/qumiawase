@@ -1,13 +1,13 @@
 // くみあわせ（QumiAwase）：入口。画面（大会・チーム・形・日程・トーナメント表・順位表・試合と結果・送る）を作り、ボタン・入力を受け、部品（js/）をつなぐ。
 // index.html から読む（type="module"）。組み合わせは js/pairing.js、順位と勝ち上がりは js/stats.js、端末に残すのは js/store.js、
 // リンク（見る人用・さくせん盤・ろくが・結果を戻す）は js/link.js、カードは js/card.js、画像は js/image.js
-import { FORMATS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610282144";
-import { addMinutes, autoReferees, fitOptions, generate, refereeOptions, roundName, timeSchedule } from "./js/pairing.js?v=202610282144";
-import { durationLabel, estimate, outcome, podium, resolve, table } from "./js/stats.js?v=202610282144";
-import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610282144";
-import { LINK_MAX, qronosUrl, readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610282144";
-import { cardParams, dateLabel, formatLabel, matchLine, matchTitle, sideLabel, summaryText, teamName } from "./js/card.js?v=202610282144";
-import { drawTournament } from "./js/image.js?v=202610282144";
+import { FORMATS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610282147";
+import { addMinutes, autoReferees, fitOptions, generate, refereeOptions, roundName, timeSchedule } from "./js/pairing.js?v=202610282147";
+import { durationLabel, estimate, outcome, podium, resolve, table } from "./js/stats.js?v=202610282147";
+import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610282147";
+import { LINK_MAX, qronosUrl, readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610282147";
+import { cardParams, dateLabel, formatLabel, matchLine, matchTitle, sideLabel, summaryText, teamName } from "./js/card.js?v=202610282147";
+import { drawTournament } from "./js/image.js?v=202610282147";
 
 // id から画面の部品を返す
 const $ = (id) => document.getElementById(id);
@@ -528,7 +528,7 @@ function renderBracket({ t, gen, resolved }) {
 
 /**
  * 総当たり表（星取表）の HTML を返す（ids は順位の順。番号は順位とそろう）：行のチームから見た結果（○ 2-1・● 0-1・△ 1-1）か、まだなら時刻（なければ何試合目）。
- * 2回総当たりは1マスに2つ。マスを押すと、試合の表のその試合へ
+ * 2回総当たりは1マスに2つ。マスを押すと、その場で点を入れる窓（見るだけのときは試合の表のその試合へ）
  */
 function crossHtml(c, ids, ms, key) {
   const { t } = c;
@@ -550,7 +550,76 @@ function crossHtml(c, ids, ms, key) {
   const no = (id) => ids.indexOf(id) + 1;
   const head = ids.map((id) => `<th scope="col" title="${esc(teamName(t, id))}">${dotHtml(id)}${no(id)}</th>`).join("");
   const body = ids.map((a) => `<tr class="${a === mine() ? "is-mine" : ""}"><th scope="row" class="team">${no(a)} ${dotHtml(a)}${esc(teamName(t, a))}</th>${ids.map((b) => cell(a, b)).join("")}</tr>`).join("");
-  return `<div class="table-wrap cross-wrap"><table class="cross-table"><caption>${key ? `${esc(key)}組の` : ""}総当たり表<span>左のチームから見た結果・まだの試合は時刻（押すとその試合へ）。番号は順位</span></caption><thead><tr><th></th>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
+  return `<div class="table-wrap cross-wrap"><table class="cross-table"><caption>${key ? `${esc(key)}組の` : ""}総当たり表<span>左のチームから見た結果・まだの試合は時刻。押すと点を入れられます。番号は順位</span></caption><thead><tr><th></th>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
+}
+
+/**
+ * 総当たり表のマスから開く「点を入れる」窓。− 数 ＋ は試合の表と同じで、入れるとすぐ順位表・総当たり表・試合の表に出る。
+ * 「結果を消す」（元に戻すつき）・「試合の表で見る」・閉じる
+ */
+function openScoreSheet(mid) {
+  document.querySelector(".ls-sheet.score-sheet")?.remove();
+  const before = document.activeElement;
+  const sheet = Object.assign(document.createElement("div"), { className: "ls-sheet score-sheet" });
+  const card = Object.assign(document.createElement("div"), { className: "ls-sheet-card" });
+  card.setAttribute("role", "dialog");
+  card.setAttribute("aria-modal", "true");
+  card.setAttribute("aria-labelledby", "scoreSheetTitle");
+  sheet.append(card);
+  // 中身を、いまの結果から描きなおす
+  const draw = () => {
+    const c = compute();
+    const { t, gen, resolved } = c;
+    const m = gen.matches.find((x) => x.id === mid);
+    if (!m) return close();
+    const r = resolved[m.id] || {};
+    const res = t.results[m.id];
+    const o = outcome(res);
+    const when = c.timeOf[m.id] ? `${c.timeOf[m.id].time}${t.sched.courts > 1 ? `・コート${c.timeOf[m.id].court}` : ""}` : c.numberOf[m.id] ? `第${c.numberOf[m.id]}試合` : "";
+    const ref = t.referees?.[m.id];
+    const side = (id, k) => {
+      const name = teamName(t, id);
+      const win = (o === "home" && k === 0) || (o === "away" && k === 1);
+      return `<div class="match-side ${win ? "is-win" : ""}">${dotHtml(id)}<span class="name">${esc(name)}</span>${scoreHtml(m.id, "s", k, res ? res.s[k] : null, `${name}の点`)}</div>`;
+    };
+    card.innerHTML = `<p id="scoreSheetTitle" class="ls-sheet-title">${esc(matchTitle(m, gen))}</p>
+      <p class="score-sheet-sub">${esc([when, ref ? `🟨 審判 ${teamName(t, ref)}` : ""].filter(Boolean).join("　"))}</p>
+      <div class="score-sheet-sides">${side(r.home, 0)}${side(r.away, 1)}</div>
+      <div class="score-sheet-actions">
+        ${res ? `<button class="ls-chip" type="button" data-sheet-clear>結果を消す</button>` : ""}
+        <button class="ls-chip" type="button" data-sheet-goto>📋 試合の表で見る</button>
+      </div>
+      <button class="ls-sheet-cancel" type="button" data-sheet-close>${res ? "決める" : "閉じる"}</button>`;
+  };
+  const onKey = (e) => e.key === "Escape" && close();
+  function close() {
+    sheet.remove();
+    document.removeEventListener("keydown", onKey);
+    before?.focus?.({ preventScroll: true });
+  }
+  sheet.addEventListener("click", (e) => {
+    if (e.target === sheet || e.target.closest("[data-sheet-close]")) return close();
+    const b = e.target.closest("[data-score]");
+    if (b) {
+      const focusKey = `[data-score="${b.dataset.score}"][data-k="${b.dataset.k}"][data-d="${b.dataset.d}"]`;
+      setScore(b.dataset.mid, b.dataset.score, Number(b.dataset.k), Number(b.dataset.d));
+      draw();
+      card.querySelector(focusKey)?.focus();
+      return;
+    }
+    if (e.target.closest("[data-sheet-clear]")) {
+      clearScore(mid);
+      return draw();
+    }
+    if (e.target.closest("[data-sheet-goto]")) {
+      close();
+      gotoMatch(mid);
+    }
+  });
+  draw();
+  document.addEventListener("keydown", onKey);
+  document.body.append(sheet);
+  card.querySelector(".score-stepper button")?.focus({ preventScroll: true });
 }
 
 // 総当たり表のマスから、試合の表のその試合へ動く（少しのあいだ光らせる）
@@ -1284,9 +1353,10 @@ function bindEvents() {
     if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 90, behavior: "smooth" });
   });
   // 準備のおわり：試合のページへ（いちばん上から）
+  // 総当たり表のマス：その場で点を入れる窓を開く（見るだけのときは試合の表へ）
   $("standings").addEventListener("click", (e) => {
     const b = e.target.closest("[data-goto]");
-    if (b) gotoMatch(b.dataset.goto);
+    if (b) (viewing ? gotoMatch : openScoreSheet)(b.dataset.goto);
   });
   $("goPlay").addEventListener("click", () => {
     page.now = "play";
