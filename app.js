@@ -1,13 +1,13 @@
 // くみあわせ（QumiAwase）：入口。画面（大会・チーム・形・日程・トーナメント表・順位表・試合と結果・送る）を作り、ボタン・入力を受け、部品（js/）をつなぐ。
 // index.html から読む（type="module"）。組み合わせは js/pairing.js、順位と勝ち上がりは js/stats.js、端末に残すのは js/store.js、
 // リンク（見る人用・さくせん盤・ろくが・結果を戻す）は js/link.js、カードは js/card.js、画像は js/image.js
-import { FORMATS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610281310";
-import { addMinutes, autoReferees, fitOptions, generate, refereeOptions, roundName, timeSchedule } from "./js/pairing.js?v=202610281310";
-import { durationLabel, estimate, outcome, podium, resolve, table } from "./js/stats.js?v=202610281310";
-import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610281310";
-import { LINK_MAX, qronosUrl, readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610281310";
-import { cardParams, dateLabel, formatLabel, matchLine, matchTitle, sideLabel, summaryText, teamName } from "./js/card.js?v=202610281310";
-import { drawTournament } from "./js/image.js?v=202610281310";
+import { FORMATS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610281357";
+import { addMinutes, autoReferees, fitOptions, generate, refereeOptions, roundName, timeSchedule } from "./js/pairing.js?v=202610281357";
+import { durationLabel, estimate, outcome, podium, resolve, table } from "./js/stats.js?v=202610281357";
+import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610281357";
+import { LINK_MAX, qronosUrl, readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610281357";
+import { cardParams, dateLabel, formatLabel, matchLine, matchTitle, sideLabel, summaryText, teamName } from "./js/card.js?v=202610281357";
+import { drawTournament } from "./js/image.js?v=202610281357";
 
 // id から画面の部品を返す
 const $ = (id) => document.getElementById(id);
@@ -321,7 +321,7 @@ function stepper(el, { get, set, min, max, step = 1, label, typed = false }) {
 function renderFormat() {
   const t = current();
   const opts = fitOptions(t.teams.length, t.opts);
-  $("formatMeta").textContent = FORMATS[t.format];
+  $("formatMeta").textContent = [PRESETS.find((p) => p.key === t.preset)?.label.replace(/^\S+\s/, ""), FORMATS[t.format]].filter(Boolean).join("・");
   $("formatChips").replaceChildren(
     ...Object.entries(FORMATS).map(([key, label]) => {
       const b = Object.assign(document.createElement("button"), { type: "button", className: "ls-chip", textContent: label });
@@ -365,6 +365,7 @@ function renderSched() {
     if (key === "minutes" || key === "rest") t.preset = "";
     persist();
     renderPresets();
+    renderFormat(); // 枠の見出しに試合の種類を出しているので
     renderSched();
     renderResults();
   };
@@ -1087,6 +1088,8 @@ function bindEvents() {
     })
   );
   // 試合の種類
+  // 試合の種類と形の枠を開いたら、選んでいる種類のタブが見えるように（閉じているあいだは送れない）
+  $("formatFold").addEventListener("toggle", () => $("formatFold").open && renderPresets());
   $("presetTabs").addEventListener("click", (e) => {
     const b = e.target.closest("[data-preset]");
     if (b) applyPreset(b.dataset.preset);

@@ -712,3 +712,11 @@ body.is-view #schedFold {
 .play-tabs .ls-tab {
   font-size: 13px;
 }
+
+/* 試合の種類と形の枠の中の小見出し */
+.sub-head {
+  margin: 0;
+  color: var(--ls-subtext);
+  font-size: 13px;
+  font-weight: 800;
+}

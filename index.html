@@ -27,7 +27,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://katsuan.github.io/line-share/shared/ui.css?v=202610261000">
-<link rel="stylesheet" href="style.css?v=202610281310">
+<link rel="stylesheet" href="style.css?v=202610281357">
 </head>
 <body>
 <main class="ls-page ls-stack">
@@ -67,13 +67,6 @@
     </div>
   </section>
 
-  <!-- 試合の種類：押すと、1試合の時間・空き時間・勝ち点などの初期設定が入る（目安。あとで変えられる） -->
-  <section class="ls-panel ls-stack" aria-labelledby="presetTitle">
-    <h2 id="presetTitle" class="ls-panel-title">🏷️ 試合の種類</h2>
-    <div id="presetTabs" class="ls-chips preset-tabs" role="tablist" aria-label="試合の種類"></div>
-    <p id="presetNote" class="ls-hint"></p>
-  </section>
-
   <!-- チーム：名前と色（入力枠の中の左に色の丸。さくせん盤・ろくがと同じ形）・並べかえ・シャッフル -->
   <details id="teamsFold" class="ls-fold" open>
     <summary>👥 チーム <span id="teamsMeta" class="ls-fold-meta"></span></summary>
@@ -93,10 +86,15 @@
     </div>
   </details>
 
-  <!-- 形：トーナメント・総当たり・グループ → 決勝トーナメントと、その設定 -->
+  <!-- 試合の種類と形：種類（押すと、1試合の時間・空き時間・勝ち点などの初期設定が入る。目安であとで変えられる）と、
+       形（トーナメント・総当たり・グループ → 決勝トーナメント）とその設定。種類で変わる勝ち点・3位決定戦・見こみが、すぐ下で見える -->
   <details id="formatFold" class="ls-fold" open>
-    <summary>🏆 形 <span id="formatMeta" class="ls-fold-meta"></span></summary>
+    <summary>🏷️ 試合の種類と形 <span id="formatMeta" class="ls-fold-meta"></span></summary>
     <div class="ls-fold-body ls-stack">
+      <h3 class="sub-head">試合の種類</h3>
+      <div id="presetTabs" class="ls-chips preset-tabs" role="tablist" aria-label="試合の種類"></div>
+      <p id="presetNote" class="ls-hint"></p>
+      <h3 class="sub-head">形</h3>
       <div id="formatChips" class="ls-chips format-chips" role="radiogroup" aria-label="形"></div>
       <!-- 見こみ：試合の数・1チームの最多の試合の数・かかる時間（チーム数・形・時間と日程から） -->
       <p id="estimate" class="estimate" aria-live="polite"></p>
@@ -220,7 +218,7 @@
 <section id="printArea" class="print-area" aria-hidden="true"></section>
 <script src="https://katsuan.github.io/line-share/shared/oqrn.js"></script>
 <script src="https://katsuan.github.io/line-share/shared/ui.js?v=202610260300" defer></script>
-<script type="module" src="app.js?v=202610281310"></script>
+<script type="module" src="app.js?v=202610281357"></script>
 <script src="https://katsuan.github.io/line-share/shared/tool-share.js" data-tool="qumiawase" defer></script>
 <script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(() => {});</script>
 </body>
