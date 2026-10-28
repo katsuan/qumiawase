@@ -1,13 +1,13 @@
 // くみあわせ（QumiAwase）：入口。画面（大会・チーム・形・日程・トーナメント表・順位表・試合と結果・送る）を作り、ボタン・入力を受け、部品（js/）をつなぐ。
 // index.html から読む（type="module"）。組み合わせは js/pairing.js、順位と勝ち上がりは js/stats.js、端末に残すのは js/store.js、
 // リンク（見る人用・さくせん盤・ろくが・結果を戻す）は js/link.js、カードは js/card.js、画像は js/image.js
-import { FORMATS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610282129";
-import { addMinutes, autoReferees, fitOptions, generate, refereeOptions, roundName, timeSchedule } from "./js/pairing.js?v=202610282129";
-import { durationLabel, estimate, outcome, podium, resolve, table } from "./js/stats.js?v=202610282129";
-import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610282129";
-import { LINK_MAX, qronosUrl, readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610282129";
-import { cardParams, dateLabel, formatLabel, matchLine, matchTitle, sideLabel, summaryText, teamName } from "./js/card.js?v=202610282129";
-import { drawTournament } from "./js/image.js?v=202610282129";
+import { FORMATS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610282144";
+import { addMinutes, autoReferees, fitOptions, generate, refereeOptions, roundName, timeSchedule } from "./js/pairing.js?v=202610282144";
+import { durationLabel, estimate, outcome, podium, resolve, table } from "./js/stats.js?v=202610282144";
+import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610282144";
+import { LINK_MAX, qronosUrl, readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610282144";
+import { cardParams, dateLabel, formatLabel, matchLine, matchTitle, sideLabel, summaryText, teamName } from "./js/card.js?v=202610282144";
+import { drawTournament } from "./js/image.js?v=202610282144";
 
 // id から画面の部品を返す
 const $ = (id) => document.getElementById(id);
@@ -526,8 +526,51 @@ function renderBracket({ t, gen, resolved }) {
   if (p.first) $("champion").textContent = `🏆 優勝 ${teamName(t, p.first)}${p.second ? `　🥈 ${teamName(t, p.second)}` : ""}${p.third ? `　🥉 ${teamName(t, p.third)}` : ""}`;
 }
 
+/**
+ * 総当たり表（星取表）の HTML を返す（ids は順位の順。番号は順位とそろう）：行のチームから見た結果（○ 2-1・● 0-1・△ 1-1）か、まだなら時刻（なければ何試合目）。
+ * 2回総当たりは1マスに2つ。マスを押すと、試合の表のその試合へ
+ */
+function crossHtml(c, ids, ms, key) {
+  const { t } = c;
+  const when = (m) => c.timeOf[m.id]?.time || (c.numberOf[m.id] ? `第${c.numberOf[m.id]}` : "");
+  const cell = (a, b) => {
+    if (a === b) return `<td class="cross-self"></td>`;
+    const list = ms.filter((m) => (m.home.team === a && m.away.team === b) || (m.home.team === b && m.away.team === a));
+    const items = list.map((m) => {
+      const res = t.results[m.id];
+      const o = outcome(res);
+      if (!o) return `<button type="button" class="cross-item is-wait" data-goto="${esc(m.id)}">${esc(when(m))}</button>`;
+      const mineHome = m.home.team === a;
+      const [x, y] = mineHome ? res.s : [res.s[1], res.s[0]];
+      const mark = x > y ? "win" : x < y ? "loss" : "draw";
+      return `<button type="button" class="cross-item is-${mark}" data-goto="${esc(m.id)}"><i>${{ win: "○", loss: "●", draw: "△" }[mark]}</i>${esc(x)}-${esc(y)}</button>`;
+    });
+    return `<td>${items.join("")}</td>`;
+  };
+  const no = (id) => ids.indexOf(id) + 1;
+  const head = ids.map((id) => `<th scope="col" title="${esc(teamName(t, id))}">${dotHtml(id)}${no(id)}</th>`).join("");
+  const body = ids.map((a) => `<tr class="${a === mine() ? "is-mine" : ""}"><th scope="row" class="team">${no(a)} ${dotHtml(a)}${esc(teamName(t, a))}</th>${ids.map((b) => cell(a, b)).join("")}</tr>`).join("");
+  return `<div class="table-wrap cross-wrap"><table class="cross-table"><caption>${key ? `${esc(key)}組の` : ""}総当たり表<span>左のチームから見た結果・まだの試合は時刻（押すとその試合へ）。番号は順位</span></caption><thead><tr><th></th>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
+}
+
+// 総当たり表のマスから、試合の表のその試合へ動く（少しのあいだ光らせる）
+function gotoMatch(id) {
+  page.now = "play";
+  page.play = "matches";
+  view.mode = "order";
+  renderPage();
+  renderResults();
+  const el = document.querySelector(`#matches .match[data-mid="${CSS.escape(id)}"]`);
+  if (!el) return;
+  // タブを切りかえたあとなので、なめらかにせず、すぐその位置へ
+  window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 90 });
+  el.classList.add("is-flash");
+  setTimeout(() => el.classList.remove("is-flash"), 1600);
+}
+
 // 順位表（総当たり・グループごと）を描きなおす
-function renderStandings({ t, gen }) {
+function renderStandings(c) {
+  const { t, gen } = c;
   const groups = gen.groups?.length ? gen.groups : t.format === "league" && gen.matches.length ? [{ key: "", ids: t.teams.map((x) => x.id) }] : [];
   $("standingsPanel").hidden = !groups.length;
   $("standings").innerHTML = groups
@@ -536,7 +579,8 @@ function renderStandings({ t, gen }) {
       const rows = table(g.ids, ms, t.results, t.points)
         .map((r) => `<tr class="${r.id === mine() ? "is-mine" : ""}"><td>${r.rank}</td><td class="team">${dotHtml(r.id)}${esc(teamName(t, r.id))}</td><td>${r.played}</td><td>${r.win}</td><td>${r.draw}</td><td>${r.loss}</td><td>${r.gf}</td><td>${r.ga}</td><td>${r.gd > 0 ? "+" : ""}${r.gd}</td><td class="pts">${r.pts}</td></tr>`)
         .join("");
-      return `<div class="table-wrap"><table class="standing-table">${g.key ? `<caption>${esc(g.key)}組</caption>` : ""}<thead><tr><th></th><th class="team">チーム</th><th>試</th><th>勝</th><th>分</th><th>負</th><th>得</th><th>失</th><th>差</th><th>点</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+      const ranked = table(g.ids, ms, t.results, t.points).map((r) => r.id);
+      return `<div class="table-wrap"><table class="standing-table">${g.key ? `<caption>${esc(g.key)}組</caption>` : ""}<thead><tr><th></th><th class="team">チーム</th><th>試</th><th>勝</th><th>分</th><th>負</th><th>得</th><th>失</th><th>差</th><th>点</th></tr></thead><tbody>${rows}</tbody></table></div>${crossHtml(c, ranked, ms, g.key)}`;
     })
     .join("");
 }
@@ -1240,6 +1284,10 @@ function bindEvents() {
     if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 90, behavior: "smooth" });
   });
   // 準備のおわり：試合のページへ（いちばん上から）
+  $("standings").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-goto]");
+    if (b) gotoMatch(b.dataset.goto);
+  });
   $("goPlay").addEventListener("click", () => {
     page.now = "play";
     page.play = "matches";

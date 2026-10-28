@@ -740,6 +740,148 @@ body {
   overflow-x: auto;
 }
 
+/* 総当たり表（星取表）：チームの列は左に貼りつけ、マスは横にずらせる */
+.cross-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.cross-table caption {
+  margin-bottom: 4px;
+  font-weight: 800;
+  text-align: left;
+}
+
+.cross-table caption span {
+  display: block;
+  color: var(--ls-subtext);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.cross-table th,
+.cross-table td {
+  min-width: 52px;
+  padding: 2px;
+  border-bottom: 1px solid var(--ls-line);
+  border-left: 1px solid var(--ls-line);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.cross-table thead th {
+  color: var(--ls-subtext);
+  font-size: 12px;
+}
+
+.cross-table thead th .dot,
+.cross-table .team .dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  margin-right: 3px;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px #c9c4bd;
+  vertical-align: middle;
+}
+
+.cross-table .team {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  max-width: 8.5em;
+  overflow: hidden;
+  padding-right: 6px;
+  border-left: 0;
+  background: var(--ls-surface);
+  font-weight: 700;
+  text-align: left;
+  text-overflow: ellipsis;
+}
+
+.cross-table thead th:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  border-left: 0;
+  background: var(--ls-surface);
+}
+
+.cross-self {
+  background: repeating-linear-gradient(135deg, transparent 0 5px, var(--ls-line) 5px 6px);
+}
+
+.cross-item {
+  display: block;
+  width: 100%;
+  min-height: 36px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.cross-item + .cross-item {
+  border-top: 1px dashed var(--ls-line);
+  border-radius: 0;
+}
+
+.cross-item i {
+  margin-right: 2px;
+  font-style: normal;
+}
+
+.cross-item.is-win {
+  font-weight: 800;
+}
+
+.cross-item.is-win i {
+  color: #d9622b;
+}
+
+.cross-item.is-loss {
+  color: var(--ls-subtext);
+}
+
+.cross-item.is-wait {
+  color: var(--ls-subtext);
+  font-size: 12px;
+}
+
+.cross-table tr.is-mine .team,
+.cross-table tr.is-mine td {
+  background: var(--ls-accent-soft);
+  color: var(--ls-accent-ink);
+}
+
+/* 総当たり表から動いてきた試合を少し光らせる */
+.match.is-flash {
+  animation: match-flash 1.6s ease-out;
+}
+
+@keyframes match-flash {
+  0%,
+  30% {
+    box-shadow: 0 0 0 4px var(--ls-accent);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .match.is-flash {
+    animation: none;
+    outline: 3px solid var(--ls-accent);
+  }
+}
+
 /* ---- 送る・保存 ---- */
 .share-row {
   display: grid;
@@ -876,6 +1018,7 @@ body.is-view #schedFold {
   /* ページの区切り：チーム・トーナメント表・グループごとの順位表は途中で切らない。見出しだけがページの最後に残らないように */
   .print-area .print-keep,
   .print-area .table-wrap,
+  .print-area .cross-table,
   .print-area .bracket {
     break-inside: avoid;
   }
