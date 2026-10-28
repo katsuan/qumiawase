@@ -110,3 +110,23 @@ test("総当たりの PK の勝ち点", () => {
   const wait = table(["x", "y"], ms, { a: { s: [1, 1] } }, { win: 3, draw: 1, loss: 0, pk: true, pkWin: 2, pkLoss: 1 });
   assert.deepEqual(wait.map((r) => [r.pts, r.played, r.draw]), [[0, 0, 0], [0, 0, 0]]);
 });
+
+// 順位の決め方の並び：勝ち点のあとを 総得点 → 得失点差 にすると、点の多いチームが上になる
+test("順位の決め方を並べかえる", () => {
+  // x：3-0 で勝ち、0-1 で負け（得失点 +2・総得点 3）／ y：4-3 で勝ち、2-3 で負け（得失点 0・総得点 6）。どちらも勝ち点 3
+  const ms = [
+    { id: "a", home: { team: "x" }, away: { team: "z" } },
+    { id: "b", home: { team: "x" }, away: { team: "w" } },
+    { id: "c", home: { team: "y" }, away: { team: "z" } },
+    { id: "d", home: { team: "y" }, away: { team: "w" } }
+  ];
+  const results = { a: { s: [3, 0] }, b: { s: [0, 1] }, c: { s: [4, 3] }, d: { s: [2, 3] } };
+  const P = { win: 3, draw: 1, loss: 0 };
+  const ids = ["x", "y", "z", "w"];
+  assert.deepEqual(table(ids, ms, results, P).slice(0, 2).map((r) => r.id), ["w", "x"]);
+  const top = (order) => table(ids, ms, results, P, order).filter((r) => r.pts === 3 && ["x", "y"].includes(r.id)).map((r) => r.id);
+  assert.deepEqual(top(["gd", "gf", "h2h"]), ["x", "y"]);
+  assert.deepEqual(top(["gf", "gd", "h2h"]), ["y", "x"]);
+  // 形がちがえば、はじめの並び
+  assert.deepEqual(top(["gf", "gf", "x"]), ["x", "y"]);
+});

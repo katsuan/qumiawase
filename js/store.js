@@ -2,9 +2,10 @@
 // app.js・js/link.js から読む（import）
 //
 // 大会の形：{ id, name, createdAt, updatedAt, teams: [{ id, name, color }], format, opts: { thirdPlace, legs, groups, advance },
-//            points: { win, draw, loss, pk（総当たりも同点なら PK）, pkWin, pkLoss }, sched: { on（時刻を入れる）, date, start, courts, minutes, place, avoid（連続試合を避ける）, rest（同じチームの空き時間・分） },
+//            points: { win, draw, loss, pk（総当たりも同点なら PK）, pkWin, pkLoss }, rank（順位の決め方：勝ち点のあとの並び。gd・gf・h2h）, sched: { on（時刻を入れる）, date, start, courts, minutes, place, avoid（連続試合を避ける）, rest（同じチームの空き時間・分） },
 //            results: { 試合の id: { s, pk? } }, referees: { 試合の id: 審判のチームの id } }
-import { DEFAULT_POINTS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./settings.js?v=202610282212";
+import { DEFAULT_POINTS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./settings.js?v=202610282215";
+import { DEFAULT_RANK, rankIn } from "./stats.js?v=202610282215";
 
 export const STORE_KEY = `${TOOL.key}:tournaments`; // { list: [大会…], current: いま開いている大会の id }
 export const INBOX_KEY = `${TOOL.key}:inbox`; // さくせん盤から戻ってきた結果（同じ端末のとき）
@@ -44,6 +45,7 @@ export function blankTournament(name = "") {
     format: "knockout",
     opts: { thirdPlace: false, legs: 1, groups: 2, advance: 2 },
     points: { ...DEFAULT_POINTS },
+    rank: [...DEFAULT_RANK], // 順位の決め方（勝ち点のあと）
     sched: { on: false, date: "", start: "09:00", courts: 1, minutes: 20, place: "", avoid: true, rest: 10 },
     results: {},
     referees: {} // 審判（試合の id → チームの id）
@@ -103,6 +105,7 @@ export function cleanTournament(v) {
       advance: intIn(opts.advance, 1, 16, 2)
     },
     points: { win: intIn(points.win, 0, 9, 3), draw: intIn(points.draw, 0, 9, 1), loss: intIn(points.loss, 0, 9, 0), pk: points.pk === true, pkWin: intIn(points.pkWin, 0, 9, 2), pkLoss: intIn(points.pkLoss, 0, 9, 1) },
+    rank: rankIn(v.rank),
     sched: {
       on: sched.on === true,
       date: dateIn(sched.date),

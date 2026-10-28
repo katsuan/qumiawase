@@ -1,9 +1,9 @@
 // くみあわせ：おくるんのお知らせカード（OQRN.cardUrl）に渡す中身（組み合わせ表・順位表を文で）と、試合や順位の言い方。画面には触らない（テストで呼ぶ）
 // app.js・js/image.js から読む（import）
-import { FORMATS, TOOL } from "./settings.js?v=202610282212";
-import { roundName } from "./pairing.js?v=202610282212";
-import { podium, table } from "./stats.js?v=202610282212";
-import { LINK_MAX, viewUrl } from "./link.js?v=202610282212";
+import { FORMATS, TOOL } from "./settings.js?v=202610282215";
+import { roundName } from "./pairing.js?v=202610282215";
+import { podium, RANK_LABELS, rankIn, table } from "./stats.js?v=202610282215";
+import { LINK_MAX, viewUrl } from "./link.js?v=202610282215";
 
 export const CARD_COLOR = "#D9622B"; // くみあわせの色（ロゴのオレンジ）
 const DETAIL_MAX = 600;
@@ -41,6 +41,9 @@ export function sideLabel(side, gen) {
 // 勝ち点の言い方（「勝3・分1・負0」。PK をするときは引き分けがないので「勝3・PK勝2・PK負1・負0」）を返す
 export const pointsLabel = (p) => `勝${p.win}${p.pk ? `・PK勝${p.pkWin}・PK負${p.pkLoss}` : `・分${p.draw}`}・負${p.loss}`;
 
+// 順位の決め方の言い方（「勝ち点 → 得失点差 → 総得点 → 直接対決」）を返す
+export const rankLabel = (order) => ["勝ち点", ...rankIn(order).map((k) => RANK_LABELS[k])].join(" → ");
+
 // チームの名前（空なら「チーム3」）を返す
 export const teamName = (t, id) => {
   const i = t.teams.findIndex((x) => x.id === id);
@@ -65,7 +68,7 @@ export function standingLines(t, gen) {
     const ms = gen.matches.filter((m) => (g.key ? m.group === g.key : m.stage === "league"));
     if (!ms.some((m) => t.results[m.id])) continue;
     if (g.key) lines.push(`【${g.key}組】`);
-    for (const row of table(g.ids, ms, t.results, t.points)) lines.push(`${row.rank}位 ${teamName(t, row.id)} ${row.pts}点（${row.win}勝${t.points.pk ? `${row.pkWin}PK勝${row.pkLoss}PK負` : `${row.draw}分`}${row.loss}敗）`);
+    for (const row of table(g.ids, ms, t.results, t.points, t.rank)) lines.push(`${row.rank}位 ${teamName(t, row.id)} ${row.pts}点（${row.win}勝${t.points.pk ? `${row.pkWin}PK勝${row.pkLoss}PK負` : `${row.draw}分`}${row.loss}敗）`);
   }
   return lines;
 }
@@ -133,7 +136,7 @@ export function summaryText(t, gen, resolved, order) {
   if (when) lines.push(when);
   lines.push(`${formatLabel(t)}・${t.teams.length}チーム`);
   if (t.sched.on) lines.push(`日程：${t.sched.start}〜・コート${t.sched.courts}・1試合${t.sched.minutes}分`);
-  if (t.format !== "knockout") lines.push(`勝ち点：${pointsLabel(t.points)}`);
+  if (t.format !== "knockout") lines.push(`勝ち点：${pointsLabel(t.points)}`, `順位：${rankLabel(t.rank)}`);
   lines.push("", "【チーム】");
   if (gen.groups?.length) for (const g of gen.groups) lines.push(`${g.key}組：${g.ids.map((id) => teamName(t, id)).join("・")}`);
   else t.teams.forEach((x, i) => lines.push(`${i + 1}. ${teamName(t, x.id)}`));

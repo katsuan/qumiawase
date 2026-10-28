@@ -1316,6 +1316,71 @@ body.is-view #schedFold {
   font-weight: 800;
 }
 
+/* 順位の決め方（↑↓で並べかえ） */
+.rank-head {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.rank-head small {
+  margin-left: 6px;
+  color: var(--ls-subtext);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.rank-box {
+  display: grid;
+  gap: 6px;
+}
+
+.rank-order {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rank-order li {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 4px 0 8px;
+  border: 1px solid var(--ls-line);
+  border-radius: 10px;
+  background: var(--ls-surface);
+}
+
+.rank-order .rank-no {
+  color: var(--ls-subtext);
+  font-weight: 800;
+}
+
+.rank-order .rank-name {
+  font-weight: 700;
+}
+
+.rank-order small {
+  grid-column: 3 / -1;
+  padding-right: 8px;
+  color: var(--ls-subtext);
+  font-size: 12px;
+}
+
+.rank-order .ls-chip {
+  min-width: 44px;
+  min-height: 36px;
+  justify-content: center;
+}
+
+.rank-order .ls-chip[disabled] {
+  opacity: 0.35;
+}
+
 .rule-box .ls-hint {
   margin: 0;
 }

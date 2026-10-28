@@ -45,30 +45,52 @@ function tally(ids, matches, results, points) {
   return rows;
 }
 
+// 順位の決め方（勝ち点のあと）の、はじめの並び：得失点差 → 総得点 → 直接対決
+export const DEFAULT_RANK = ["gd", "gf", "h2h"];
+export const RANK_LABELS = { gd: "得失点差", gf: "総得点", h2h: "直接対決" };
+
+// 並びの形を確かめて返す（gd・gf・h2h を1つずつ。ちがえば、はじめの並び）
+export function rankIn(v) {
+  return Array.isArray(v) && v.length === 3 && DEFAULT_RANK.every((k) => v.includes(k)) ? [...v] : [...DEFAULT_RANK];
+}
+
 /**
- * 順位表を返す。並びは 勝ち点 → 得失点差 → 総得点 → 直接対決（同じ順位のチームどうしの試合の 勝ち点 → 得失点差 → 総得点）→ チームの並びの順。
+ * 順位表を返す。並びは 勝ち点 → order の順（はじめは 得失点差 → 総得点 → 直接対決）→ チームの並びの順。
+ * 直接対決は、そこまで同じ並びのチームどうしの試合だけで数えた 勝ち点 → 得失点差 → 総得点。
  * ids はチームの id のならび（同じなら前のほうが上）、matches は総当たりの試合（{ home: { team }, away: { team } }）、points は勝ち点
  */
-export function table(ids, matches, results, points) {
+export function table(ids, matches, results, points, order = DEFAULT_RANK) {
   const rows = tally(ids, matches, results, points);
-  const main = (x, y) => y.pts - x.pts || y.gd - x.gd || y.gf - x.gf;
-  const list = ids.map((id) => rows[id]).sort((x, y) => main(x, y) || ids.indexOf(x.id) - ids.indexOf(y.id));
-  // 同じ並びのチームどうしは、そのチームどうしの試合だけで並べなおす
-  const out = [];
-  for (let i = 0; i < list.length; ) {
-    let j = i + 1;
-    while (j < list.length && main(list[i], list[j]) === 0) j++;
-    const tied = list.slice(i, j);
-    if (tied.length > 1) {
-      const tiedIds = tied.map((r) => r.id);
+  const keys = ["pts", ...rankIn(order)];
+  const byOrder = (x, y) => ids.indexOf(x.id) - ids.indexOf(y.id);
+  // list（そこまで同じ並び）を、keys の先頭から順に分けて並べる
+  const rank = (list, rest) => {
+    if (list.length < 2 || !rest.length) return [...list].sort(byOrder);
+    const [k, ...next] = rest;
+    let value;
+    if (k === "h2h") {
+      const tiedIds = list.map((r) => r.id);
       const inside = matches.filter((m) => tiedIds.includes(m.home.team) && tiedIds.includes(m.away.team));
       const h2h = tally(tiedIds, inside, results, points);
-      tied.sort((x, y) => main(h2h[x.id], h2h[y.id]) || ids.indexOf(x.id) - ids.indexOf(y.id));
+      value = (r) => [h2h[r.id].pts, h2h[r.id].gd, h2h[r.id].gf];
+    } else value = (r) => [r[k]];
+    const cmp = (x, y) => {
+      const a = value(x);
+      const b = value(y);
+      for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return b[i] - a[i];
+      return 0;
+    };
+    const sorted = [...list].sort((x, y) => cmp(x, y) || byOrder(x, y));
+    const out = [];
+    for (let i = 0; i < sorted.length; ) {
+      let j = i + 1;
+      while (j < sorted.length && cmp(sorted[i], sorted[j]) === 0) j++;
+      out.push(...rank(sorted.slice(i, j), next));
+      i = j;
     }
-    out.push(...tied);
-    i = j;
-  }
-  return out.map((row, i) => ({ ...row, rank: i + 1 }));
+    return out;
+  };
+  return rank(ids.map((id) => rows[id]), keys).map((row, i) => ({ ...row, rank: i + 1 }));
 }
 
 // その試合のならびに、結果がまだ入っていない試合がないか（全部終わったか）を返す
@@ -78,14 +100,14 @@ export const finished = (matches, results) => matches.every((m) => m.bye || outc
  * トーナメントの勝ち上がりを決める：試合ごとの、ホーム・アウェイのチーム（まだ決まらなければ null）と、勝ったチーム・負けたチームを返す。
  * gen は js/pairing.js の generate の返り値、ids はチームの並び。{ 試合の id: { home, away, winner, loser } } を返す
  */
-export function resolve(gen, ids, results, points) {
+export function resolve(gen, ids, results, points, order = DEFAULT_RANK) {
   const byId = Object.fromEntries(gen.matches.map((m) => [m.id, m]));
   const memo = {};
   // グループの順位（全部の試合が終わったグループだけ）
   const groupRanks = {};
   for (const g of gen.groups || []) {
     const ms = gen.matches.filter((m) => m.stage === "group" && m.group === g.key);
-    if (ms.length && finished(ms, results)) groupRanks[g.key] = table(g.ids, ms, results, points).map((r) => r.id);
+    if (ms.length && finished(ms, results)) groupRanks[g.key] = table(g.ids, ms, results, points, order).map((r) => r.id);
   }
   // 側（チーム・勝者・敗者・グループの順位）から、決まっていればチームの id を返す
   const teamOf = (side) => {

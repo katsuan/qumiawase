@@ -1,13 +1,13 @@
 // くみあわせ（QumiAwase）：入口。画面（大会・チーム・形・日程・トーナメント表・順位表・試合と結果・送る）を作り、ボタン・入力を受け、部品（js/）をつなぐ。
 // index.html から読む（type="module"）。組み合わせは js/pairing.js、順位と勝ち上がりは js/stats.js、端末に残すのは js/store.js、
 // リンク（見る人用・さくせん盤・ろくが・結果を戻す）は js/link.js、カードは js/card.js、画像は js/image.js
-import { FORMATS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610282212";
-import { addMinutes, autoReferees, fitOptions, generate, refereeOptions, roundName, timeSchedule } from "./js/pairing.js?v=202610282212";
-import { durationLabel, estimate, outcome, podium, resolve, table } from "./js/stats.js?v=202610282212";
-import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610282212";
-import { LINK_MAX, qronosUrl, readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610282212";
-import { cardParams, dateLabel, formatLabel, matchLine, matchTitle, pointsLabel, sideLabel, summaryText, teamName } from "./js/card.js?v=202610282212";
-import { drawTournament } from "./js/image.js?v=202610282212";
+import { FORMATS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610282215";
+import { addMinutes, autoReferees, fitOptions, generate, refereeOptions, roundName, timeSchedule } from "./js/pairing.js?v=202610282215";
+import { durationLabel, estimate, outcome, podium, RANK_LABELS, rankIn, resolve, table } from "./js/stats.js?v=202610282215";
+import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610282215";
+import { LINK_MAX, qronosUrl, readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610282215";
+import { cardParams, dateLabel, formatLabel, matchLine, matchTitle, pointsLabel, sideLabel, summaryText, teamName } from "./js/card.js?v=202610282215";
+import { drawTournament } from "./js/image.js?v=202610282215";
 
 // id から画面の部品を返す
 const $ = (id) => document.getElementById(id);
@@ -87,7 +87,7 @@ function compute() {
   const sched = s.on && plan.length ? plan : null;
   const timeOf = Object.fromEntries((sched || []).map((p) => [p.id, p]));
   const numberOf = Object.fromEntries(plan.map((p, i) => [p.id, i + 1]));
-  const resolved = resolve(gen, t.teams.map((x) => x.id), t.results, t.points);
+  const resolved = resolve(gen, t.teams.map((x) => x.id), t.results, t.points, t.rank);
   return { t, gen, plan, sched, timeOf, numberOf, resolved, est: estimate(gen, plan) };
 }
 
@@ -447,6 +447,13 @@ function renderFormat() {
   $("pkPoints").hidden = !t.points.pk;
   $("drawPoints").hidden = t.points.pk; // PK をするなら引き分けはない
   $("pointsMeta").textContent = pointsLabel(t.points);
+  // 順位の決め方：勝ち点はいつも最初。あとの3つは ↑↓ で並べかえる
+  const rank = rankIn(t.rank);
+  $("rankOrder").innerHTML =
+    `<li><span class="rank-no">1</span><span class="rank-name">勝ち点</span><small>いつも最初</small></li>` +
+    rank
+      .map((k, i) => `<li><span class="rank-no">${i + 2}</span><span class="rank-name">${esc(RANK_LABELS[k])}</span><button class="ls-chip" type="button" data-rank="${i}" data-d="-1" aria-label="${esc(RANK_LABELS[k])}を上へ" ${i === 0 ? "disabled" : ""}>↑</button><button class="ls-chip" type="button" data-rank="${i}" data-d="1" aria-label="${esc(RANK_LABELS[k])}を下へ" ${i === rank.length - 1 ? "disabled" : ""}>↓</button></li>`)
+      .join("");
 }
 
 // 時間と日程の欄（コート・1試合の時間・連続試合と空き時間・時刻を入れるか）を描きなおす
@@ -658,10 +665,10 @@ function renderStandings(c) {
   $("standings").innerHTML = groups
     .map((g) => {
       const ms = gen.matches.filter((m) => (g.key ? m.group === g.key : m.stage === "league"));
-      const rows = table(g.ids, ms, t.results, t.points)
+      const rows = table(g.ids, ms, t.results, t.points, t.rank)
         .map((r) => `<tr class="${r.id === mine() ? "is-mine" : ""}"><td>${r.rank}</td><td class="team">${dotHtml(r.id)}${esc(teamName(t, r.id))}</td><td>${r.played}</td><td>${r.win}</td>${t.points.pk ? `<td>${r.pkWin}</td><td>${r.pkLoss}</td>` : `<td>${r.draw}</td>`}<td>${r.loss}</td><td>${r.gf}</td><td>${r.ga}</td><td>${r.gd > 0 ? "+" : ""}${r.gd}</td><td class="pts">${r.pts}</td></tr>`)
         .join("");
-      const ranked = table(g.ids, ms, t.results, t.points).map((r) => r.id);
+      const ranked = table(g.ids, ms, t.results, t.points, t.rank).map((r) => r.id);
       return `<div class="table-wrap"><table class="standing-table">${g.key ? `<caption>${esc(g.key)}組</caption>` : ""}<thead><tr><th></th><th class="team">チーム</th><th>試</th><th>勝</th>${t.points.pk ? `<th title="PK勝ち">PK勝</th><th title="PK負け">PK負</th>` : "<th>分</th>"}<th>負</th><th>得</th><th>失</th><th>差</th><th>点</th></tr></thead><tbody>${rows}</tbody></table></div>${crossHtml(c, ranked, ms, g.key)}`;
     })
     .join("");
@@ -1267,6 +1274,22 @@ function bindEvents() {
 
   // 形
   $("thirdPlace").addEventListener("change", (e) => change((t) => (t.opts.thirdPlace = e.target.checked)));
+  // 順位の決め方の ↑↓：となりと入れかえる
+  $("rankOrder").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-rank]");
+    if (!b || b.disabled) return;
+    const t = current();
+    const rank = rankIn(t.rank);
+    const i = Number(b.dataset.rank);
+    const j = i + Number(b.dataset.d);
+    if (j < 0 || j >= rank.length) return;
+    [rank[i], rank[j]] = [rank[j], rank[i]];
+    t.rank = rank;
+    persist();
+    renderFormat();
+    renderResults();
+    document.querySelector(`#rankOrder [data-rank="${j}"][data-d="${b.dataset.d}"]:not([disabled])`)?.focus() || document.querySelector(`#rankOrder [data-rank="${j}"]:not([disabled])`)?.focus();
+  });
   // 総当たりも同点なら PK（PK勝ち・PK負けの勝ち点）。組み合わせは変わらないので、描きなおすだけ
   $("pointsPk").addEventListener("change", (e) => {
     current().points.pk = e.target.checked;
