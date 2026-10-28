@@ -1,9 +1,9 @@
 // くみあわせ：おくるんのお知らせカード（OQRN.cardUrl）に渡す中身（組み合わせ表・順位表を文で）と、試合や順位の言い方。画面には触らない（テストで呼ぶ）
 // app.js・js/image.js から読む（import）
-import { FORMATS, TOOL } from "./settings.js?v=202610282254";
-import { roundName } from "./pairing.js?v=202610282254";
-import { podium, RANK_LABELS, rankIn, table } from "./stats.js?v=202610282254";
-import { LINK_MAX, viewUrl } from "./link.js?v=202610282254";
+import { FORMATS, TOOL } from "./settings.js?v=202610282311";
+import { roundName } from "./pairing.js?v=202610282311";
+import { podium, RANK_LABELS, rankIn, table } from "./stats.js?v=202610282311";
+import { LINK_MAX, viewUrl } from "./link.js?v=202610282311";
 
 export const CARD_COLOR = "#D9622B"; // くみあわせの色（ロゴのオレンジ）
 const DETAIL_MAX = 600;
