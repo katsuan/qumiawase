@@ -1,14 +1,14 @@
 // くみあわせ（QumiAwase）：入口。画面（大会・チーム・形・日程・トーナメント表・順位表・試合と結果・送る）を作り、ボタン・入力を受け、部品（js/）をつなぐ。
 // index.html から読む（type="module"）。組み合わせは js/pairing.js、順位と勝ち上がりは js/stats.js、端末に残すのは js/store.js、
 // リンク（見る人用・さくせん盤・ろくが・結果を戻す）は js/link.js、カードは js/card.js、画像は js/image.js、みんなで入れる（くらぶボット）は js/live.js
-import { FORMATS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610282250";
-import { addMinutes, autoReferees, fitOptions, generate, refereeOptions, roundName, timeSchedule } from "./js/pairing.js?v=202610282250";
-import { durationLabel, estimate, outcome, podium, RANK_LABELS, rankIn, resolve, table } from "./js/stats.js?v=202610282250";
-import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610282250";
-import { LINK_MAX, qronosUrl, readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610282250";
-import { cardParams, dateLabel, formatLabel, matchLine, matchTitle, pointsLabel, sideLabel, summaryText, teamName } from "./js/card.js?v=202610282250";
-import { drawTournament } from "./js/image.js?v=202610282250";
-import { adminKey, botUrlIn, fromServer, inputKey, liveCall, liveError, liveUrl, newLiveId, overlay, PASS_MAX, PASS_MIN, queue, readLive, sessionKey, setSessionKey, toServer } from "./js/live.js?v=202610282250";
+import { FORMATS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610282254";
+import { addMinutes, autoReferees, fitOptions, generate, refereeOptions, roundName, timeSchedule } from "./js/pairing.js?v=202610282254";
+import { durationLabel, estimate, outcome, podium, RANK_LABELS, rankIn, resolve, table } from "./js/stats.js?v=202610282254";
+import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610282254";
+import { LINK_MAX, qronosUrl, readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610282254";
+import { cardParams, dateLabel, formatLabel, matchLine, matchTitle, pointsLabel, sideLabel, summaryText, teamName } from "./js/card.js?v=202610282254";
+import { drawTournament } from "./js/image.js?v=202610282254";
+import { adminKey, botUrlIn, fromServer, inputKey, liveCall, liveError, liveUrl, newLiveId, overlay, PASS_MAX, PASS_MIN, queue, readLive, sessionKey, setSessionKey, toServer } from "./js/live.js?v=202610282254";
 
 // id から画面の部品を返す
 const $ = (id) => document.getElementById(id);
@@ -581,7 +581,7 @@ function crossHtml(c, ids, ms, key) {
   const no = (id) => ids.indexOf(id) + 1;
   const head = ids.map((id) => `<th scope="col" title="${esc(teamName(t, id))}">${dotHtml(id)}${no(id)}</th>`).join("");
   const body = ids.map((a) => `<tr class="${a === mine() ? "is-mine" : ""}"><th scope="row" class="team">${no(a)} ${dotHtml(a)}${esc(teamName(t, a))}</th>${ids.map((b) => cell(a, b)).join("")}</tr>`).join("");
-  return `<div class="table-wrap cross-wrap"><table class="cross-table"><caption>${key ? `${esc(key)}組の` : ""}総当たり表</caption><thead><tr><th></th>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
+  return `<div class="table-wrap cross-wrap"><table class="cross-table"><caption>総当たり表</caption><thead><tr><th></th>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
 }
 
 /**
@@ -685,7 +685,7 @@ function renderStandings(c) {
         .map((r) => `<tr class="${r.id === mine() ? "is-mine" : ""}"><td>${r.rank}</td><td class="team">${dotHtml(r.id)}${esc(teamName(t, r.id))}</td><td>${r.played}</td><td>${r.win}</td>${t.points.pk ? `<td>${r.pkWin}</td><td>${r.pkLoss}</td>` : `<td>${r.draw}</td>`}<td>${r.loss}</td><td>${r.gf}</td><td>${r.ga}</td><td>${r.gd > 0 ? "+" : ""}${r.gd}</td><td class="pts">${r.pts}</td></tr>`)
         .join("");
       const ranked = table(g.ids, ms, t.results, t.points, t.rank).map((r) => r.id);
-      return `<div class="table-wrap"><table class="standing-table">${g.key ? `<caption>${esc(g.key)}組</caption>` : ""}<thead><tr><th></th><th class="team">チーム</th><th>試</th><th>勝</th>${t.points.pk ? `<th title="PK勝ち">PK勝</th><th title="PK負け">PK負</th>` : "<th>分</th>"}<th>負</th><th>得</th><th>失</th><th>差</th><th>点</th></tr></thead><tbody>${rows}</tbody></table></div>${crossHtml(c, ranked, ms, g.key)}`;
+      return `${g.key ? `<section class="group-box" aria-label="${esc(g.key)}組"><h3 class="group-title">${esc(g.key)}組</h3>` : ""}<div class="table-wrap"><table class="standing-table"><thead><tr><th></th><th class="team">チーム</th><th>試</th><th>勝</th>${t.points.pk ? `<th title="PK勝ち">PK勝</th><th title="PK負け">PK負</th>` : "<th>分</th>"}<th>負</th><th>得</th><th>失</th><th>差</th><th>点</th></tr></thead><tbody>${rows}</tbody></table></div>${crossHtml(c, ranked, ms, g.key)}${g.key ? "</section>" : ""}`;
     })
     .join("");
 }
@@ -1269,7 +1269,27 @@ function bindEvents() {
     if (t.live.pending.length && liveRole(t)) await liveFlush();
     else if (await livePull({ quiet: false })) toast("読みなおしました");
   });
-  $("liveRoleBtn").addEventListener("click", () => (liveRole() ? $("liveFold").scrollIntoView({ behavior: "smooth", block: "center" }) : liveUnlock()));
+  $("liveRoleBtn").addEventListener("click", () => {
+    if (liveRole()) return $("liveFold").scrollIntoView({ behavior: "smooth", block: "center" });
+    // 見るだけのとき：帯の中に合言葉の欄を出す（もう一度押すとしまう）
+    const form = $("liveUnlock");
+    form.hidden = !form.hidden;
+    if (!form.hidden) form.elements.unlock.focus();
+  });
+  // 合言葉の欄：送る（Enter でも）・見せる
+  document.addEventListener("submit", (e) => {
+    const form = e.target.closest("form[data-live-form]");
+    if (!form) return;
+    e.preventDefault();
+    const kind = form.dataset.liveForm;
+    if (kind === "start") liveStart(form);
+    if (kind === "input") liveChangeInput(form);
+    if (kind === "unlock") liveUnlock(form);
+  });
+  document.addEventListener("change", (e) => {
+    const box = e.target.closest("[data-pass-show]");
+    if (box) box.closest("form").querySelectorAll(".pass-input").forEach((x) => (x.type = box.checked ? "text" : "password"));
+  });
   // 大会
   $("eventName").addEventListener("click", renameEvent);
   $("eventMenu").addEventListener("click", openEventMenu);
@@ -1679,53 +1699,26 @@ async function livePut(retry = true) {
   renderLive();
 }
 
-// 合言葉を入れる窓（入れる文字は伏せる。「見せる」で見える）。入れた文字か null を返す
-function askPass({ title, text, ok = "入れる" }) {
-  return new Promise((resolve) => {
-    document.querySelector(".ls-sheet.pass-sheet")?.remove();
-    const before = document.activeElement;
-    const sheet = Object.assign(document.createElement("div"), { className: "ls-sheet pass-sheet" });
-    sheet.innerHTML = `<form class="ls-sheet-card" role="dialog" aria-modal="true" aria-labelledby="passTitle">
-      <p id="passTitle" class="ls-sheet-title">${esc(title)}</p>
-      <p class="ls-ask-text">${esc(text)}</p>
-      <input class="ls-input" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" minlength="${PASS_MIN}" maxlength="${PASS_MAX}" aria-label="${esc(title)}" required>
-      <label class="check-row"><input type="checkbox" data-show> 見せる</label>
-      <p class="pass-error ls-hint" hidden></p>
-      <div class="ls-sheet-actions"><button class="ls-button" type="button" data-no>やめる</button><button class="ls-button is-primary" type="submit">${esc(ok)}</button></div>
-    </form>`;
-    const field = sheet.querySelector("input.ls-input");
-    const close = (value) => {
-      sheet.remove();
-      document.removeEventListener("keydown", onKey);
-      before?.focus?.({ preventScroll: true });
-      resolve(value);
-    };
-    const onKey = (e) => e.key === "Escape" && close(null);
-    sheet.querySelector("[data-show]").addEventListener("change", (e) => (field.type = e.target.checked ? "text" : "password"));
-    sheet.querySelector("[data-no]").addEventListener("click", () => close(null));
-    sheet.addEventListener("click", (e) => e.target === sheet && close(null));
-    sheet.querySelector("form").addEventListener("submit", (e) => {
-      e.preventDefault();
-      const v = field.value.trim();
-      if (v.length < PASS_MIN) {
-        const err = sheet.querySelector(".pass-error");
-        err.hidden = false;
-        err.textContent = `${PASS_MIN}文字以上で入れてね`;
-        return field.focus();
-      }
-      close(v);
-    });
-    document.addEventListener("keydown", onKey);
-    document.body.append(sheet);
-    field.focus();
-  });
+// 合言葉の入力欄（ページの中に置く。iPhone で下から出す窓の入力欄はキーボードと重なって入れにくいため）。
+// 伏せて入れ、「見せる」で見える。name は form の中の見分け
+const passField = (name, label, hint = "") =>
+  `<label class="ls-label" for="pass-${name}">${esc(label)}</label><input id="pass-${name}" name="${name}" class="ls-input pass-input" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="${PASS_MAX}" enterkeyhint="done">${hint ? `<p class="ls-hint">${esc(hint)}</p>` : ""}`;
+const passShow = `<label class="check-row"><input type="checkbox" data-pass-show> 合言葉を見せる</label>`;
+
+// form の中の合言葉（name）を読む。短ければ知らせて null
+function passOf(form, name) {
+  const v = String(form.elements[name]?.value || "").trim();
+  if (v.length >= PASS_MIN) return v;
+  toast(`合言葉は${PASS_MIN}文字以上で入れてね`);
+  form.elements[name]?.focus();
+  return null;
 }
 
 // 合言葉を入れて、この大会で点を入れられるようにする（運営の合言葉でも、入力の合言葉でもよい）
-async function liveUnlock() {
+async function liveUnlock(form) {
   const t = current();
   if (!t.live) return;
-  const pass = await askPass({ title: "✏️ 点を入れる", text: "運営から聞いた「入力の合言葉」を入れてね（運営の人は、運営の合言葉）。この端末には残しません。" });
+  const pass = passOf(form, "unlock");
   if (!pass) return;
   toast("確かめています…");
   // 入力の合言葉として確かめ、ちがえば運営の合言葉として確かめる
@@ -1734,6 +1727,8 @@ async function liveUnlock() {
     const res = await liveCall(t.live.bot, "check", { id: t.live.id, key });
     if (res.ok) {
       rememberKey(t.live.id, { role: res.role, key });
+      form.reset();
+      form.hidden = true;
       toast(res.role === "admin" ? "運営として入れられます" : "点を入れられます");
       renderAll();
       liveFlush();
@@ -1745,13 +1740,13 @@ async function liveUnlock() {
 }
 
 // 運営：いまの大会を、くらぶボットにのせる（みんなで入れられるようにする）
-async function liveStart() {
+async function liveStart(form) {
   const t = current();
   const bot = window.QloveBotLink?.get() || "";
   if (!bot) return toast("先に、くらぶボットの URL を入れてね");
-  const admin = await askPass({ title: "📡 運営の合言葉", text: "くらぶボットを作った人（システム管理者）が決めた「運営の合言葉」を入れてね。" });
+  const admin = passOf(form, "admin");
   if (!admin) return;
-  const input = await askPass({ title: "🔑 入力の合言葉を決める", text: "コートで点を入れる人に、口で伝える合言葉です（4文字以上）。リンクには入りません。", ok: "決める" });
+  const input = passOf(form, "input");
   if (!input) return;
   const id = newLiveId();
   toast("のせています…");
@@ -1768,17 +1763,18 @@ async function liveStart() {
 }
 
 // 運営：入力の合言葉を変える（前の合言葉の人は、入れられなくなる）
-async function liveChangeInput() {
+async function liveChangeInput(form) {
   const t = current();
   if (liveRole(t) !== "admin") return;
-  const input = await askPass({ title: "🔑 入力の合言葉を変える", text: "新しい合言葉を、点を入れる人に伝えなおしてね。前の合言葉では入れられなくなります。", ok: "変える" });
+  const input = passOf(form, "newinput");
   if (!input) return;
   const { key } = sessionKey(t.live.id) || liveKeys[t.live.id];
   const res = await liveCall(t.live.bot, "put", { id: t.live.id, key, base: t.live.version, data: toServer(overlay(t, t.live.pending)), inputKey: await inputKey(t.live.id, input) });
   if (!res.ok) return toast(liveError(res));
   t.live.version = res.version;
   saveAll(data);
-  toast("入力の合言葉を変えました");
+  form.reset();
+  toast("入力の合言葉を変えました。点を入れる人に伝えなおしてね");
   renderLive();
 }
 
@@ -1822,6 +1818,7 @@ function renderLive() {
     $("liveStatus").textContent = [liveMessage ? "⚠️ つながっていません" : time ? `${time} に読みなおし` : "まだ読んでいません", wait ? `送るのを待っている ${wait} 件` : ""].filter(Boolean).join("・");
     $("liveRoleBtn").textContent = role === "admin" ? "🔓 運営" : role === "input" ? "🔓 入力できる" : "✏️ 点を入れる";
     $("liveRoleBtn").classList.toggle("is-primary", !role);
+    if (role) $("liveUnlock").hidden = true;
   }
   $("liveMeta").textContent = t.live ? (role === "admin" ? "運営" : role === "input" ? "入力" : "見るだけ") : "";
   const bot = window.QloveBotLink?.get() || "";
@@ -1830,11 +1827,12 @@ function renderLive() {
     html = `<p class="ls-hint">この大会は、くらぶボットで共有しています。点は1試合ずつ送り、ほかの人の点は20秒ごと（と 🔄）に読みなおします。電波がないときは、この端末にためて、つながったら送ります。</p>
       <div class="live-actions">
         <button class="ls-button is-primary" type="button" data-live="copy">🔗 共有リンクをコピー</button>
-        ${role === "admin" ? `<button class="ls-button" type="button" data-live="input">🔑 入力の合言葉を変える</button>` : ""}
+
         ${role ? `<button class="ls-chip" type="button" data-live="lock">🔒 この端末で入れるのをやめる</button>` : ""}
         <button class="ls-chip" type="button" data-live="leave">📴 つなぐのをやめる</button>
       </div>
-      <p class="ls-hint">共有リンクには合言葉は入りません。点を入れる人には、入力の合言葉を口で伝えてね。見る人は、リンクを開くだけ。</p>`;
+      <p class="ls-hint">共有リンクには合言葉は入りません。点を入れる人には、入力の合言葉を口で伝えてね。見る人は、リンクを開くだけ。</p>
+      ${role === "admin" ? `<form class="ls-stack live-form" data-live-form="input">${passField("newinput", "🔑 入力の合言葉を変える", "前の合言葉では入れられなくなります")}${passShow}<button class="ls-button" type="submit">変える</button></form>` : ""}`;
   } else if (!window.QloveBotLink) {
     html = `<p class="ls-hint">くらぶボットの部品を読めませんでした（電波を確かめてね）。</p>`;
   } else if (!bot) {
@@ -1844,17 +1842,25 @@ function renderLive() {
       <button class="ls-button" type="button" data-live="bot">つなぐ</button>`;
   } else {
     html = `<p class="ls-hint">くらぶボットにつないであります。この大会をのせると、運営・コートの入力の人・見る人で同じ結果を見られます（入れた点はすぐ送り、ほかの人の点を読みなおします）。</p>
-      <button class="ls-button is-primary is-block" type="button" data-live="start">📡 この大会をみんなで入れる</button>
+      <form class="ls-stack live-form" data-live-form="start">
+        ${passField("admin", "📡 運営の合言葉", "くらぶボットを作った人（システム管理者）が決めたもの")}
+        ${passField("input", "🔑 入力の合言葉（新しく決める）", "コートで点を入れる人に、口で伝える合言葉（4文字以上）。リンクには入りません")}
+        ${passShow}
+        <button class="ls-button is-primary is-block" type="submit">📡 この大会をみんなで入れる</button>
+      </form>
       <button class="ls-chip" type="button" data-live="forget">くらぶボットの URL を変える</button>`;
   }
-  $("liveBody").innerHTML = html;
+  // 中身が同じなら描きなおさない（読みなおしのたびに、入れかけの合言葉が消えないように）
+  if ($("liveBody").dataset.html !== html) {
+    $("liveBody").innerHTML = html;
+    $("liveBody").dataset.html = html;
+  }
 }
 
 // 「📡 みんなで入れる」のボタン
 async function onLiveAction(kind) {
   const t = current();
   if (kind === "bot") return liveSetBot();
-  if (kind === "start") return liveStart();
   if (kind === "forget") {
     window.QloveBotLink?.clear();
     return renderLive();
@@ -1869,7 +1875,6 @@ async function onLiveAction(kind) {
     }
     return;
   }
-  if (kind === "input") return liveChangeInput();
   if (kind === "lock") {
     rememberKey(t.live.id, null);
     toast("この端末では、見るだけにしました");

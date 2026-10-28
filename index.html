@@ -27,7 +27,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://katsuan.github.io/line-share/shared/ui.css?v=202610261000">
-<link rel="stylesheet" href="style.css?v=202610282250">
+<link rel="stylesheet" href="style.css?v=202610282254">
 </head>
 <body>
 <main class="ls-page ls-stack">
@@ -199,6 +199,12 @@
       <button id="liveRefresh" class="ls-chip" type="button">🔄 更新</button>
       <button id="liveRoleBtn" class="ls-chip" type="button">✏️ 点を入れる</button>
     </div>
+    <!-- 見るだけのとき：合言葉を入れる欄（ページの中。iPhone で入れやすいように） -->
+    <form id="liveUnlock" class="live-unlock ls-stack" data-live-form="unlock" hidden>
+      <label class="ls-label" for="pass-unlock">運営から聞いた「入力の合言葉」（運営の人は運営の合言葉）。この端末には残しません</label>
+      <div class="live-unlock-row"><input id="pass-unlock" name="unlock" class="ls-input pass-input" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="40" enterkeyhint="done"><button class="ls-button is-primary" type="submit">入れる</button></div>
+      <label class="check-row"><input type="checkbox" data-pass-show> 合言葉を見せる</label>
+    </form>
   </section>
     <!-- 大会の見出し：名前・形・見こみ（試合のタブのいちばん上） -->
     <section class="ls-panel play-head" aria-label="大会">
@@ -279,7 +285,7 @@
 <script src="https://katsuan.github.io/line-share/shared/oqrn.js"></script>
 <script src="https://katsuan.github.io/line-share/shared/ui.js?v=202610260300" defer></script>
 <script src="https://katsuan.github.io/line-share/shared/qlove-bot.js"></script>
-<script type="module" src="app.js?v=202610282250"></script>
+<script type="module" src="app.js?v=202610282254"></script>
 <script src="https://katsuan.github.io/line-share/shared/tool-share.js" data-tool="qumiawase" defer></script>
 <script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(() => {});</script>
 </body>
