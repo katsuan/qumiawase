@@ -1,14 +1,14 @@
 // くみあわせ（QumiAwase）：入口。画面（大会・チーム・形・日程・トーナメント表・順位表・試合と結果・送る）を作り、ボタン・入力を受け、部品（js/）をつなぐ。
 // index.html から読む（type="module"）。組み合わせは js/pairing.js、順位と勝ち上がりは js/stats.js、端末に残すのは js/store.js、
 // リンク（見る人用・さくせん盤・ろくが・結果を戻す）は js/link.js、カードは js/card.js、画像は js/image.js、みんなで入れる（くらぶボット）は js/live.js
-import { FORMATS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610282248";
-import { addMinutes, autoReferees, fitOptions, generate, refereeOptions, roundName, timeSchedule } from "./js/pairing.js?v=202610282248";
-import { durationLabel, estimate, outcome, podium, RANK_LABELS, rankIn, resolve, table } from "./js/stats.js?v=202610282248";
-import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610282248";
-import { LINK_MAX, qronosUrl, readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610282248";
-import { cardParams, dateLabel, formatLabel, matchLine, matchTitle, pointsLabel, sideLabel, summaryText, teamName } from "./js/card.js?v=202610282248";
-import { drawTournament } from "./js/image.js?v=202610282248";
-import { adminKey, botUrlIn, fromServer, inputKey, liveCall, liveError, liveUrl, newLiveId, overlay, PASS_MAX, PASS_MIN, queue, readLive, sessionKey, setSessionKey, toServer } from "./js/live.js?v=202610282248";
+import { FORMATS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610282250";
+import { addMinutes, autoReferees, fitOptions, generate, refereeOptions, roundName, timeSchedule } from "./js/pairing.js?v=202610282250";
+import { durationLabel, estimate, outcome, podium, RANK_LABELS, rankIn, resolve, table } from "./js/stats.js?v=202610282250";
+import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610282250";
+import { LINK_MAX, qronosUrl, readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610282250";
+import { cardParams, dateLabel, formatLabel, matchLine, matchTitle, pointsLabel, sideLabel, summaryText, teamName } from "./js/card.js?v=202610282250";
+import { drawTournament } from "./js/image.js?v=202610282250";
+import { adminKey, botUrlIn, fromServer, inputKey, liveCall, liveError, liveUrl, newLiveId, overlay, PASS_MAX, PASS_MIN, queue, readLive, sessionKey, setSessionKey, toServer } from "./js/live.js?v=202610282250";
 
 // id から画面の部品を返す
 const $ = (id) => document.getElementById(id);
@@ -581,7 +581,7 @@ function crossHtml(c, ids, ms, key) {
   const no = (id) => ids.indexOf(id) + 1;
   const head = ids.map((id) => `<th scope="col" title="${esc(teamName(t, id))}">${dotHtml(id)}${no(id)}</th>`).join("");
   const body = ids.map((a) => `<tr class="${a === mine() ? "is-mine" : ""}"><th scope="row" class="team">${no(a)} ${dotHtml(a)}${esc(teamName(t, a))}</th>${ids.map((b) => cell(a, b)).join("")}</tr>`).join("");
-  return `<div class="table-wrap cross-wrap"><table class="cross-table"><caption>${key ? `${esc(key)}組の` : ""}総当たり表<span>左のチームから見た結果・まだの試合は時刻。押すと点を入れられます。番号は順位</span></caption><thead><tr><th></th>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
+  return `<div class="table-wrap cross-wrap"><table class="cross-table"><caption>${key ? `${esc(key)}組の` : ""}総当たり表</caption><thead><tr><th></th>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
 }
 
 /**

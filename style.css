@@ -835,13 +835,6 @@ body {
   text-align: left;
 }
 
-.cross-table caption span {
-  display: block;
-  color: var(--ls-subtext);
-  font-size: 12px;
-  font-weight: 600;
-}
-
 .cross-table th,
 .cross-table td {
   min-width: 52px;
