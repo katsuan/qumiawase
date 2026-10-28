@@ -129,3 +129,13 @@ test("リンクで PK の勝ち点を運ぶ", () => {
   assert.deepEqual(off.p, [3, 1, 0]);
   assert.equal(unpackTournament(off).points.pk, false);
 });
+
+// 大会要項：改行は残し、見えない文字は消し、5000字まで。見る人用のリンクには入れない
+test("大会要項の文", async () => {
+  const { cleanTournament } = await import("../js/store.js");
+  const t = cleanTournament({ name: "x", teams: [{ name: "a" }, { name: "b" }], rules: "試合時間：10分\r\n交代：自由\u0007  \n\n雨天：前日20時" + "あ".repeat(6000) });
+  assert.ok(t.rules.startsWith("試合時間：10分\n交代：自由\n\n雨天：前日20時"));
+  assert.equal([...t.rules].length, 5000);
+  assert.equal("rules" in packTournament(t), false);
+  assert.equal(cleanTournament({ teams: [], rules: 5 }).rules, "");
+});

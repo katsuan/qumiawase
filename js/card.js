@@ -1,9 +1,9 @@
 // くみあわせ：おくるんのお知らせカード（OQRN.cardUrl）に渡す中身（組み合わせ表・順位表を文で）と、試合や順位の言い方。画面には触らない（テストで呼ぶ）
 // app.js・js/image.js から読む（import）
-import { FORMATS, TOOL } from "./settings.js?v=202610282232";
-import { roundName } from "./pairing.js?v=202610282232";
-import { podium, RANK_LABELS, rankIn, table } from "./stats.js?v=202610282232";
-import { LINK_MAX, viewUrl } from "./link.js?v=202610282232";
+import { FORMATS, TOOL } from "./settings.js?v=202610282233";
+import { roundName } from "./pairing.js?v=202610282233";
+import { podium, RANK_LABELS, rankIn, table } from "./stats.js?v=202610282233";
+import { LINK_MAX, viewUrl } from "./link.js?v=202610282233";
 
 export const CARD_COLOR = "#D9622B"; // くみあわせの色（ロゴのオレンジ）
 const DETAIL_MAX = 600;
@@ -137,6 +137,7 @@ export function summaryText(t, gen, resolved, order) {
   lines.push(`${formatLabel(t)}・${t.teams.length}チーム`);
   if (t.sched.on) lines.push(`日程：${t.sched.start}〜・コート${t.sched.courts}・1試合${t.sched.minutes}分`);
   if (t.format !== "knockout") lines.push(`勝ち点：${pointsLabel(t.points)}`, `順位：${rankLabel(t.rank)}`);
+  if (t.rules) lines.push("", "【大会要項】", t.rules);
   lines.push("", "【チーム】");
   if (gen.groups?.length) for (const g of gen.groups) lines.push(`${g.key}組：${g.ids.map((id) => teamName(t, id)).join("・")}`);
   else t.teams.forEach((x, i) => lines.push(`${i + 1}. ${teamName(t, x.id)}`));

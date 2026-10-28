@@ -1,14 +1,14 @@
 // くみあわせ（QumiAwase）：入口。画面（大会・チーム・形・日程・トーナメント表・順位表・試合と結果・送る）を作り、ボタン・入力を受け、部品（js/）をつなぐ。
 // index.html から読む（type="module"）。組み合わせは js/pairing.js、順位と勝ち上がりは js/stats.js、端末に残すのは js/store.js、
 // リンク（見る人用・さくせん盤・ろくが・結果を戻す）は js/link.js、カードは js/card.js、画像は js/image.js、みんなで入れる（くらぶボット）は js/live.js
-import { FORMATS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610282232";
-import { addMinutes, autoReferees, fitOptions, generate, refereeOptions, roundName, timeSchedule } from "./js/pairing.js?v=202610282232";
-import { durationLabel, estimate, outcome, podium, RANK_LABELS, rankIn, resolve, table } from "./js/stats.js?v=202610282232";
-import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610282232";
-import { LINK_MAX, qronosUrl, readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610282232";
-import { cardParams, dateLabel, formatLabel, matchLine, matchTitle, pointsLabel, sideLabel, summaryText, teamName } from "./js/card.js?v=202610282232";
-import { drawTournament } from "./js/image.js?v=202610282232";
-import { adminKey, botUrlIn, fromServer, inputKey, liveCall, liveError, liveUrl, newLiveId, overlay, PASS_MAX, PASS_MIN, queue, readLive, sessionKey, setSessionKey, toServer } from "./js/live.js?v=202610282232";
+import { FORMATS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610282233";
+import { addMinutes, autoReferees, fitOptions, generate, refereeOptions, roundName, timeSchedule } from "./js/pairing.js?v=202610282233";
+import { durationLabel, estimate, outcome, podium, RANK_LABELS, rankIn, resolve, table } from "./js/stats.js?v=202610282233";
+import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610282233";
+import { LINK_MAX, qronosUrl, readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610282233";
+import { cardParams, dateLabel, formatLabel, matchLine, matchTitle, pointsLabel, sideLabel, summaryText, teamName } from "./js/card.js?v=202610282233";
+import { drawTournament } from "./js/image.js?v=202610282233";
+import { adminKey, botUrlIn, fromServer, inputKey, liveCall, liveError, liveUrl, newLiveId, overlay, PASS_MAX, PASS_MIN, queue, readLive, sessionKey, setSessionKey, toServer } from "./js/live.js?v=202610282233";
 
 // id から画面の部品を返す
 const $ = (id) => document.getElementById(id);
@@ -463,6 +463,7 @@ function renderFormat() {
   $("pointsMeta").textContent = pointsLabel(t.points);
   // 順位の決め方：勝ち点はいつも最初。あとの3つは ↑↓ で並べかえる
   const rank = rankIn(t.rank);
+  $("rankMeta").textContent = rank.map((k) => RANK_LABELS[k]).join(" → ");
   $("rankOrder").innerHTML =
     `<li><span class="rank-no">1</span><span class="rank-name">勝ち点</span><small>いつも最初</small></li>` +
     rank
@@ -1018,6 +1019,7 @@ function renderResults() {
 // 画面をまるごと描きなおす
 function renderAll() {
   renderLive();
+  renderRules();
   renderPage();
   renderPresets();
   renderEvents();
@@ -1178,6 +1180,7 @@ function printSummary(c) {
     <p>${esc([when, `${formatLabel(t)}・${t.teams.length}チーム`].filter(Boolean).join("　"))}</p>
     <p>${esc(`1試合${t.sched.minutes}分・コート${t.sched.courts}${t.sched.avoid ? `・同じチームの空き時間${t.sched.rest}分` : ""}${t.sched.on ? `・${t.sched.start}〜` : ""}`)}</p>
     <section class="print-keep"><h2>チーム</h2>${teams}</section>
+    ${t.rules ? `<section><h2>大会要項</h2><div class="print-rules">${esc(t.rules)}</div></section>` : ""}
     ${$("standings").innerHTML.trim() ? `<section><h2>順位表</h2>${$("standings").innerHTML}</section>` : ""}
     ${gen.matches.some((m) => m.stage === "ko") ? `<section class="print-keep"><h2>トーナメント表</h2><div class="bracket">${$("bracket").innerHTML}</div></section>` : ""}
     <h2>試合</h2>
@@ -1234,6 +1237,14 @@ function sendCard() {
 
 // 押す・入力を受けるしかけを付ける（はじめに1回）
 function bindEvents() {
+  // 大会要項：入れるたびに残す（共有中の運営なら、少し待ってからボットへ）
+  $("rulesText").addEventListener("input", (e) => {
+    current().rules = e.target.value.slice(0, LIMITS.rules);
+    persist();
+    $("rulesMeta").textContent = current().rules ? `${[...current().rules].length}字` : "なし";
+    $("rulesView").hidden = !current().rules.trim();
+    $("rulesBody").innerHTML = rulesHtml(current().rules);
+  });
   // みんなで入れる
   $("liveBody").addEventListener("click", (e) => {
     const b = e.target.closest("[data-live]");
@@ -1480,6 +1491,23 @@ function bindEvents() {
 }
 
 // はじめに動かす：名前を出し、受けとった結果を入れ、画面を作る
+// ---- 大会要項 ----
+
+// 大会要項の文を HTML にする（文字はぜんぶ esc。https:// ではじまるところだけリンクに）
+function rulesHtml(text) {
+  return esc(text).replace(/https:\/\/[^\s<>"']+/g, (url) => `<a href="${url}" target="_blank" rel="noopener">${url}</a>`);
+}
+
+// 準備の「📜 大会要項」と、試合のページの上の大会要項を描きなおす
+function renderRules() {
+  const t = current();
+  const text = t.rules || "";
+  if (document.activeElement !== $("rulesText")) $("rulesText").value = text;
+  $("rulesMeta").textContent = text ? `${[...text].length}字` : "なし";
+  $("rulesView").hidden = !text;
+  $("rulesBody").innerHTML = rulesHtml(text);
+}
+
 // ---- みんなで入れる（くらぶボットの「🏆 大会」。js/live.js） ----
 // つないでいない大会は、これまでどおり端末の中だけ。つないだ大会だけ、点を1試合ずつ送り、ほかの端末の点を読みなおす
 

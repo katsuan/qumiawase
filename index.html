@@ -27,7 +27,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://katsuan.github.io/line-share/shared/ui.css?v=202610261000">
-<link rel="stylesheet" href="style.css?v=202610282232">
+<link rel="stylesheet" href="style.css?v=202610282233">
 </head>
 <body>
 <main class="ls-page ls-stack">
@@ -116,11 +116,14 @@
             <p class="ls-hint">PK をするときは引き分けはありません（PK を入れるまで、その試合は勝ち点に数えません）。PK の点は得失点に入れません。</p>
           </div>
         </details>
-        <div class="rank-box">
-          <p class="rank-head">順位の決め方 <small>上から順にくらべる</small></p>
-          <ol id="rankOrder" class="rank-order"></ol>
-          <p class="ls-hint">直接対決は、そこまで同じ並びのチームどうしの試合だけでくらべます（勝ち点 → 得失点差 → 総得点）。最後まで同じなら、チームの並びの順。</p>
-        </div>
+        <details id="rankFold" class="ls-fold inner">
+          <summary>順位の決め方 <span id="rankMeta" class="ls-fold-meta"></span></summary>
+          <div class="ls-fold-body ls-stack">
+            <p class="ls-hint">上から順にくらべます。勝ち点はいつも最初で、あとの3つは ↑↓ で並べかえられます。</p>
+            <ol id="rankOrder" class="rank-order"></ol>
+            <p class="ls-hint">直接対決は、そこまで同じ並びのチームどうしの試合だけでくらべます（勝ち点 → 得失点差 → 総得点）。最後まで同じなら、チームの並びの順。</p>
+          </div>
+        </details>
       </section>
       <section id="koRules" class="rule-box" aria-labelledby="koRulesTitle" hidden>
         <h4 id="koRulesTitle" class="rule-title">🗺️ トーナメントの決まり</h4>
@@ -176,6 +179,15 @@
   </details>
 
   <!-- 準備のおわり：試合のページへ（試合の数も） -->
+  <!-- 大会要項：ルール・持ち物・雨天のときなど、大会ごとの長い文。試合のページの上に出す（共有中なら見る人にも）・大会のまとめにも -->
+  <details id="rulesFold" class="ls-fold">
+    <summary><span class="fold-title">📜 大会要項</span> <span id="rulesMeta" class="ls-fold-meta"></span></summary>
+    <div class="ls-fold-body ls-stack">
+      <label class="ls-label" for="rulesText">ルール・持ち物・雨天のときなど（5000字まで）</label>
+      <textarea id="rulesText" class="ls-input rules-text" rows="8" maxlength="5000" placeholder="例）試合時間：前後半10分・ハーフタイム3分&#10;交代：自由&#10;雨天のとき：前の日の20時にお知らせ&#10;持ち物：すね当て・水筒"></textarea>
+      <p class="ls-hint">試合のページの上に出ます。みんなで入れる（共有）大会なら、見る人にも出ます。大会のまとめ（PDF）にも入ります。見る人用のリンクには入りません（長くなるため）。https:// ではじまる文字はリンクになります。</p>
+    </div>
+  </details>
   <button id="goPlay" class="ls-button is-primary is-block go-play" type="button">📋 試合へ</button>
   </div>
 
@@ -192,6 +204,10 @@
     <section class="ls-panel play-head" aria-label="大会">
       <p id="playTitle" class="play-title"></p>
       <p id="playSub" class="play-sub"></p>
+      <details id="rulesView" class="rules-view" hidden>
+        <summary>📜 大会要項</summary>
+        <div id="rulesBody" class="rules-body"></div>
+      </details>
     </section>
 
     <!-- 見せる中身のタブ：試合と結果・順位表・トーナメント表（ある形のものだけ出す） -->
@@ -263,7 +279,7 @@
 <script src="https://katsuan.github.io/line-share/shared/oqrn.js"></script>
 <script src="https://katsuan.github.io/line-share/shared/ui.js?v=202610260300" defer></script>
 <script src="https://katsuan.github.io/line-share/shared/qlove-bot.js"></script>
-<script type="module" src="app.js?v=202610282232"></script>
+<script type="module" src="app.js?v=202610282233"></script>
 <script src="https://katsuan.github.io/line-share/shared/tool-share.js" data-tool="qumiawase" defer></script>
 <script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(() => {});</script>
 </body>
