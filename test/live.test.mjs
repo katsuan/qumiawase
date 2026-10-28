@@ -10,7 +10,7 @@ const ID = "0123456789abcdef0123";
 
 test("ボットの URL と大会の番号の形", () => {
   assert.equal(botUrlIn(BOT), BOT);
-  for (const bad of ["https://example.com/exec", `${BOT}?key=x`, "javascript:alert(1)", "", null]) assert.equal(botUrlIn(bad), "", String(bad));
+  for (const bad of ["https://example.com/exec", `${BOT}?key=x`, "javascript:void(0)", "", null]) assert.equal(botUrlIn(bad), "", String(bad));
   assert.match(newLiveId(), /^[0-9a-f]{20}$/);
   assert.notEqual(newLiveId(), newLiveId());
 });
