@@ -1,12 +1,12 @@
 // くみあわせ：大会をこの端末（localStorage）に残す・読む。読むときは1つずつ形を確かめる（壊れた中身・前の版でも止まらない）
-// app.js・js/link.js から読む（import）
+// app.js・js/link.js・js/live-ui.js・js/live.js・js/prep-event.js・js/prep-teams.js・js/state.js から読む（import）
 //
 // 大会の形：{ id, name, createdAt, updatedAt, teams: [{ id, name, color }], format, opts: { thirdPlace, legs, groups, advance },
 //            rules（大会要項。長い文）, timeFix（手で直した時刻）, delays（遅れ）, points: { win, draw, loss, pk（総当たりも同点なら PK）, pkWin, pkLoss }, rank（順位の決め方：勝ち点のあとの並び。gd・gf・h2h）, sched: { on（時刻を入れる）, date, start, courts, minutes, place, avoid（連続試合を避ける）, rest（同じチームの空き時間・分） },
 //            results: { 試合の id: { s, pk? } }, referees: { 試合の id: 審判のチームの id } }
-import { DEFAULT_POINTS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./settings.js?v=202610290019";
-import { DEFAULT_RANK, rankIn } from "./stats.js?v=202610290019";
-import { liveIn } from "./live.js?v=202610290019"; // つないだ大会の印（関数の中でだけ使う）
+import { DEFAULT_POINTS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./settings.js?v=202610290639";
+import { DEFAULT_RANK, rankIn } from "./stats.js?v=202610290639";
+import { liveIn } from "./live.js?v=202610290639"; // つないだ大会の印（関数の中でだけ使う）
 
 export const STORE_KEY = `${TOOL.key}:tournaments`; // { list: [大会…], current: いま開いている大会の id }
 export const INBOX_KEY = `${TOOL.key}:inbox`; // さくせん盤から戻ってきた結果（同じ端末のとき）

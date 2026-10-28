@@ -1,5 +1,5 @@
 // くみあわせ：みんなで入れる（くらぶボットの「🏆 大会」。q-qlove-bot の lib/55_tournament.gs）。画面には触らない（テストで呼ぶ）
-// app.js から読む（import）
+// app.js・js/live-ui.js・js/state.js・js/store.js から読む（import）
 //
 // つながなければ、これまでどおり端末の中だけで動く（オフラインでも使える）。つないだ大会（t.live）だけ、点を1試合ずつボットに送り、
 // ほかの端末が入れた点は「🔄 更新」で読みなおす（GAS をあまり呼ばないため、自動では読まない）。電波がないときは端末にためておき（t.live.pending）、つながったら送る。
@@ -8,7 +8,7 @@
 //   入力の合言葉 → PBKDF2（SHA-256・塩 "qumiawase:" + 大会の番号・10万回・32バイト）。ジェンダーリビールと同じ考え
 //   運営の合言葉 → SHA-256("qumiawase:admin:" + 合言葉)（ボットのスクリプト プロパティにあるものとくらべる）
 //   できた key は、そのタブの sessionStorage にだけ置く（タブを閉じれば消える。読みこみなおしでは聞きなおさない）
-import { cleanTournament, isObj, resultIn } from "./store.js?v=202610290019";
+import { cleanTournament, isObj, resultIn } from "./store.js?v=202610290639";
 
 // くらぶボットの URL（GAS のウェブアプリ …/exec だけ。Q キットの shared/qlove-bot.js と同じ形）
 const BOT_URL = /^https:\/\/script\.google\.com\/(?:a\/[A-Za-z0-9.-]+\/)?macros\/s\/[A-Za-z0-9_-]{20,120}\/exec$/;
@@ -179,6 +179,6 @@ export function setSessionKey(id, value, storage = globalThis.sessionStorage) {
     if (value) storage.setItem(`qumiawase:key:${id}`, JSON.stringify(value));
     else storage.removeItem(`qumiawase:key:${id}`);
   } catch {
-    // 置けない端末では、ページを開いているあいだだけ（app.js が覚える）
+    // 置けない端末では、ページを開いているあいだだけ（js/live-ui.js が覚える）
   }
 }

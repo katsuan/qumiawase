@@ -27,7 +27,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://katsuan.github.io/line-share/shared/ui.css?v=202610261000">
-<link rel="stylesheet" href="style.css?v=202610290019">
+<link rel="stylesheet" href="style.css?v=202610290639">
 </head>
 <body>
 <main class="ls-page ls-stack">
@@ -287,12 +287,12 @@
 
   <div data-tool-share></div>
 </main>
-<!-- 印刷・PDF に保存するときだけ出す「大会のまとめ」（app.js の printSummary が中身を入れる） -->
+<!-- 印刷・PDF に保存するときだけ出す「大会のまとめ」（js/share-ui.js の printSummary が中身を入れる） -->
 <section id="printArea" class="print-area" aria-hidden="true"></section>
 <script src="https://katsuan.github.io/line-share/shared/oqrn.js"></script>
 <script src="https://katsuan.github.io/line-share/shared/ui.js?v=202610260300" defer></script>
 <script src="https://katsuan.github.io/line-share/shared/qlove-bot.js"></script>
-<script type="module" src="app.js?v=202610290019"></script>
+<script type="module" src="app.js?v=202610290639"></script>
 <script src="https://katsuan.github.io/line-share/shared/tool-share.js" data-tool="qumiawase" defer></script>
 <script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(() => {});</script>
 </body>

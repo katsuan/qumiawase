@@ -1,6 +1,6 @@
 // くみあわせ：組み合わせを作る（トーナメント・総当たり・グループ → 決勝トーナメント）と、日程（時刻とコート）の割りふり。
 // 画面には触らない（テストで呼ぶ）。同じチームのならびと設定からは、いつも同じ組み合わせ（試合の id も同じ）になる
-// app.js・js/stats.js・js/link.js から読む（import）
+// js/card.js・js/image.js・js/play-matches.js・js/play-tables.js・js/prep-format.js・js/state.js から読む（import）
 //
 // 試合の形：{ id, stage: "league"|"group"|"ko"|"third", group?: "A", round, home: 側, away: 側, bye?: true }
 // 側の形：{ team: チームの id } ／ { winnerOf: 試合の id } ／ { loserOf: 試合の id } ／ { groupRank: ["A", 1] } ／ { empty: true }（不戦勝の相手なし）

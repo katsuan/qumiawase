@@ -1,5 +1,5 @@
 // くみあわせ：結果から数える・まとめる（勝ち負け・順位表・トーナメントの勝ち上がり）。画面には触らない（テストで呼ぶ）
-// app.js・js/card.js・js/image.js から読む（import）
+// js/card.js・js/image.js・js/link.js・js/play-matches.js・js/play-score.js・js/play-tables.js・js/prep-format.js・js/share-ui.js・js/state.js・js/store.js から読む（import）
 //
 // 結果の形：results = { 試合の id: { s: [ホームの点, アウェイの点], pk?: [ホームの PK, アウェイの PK] } }
 
