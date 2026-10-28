@@ -27,7 +27,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://katsuan.github.io/line-share/shared/ui.css?v=202610261000">
-<link rel="stylesheet" href="style.css?v=202610282229">
+<link rel="stylesheet" href="style.css?v=202610282232">
 </head>
 <body>
 <main class="ls-page ls-stack">
@@ -232,6 +232,7 @@
     <div id="teamTools" class="team-tools-row" hidden></div>
     <!-- 審判がまだ1つも入っていないときだけ：準備で自動で入れられる案内 -->
     <p id="refereeHint" class="ls-hint referee-hint" hidden>🟨 審判は「⚙️ 準備」で自動で入れられます。</p>
+    <p id="tapHint" class="ls-hint" hidden>✏️ 試合を押すと、点を入れられます（もう一度押すと閉じる）。</p>
     <div id="matches" class="ls-stack"></div>
   </section>
 
@@ -262,7 +263,7 @@
 <script src="https://katsuan.github.io/line-share/shared/oqrn.js"></script>
 <script src="https://katsuan.github.io/line-share/shared/ui.js?v=202610260300" defer></script>
 <script src="https://katsuan.github.io/line-share/shared/qlove-bot.js"></script>
-<script type="module" src="app.js?v=202610282229"></script>
+<script type="module" src="app.js?v=202610282232"></script>
 <script src="https://katsuan.github.io/line-share/shared/tool-share.js" data-tool="qumiawase" defer></script>
 <script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(() => {});</script>
 </body>

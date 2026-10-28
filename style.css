@@ -567,13 +567,23 @@ body {
   border-color: #d9622b;
 }
 
-/* さくせん盤・ろくがは、試合のカードを押すと出る */
-.match.has-tools {
+/* 試合のカード：押すと入力中（− ＋・PK・審判・結果を消す・さくせん盤やろくが）。ふだんは点だけ */
+.match.is-tappable {
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
 
-.match-head[data-tools]:focus-visible {
+.match.is-active {
+  border-color: var(--ls-accent);
+  border-style: dashed;
+  background: var(--ls-surface);
+}
+
+.match-side > b.is-empty {
+  color: var(--ls-faint);
+}
+
+.match-head[data-tap]:focus-visible {
   outline: 2px solid var(--ls-accent);
   outline-offset: 2px;
   border-radius: 6px;
@@ -1456,4 +1466,40 @@ body.is-view #schedFold {
 .pass-error {
   margin: 0;
   color: var(--ls-danger, #c0392b);
+}
+
+/* 時刻ごとのまとまり（たためる） */
+.slot-fold > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 44px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.slot-fold > summary::-webkit-details-marker {
+  display: none;
+}
+
+.slot-fold > summary::after {
+  content: "▾";
+  color: var(--ls-subtext);
+  transition: transform 0.15s;
+}
+
+.slot-fold:not([open]) > summary::after {
+  transform: rotate(-90deg);
+}
+
+.slot-fold .slot-meta {
+  margin-left: auto;
+  color: var(--ls-subtext);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.slot-fold > .ls-stack {
+  padding-bottom: 6px;
 }
