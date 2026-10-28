@@ -1,9 +1,9 @@
 // くみあわせ：「📷 画像で保存」の画像を描く（見出し・トーナメント表・順位表・試合の一覧）。canvas を返すだけで、保存の画面は app.js
 // app.js から読む（import）
-import { TOOL } from "./settings.js?v=202610282203";
-import { roundName } from "./pairing.js?v=202610282203";
-import { table } from "./stats.js?v=202610282203";
-import { CARD_COLOR, dateLabel, matchLine, sideLabel, teamName } from "./card.js?v=202610282203";
+import { TOOL } from "./settings.js?v=202610282212";
+import { roundName } from "./pairing.js?v=202610282212";
+import { table } from "./stats.js?v=202610282212";
+import { CARD_COLOR, dateLabel, matchLine, sideLabel, teamName } from "./card.js?v=202610282212";
 
 const W = 1080;
 const PAD = 48;
@@ -120,7 +120,7 @@ function drawBracket(ctx, t, gen, resolved, y) {
 function drawTables(ctx, t, gen, y) {
   const groups = gen.groups?.length ? gen.groups : t.format === "league" ? [{ key: "", ids: t.teams.map((x) => x.id) }] : [];
   let h = 0;
-  const cols = [["勝点", "pts"], ["勝", "win"], ...(t.points.pk ? [["PK勝", "pkWin"], ["PK負", "pkLoss"]] : []), ["分", "draw"], ["負", "loss"], ["得", "gf"], ["失", "ga"], ["差", "gd"]];
+  const cols = [["勝点", "pts"], ["勝", "win"], ...(t.points.pk ? [["PK勝", "pkWin"], ["PK負", "pkLoss"]] : [["分", "draw"]]), ["負", "loss"], ["得", "gf"], ["失", "ga"], ["差", "gd"]];
   for (const g of groups) {
     const ms = gen.matches.filter((m) => (g.key ? m.group === g.key : m.stage === "league"));
     const rows = table(g.ids, ms, t.results, t.points);

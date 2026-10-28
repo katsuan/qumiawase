@@ -106,7 +106,7 @@ test("総当たりの PK の勝ち点", () => {
   assert.deepEqual(off.map((r) => [r.id, r.pts, r.draw]), [["x", 1, 1], ["y", 1, 1]]);
   const on = table(["y", "x"], ms, results, { win: 3, draw: 1, loss: 0, pk: true, pkWin: 2, pkLoss: 1 });
   assert.deepEqual(on.map((r) => [r.id, r.pts, r.pkWin, r.pkLoss, r.draw, r.gd]), [["x", 2, 1, 0, 0, 0], ["y", 1, 0, 1, 0, 0]]);
-  // PK がまだ入っていなければ引き分け
+  // PK をするなら引き分けはない：PK がまだ入っていなければ、その試合は数えない
   const wait = table(["x", "y"], ms, { a: { s: [1, 1] } }, { win: 3, draw: 1, loss: 0, pk: true, pkWin: 2, pkLoss: 1 });
-  assert.deepEqual(wait.map((r) => r.pts), [1, 1]);
+  assert.deepEqual(wait.map((r) => [r.pts, r.played, r.draw]), [[0, 0, 0], [0, 0, 0]]);
 });

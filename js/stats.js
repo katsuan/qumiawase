@@ -18,7 +18,7 @@ export function outcome(result) {
 const emptyRow = (id) => ({ id, played: 0, win: 0, draw: 0, loss: 0, pkWin: 0, pkLoss: 0, gf: 0, ga: 0, gd: 0, pts: 0 });
 
 // 試合のならびから、チームごとの成績（勝ち点・得失点）を数えて { id: 行 } で返す。
-// 同点で PK が決まったとき、points.pk なら PK勝ち・PK負けの勝ち点（pkWin・pkLoss）、そうでなければ引き分け。PK の点は得失点に入れない
+// 同点で PK が決まったとき、points.pk なら PK勝ち・PK負けの勝ち点（pkWin・pkLoss。引き分けはない。PK がまだなら数えない）、そうでなければ引き分け。PK の点は得失点に入れない
 function tally(ids, matches, results, points) {
   const rows = Object.fromEntries(ids.map((id) => [id, emptyRow(id)]));
   for (const m of matches) {
@@ -28,6 +28,7 @@ function tally(ids, matches, results, points) {
     if (!r || !Array.isArray(r.s) || !rows[h] || !rows[a]) continue;
     const [gh, ga] = r.s;
     const pk = points.pk && gh === ga && Array.isArray(r.pk) && r.pk[0] !== r.pk[1] ? r.pk : null;
+    if (points.pk && gh === ga && !pk) continue; // PK をするのに、まだ PK が決まっていない（入れ終わるまで数えない。引き分けはない）
     for (const [id, gf, gaa, k] of [[h, gh, ga, 0], [a, ga, gh, 1]]) {
       const row = rows[id];
       row.played += 1;
