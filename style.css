@@ -328,8 +328,8 @@ body {
   background: var(--ls-surface-2, color-mix(in srgb, var(--ls-surface) 92%, var(--ls-subtext)));
 }
 
-.match.is-done .match-side {
-  min-height: 36px;
+.match.is-done .match-sides .score-stepper button {
+  min-height: 34px;
 }
 
 /* 次の試合：太いふちと色で目立たせる */
@@ -393,12 +393,68 @@ body {
   font-weight: 800;
 }
 
+/* 2チームを左右に（左がホーム・右がアウェイ）。名前の下に点 */
+.match-sides,
+.pk-row .pk-steppers {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: end;
+  gap: 6px;
+}
+
+.match-vs {
+  align-self: end;
+  padding-bottom: 10px;
+  color: var(--ls-subtext);
+  font-weight: 800;
+}
+
 .match-side {
   display: grid;
-  grid-template-columns: 18px minmax(0, 1fr) auto;
+  grid-template-columns: 18px minmax(0, 1fr);
   align-items: center;
-  gap: 8px;
-  min-height: 44px;
+  gap: 6px;
+  min-width: 0;
+}
+
+.match-side > .score-stepper,
+.match-side > b {
+  grid-column: 1 / -1;
+}
+
+.match-side > b {
+  min-height: 32px;
+  font-size: 22px;
+  text-align: center;
+}
+
+/* 右のチームは、名前を右に寄せて色の丸を右に */
+.match-sides > .match-side:last-child {
+  grid-template-columns: minmax(0, 1fr) 18px;
+}
+
+.match-side > .score-stepper,
+.match-side > b {
+  grid-row: 2;
+}
+
+.match-sides > .match-side:last-child .dot {
+  grid-row: 1;
+  grid-column: 2;
+}
+
+.match-sides > .match-side:last-child .name {
+  grid-row: 1;
+  grid-column: 1;
+}
+
+.match-sides > .match-side:last-child .name {
+  text-align: right;
+}
+
+.match-side .score-stepper,
+.pk-row .score-stepper {
+  grid-template-columns: minmax(36px, 1fr) 40px minmax(36px, 1fr);
 }
 
 .match-side .dot {
@@ -464,7 +520,7 @@ body {
   font-weight: 600;
 }
 
-/* PK：見出しを上に1行、その下に上・下のチームの順で2つ（せまい画面で見出しが折れないように） */
+/* PK：見出しを上に1行、その下に左右のチームの下にそろえて2つ */
 .pk-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -475,15 +531,7 @@ body {
   font-weight: 800;
 }
 
-.pk-row .pk-steppers {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 6px;
-}
 
-.pk-row .score-stepper {
-  grid-template-columns: minmax(40px, 1fr) 44px minmax(40px, 1fr);
-}
 
 .referee-row {
   display: grid;

@@ -1,13 +1,13 @@
 // くみあわせ（QumiAwase）：入口。画面（大会・チーム・形・日程・トーナメント表・順位表・試合と結果・送る）を作り、ボタン・入力を受け、部品（js/）をつなぐ。
 // index.html から読む（type="module"）。組み合わせは js/pairing.js、順位と勝ち上がりは js/stats.js、端末に残すのは js/store.js、
 // リンク（見る人用・さくせん盤・ろくが・結果を戻す）は js/link.js、カードは js/card.js、画像は js/image.js
-import { FORMATS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610282153";
-import { addMinutes, autoReferees, fitOptions, generate, refereeOptions, roundName, timeSchedule } from "./js/pairing.js?v=202610282153";
-import { durationLabel, estimate, outcome, podium, resolve, table } from "./js/stats.js?v=202610282153";
-import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610282153";
-import { LINK_MAX, qronosUrl, readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610282153";
-import { cardParams, dateLabel, formatLabel, matchLine, matchTitle, sideLabel, summaryText, teamName } from "./js/card.js?v=202610282153";
-import { drawTournament } from "./js/image.js?v=202610282153";
+import { FORMATS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610282155";
+import { addMinutes, autoReferees, fitOptions, generate, refereeOptions, roundName, timeSchedule } from "./js/pairing.js?v=202610282155";
+import { durationLabel, estimate, outcome, podium, resolve, table } from "./js/stats.js?v=202610282155";
+import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610282155";
+import { LINK_MAX, qronosUrl, readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610282155";
+import { cardParams, dateLabel, formatLabel, matchLine, matchTitle, sideLabel, summaryText, teamName } from "./js/card.js?v=202610282155";
+import { drawTournament } from "./js/image.js?v=202610282155";
 
 // id から画面の部品を返す
 const $ = (id) => document.getElementById(id);
@@ -586,10 +586,10 @@ function openScoreSheet(mid) {
     };
     // トーナメントで同点のときは PK も（試合の表と同じ）
     const isKo = m.stage === "ko" || m.stage === "third";
-    const pkHtml = isKo && res && res.s[0] === res.s[1] ? `<div class="pk-row"><span>PK（同点のとき。左が上のチーム）</span><div class="pk-steppers">${scoreHtml(m.id, "pk", 0, res.pk ? res.pk[0] : null, "ホームの PK")}${scoreHtml(m.id, "pk", 1, res.pk ? res.pk[1] : null, "アウェイの PK")}</div></div>` : "";
+    const pkHtml = isKo && res && res.s[0] === res.s[1] ? `<div class="pk-row"><span>PK（同点のとき）</span><div class="pk-steppers">${scoreHtml(m.id, "pk", 0, res.pk ? res.pk[0] : null, "ホームの PK")}<span class="match-vs" aria-hidden="true">-</span>${scoreHtml(m.id, "pk", 1, res.pk ? res.pk[1] : null, "アウェイの PK")}</div></div>` : "";
     card.innerHTML = `<p id="scoreSheetTitle" class="ls-sheet-title">${esc(matchTitle(m, gen))}</p>
       <p class="score-sheet-sub">${esc([when, ref ? `🟨 審判 ${teamName(t, ref)}` : ""].filter(Boolean).join("　"))}</p>
-      <div class="score-sheet-sides">${side(r.home, 0)}${side(r.away, 1)}</div>
+      <div class="match-sides score-sheet-sides">${side(r.home, 0)}<span class="match-vs" aria-hidden="true">-</span>${side(r.away, 1)}</div>
       ${pkHtml}
       <div class="score-sheet-actions">
         ${res ? `<button class="ls-chip" type="button" data-sheet-clear>結果を消す</button>` : ""}
@@ -703,7 +703,7 @@ function matchHtml(c, m) {
   };
   const pkRow =
     isKo && res && res.s[0] === res.s[1]
-      ? `<div class="pk-row"><span>PK（同点のとき。左が上のチーム）</span>${viewing ? `<b>${res.pk ? `${res.pk[0]} - ${res.pk[1]}` : "–"}</b>` : `<div class="pk-steppers">${scoreHtml(m.id, "pk", 0, res.pk ? res.pk[0] : null, "ホームの PK")}${scoreHtml(m.id, "pk", 1, res.pk ? res.pk[1] : null, "アウェイの PK")}</div>`}</div>`
+      ? `<div class="pk-row"><span>PK（同点のとき）</span>${viewing ? `<b>${res.pk ? `${res.pk[0]} - ${res.pk[1]}` : "–"}</b>` : `<div class="pk-steppers">${scoreHtml(m.id, "pk", 0, res.pk ? res.pk[0] : null, "ホームの PK")}<span class="match-vs" aria-hidden="true">-</span>${scoreHtml(m.id, "pk", 1, res.pk ? res.pk[1] : null, "アウェイの PK")}</div>`}</div>`
       : "";
   let actions = "";
   // 終わった試合は「結果を消す」を見出しの右に小さく（さくせん盤・ろくがは出さない）
@@ -723,7 +723,7 @@ function matchHtml(c, m) {
   }
   const badge = next ? `<span class="next-badge">▶ 次の試合</span>` : done ? `<span class="done-badge">✓ 終わり</span>` : "";
   const tools = actions ? ` data-tools="${esc(m.id)}" role="button" tabindex="0" aria-expanded="${toolsOpen.get(m.id) ? "true" : "false"}" aria-controls="tools-${esc(m.id)}" aria-label="${esc(matchTitle(m, gen))}：さくせん盤・ろくがを${toolsOpen.get(m.id) ? "閉じる" : "出す"}"` : "";
-  return `<article class="match ${done ? "is-done" : ""} ${next ? "is-next" : ""} ${actions ? "has-tools" : ""}" data-mid="${esc(m.id)}"><div class="match-head"${tools}><span>${badge}${esc(matchTitle(m, gen))}</span><span>${esc(when)}${clearBtn}</span></div>${side(m.home, r.home, 0)}${side(m.away, r.away, 1)}${pkRow}${refereeHtml(c, m)}${actions}</article>`;
+  return `<article class="match ${done ? "is-done" : ""} ${next ? "is-next" : ""} ${actions ? "has-tools" : ""}" data-mid="${esc(m.id)}"><div class="match-head"${tools}><span>${badge}${esc(matchTitle(m, gen))}</span><span>${esc(when)}${clearBtn}</span></div><div class="match-sides">${side(m.home, r.home, 0)}<span class="match-vs" aria-hidden="true">-</span>${side(m.away, r.away, 1)}</div>${pkRow}${refereeHtml(c, m)}${actions}</article>`;
 }
 
 /**
