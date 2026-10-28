@@ -1,13 +1,13 @@
 // くみあわせ（QumiAwase）：入口。画面（大会・チーム・形・日程・トーナメント表・順位表・試合と結果・送る）を作り、ボタン・入力を受け、部品（js/）をつなぐ。
 // index.html から読む（type="module"）。組み合わせは js/pairing.js、順位と勝ち上がりは js/stats.js、端末に残すのは js/store.js、
 // リンク（見る人用・さくせん盤・ろくが・結果を戻す）は js/link.js、カードは js/card.js、画像は js/image.js
-import { FORMATS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610281921";
-import { addMinutes, autoReferees, fitOptions, generate, refereeOptions, roundName, timeSchedule } from "./js/pairing.js?v=202610281921";
-import { durationLabel, estimate, outcome, podium, resolve, table } from "./js/stats.js?v=202610281921";
-import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610281921";
-import { LINK_MAX, qronosUrl, readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610281921";
-import { cardParams, dateLabel, formatLabel, matchLine, matchTitle, sideLabel, summaryText, teamName } from "./js/card.js?v=202610281921";
-import { drawTournament } from "./js/image.js?v=202610281921";
+import { FORMATS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610281925";
+import { addMinutes, autoReferees, fitOptions, generate, refereeOptions, roundName, timeSchedule } from "./js/pairing.js?v=202610281925";
+import { durationLabel, estimate, outcome, podium, resolve, table } from "./js/stats.js?v=202610281925";
+import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610281925";
+import { LINK_MAX, qronosUrl, readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610281925";
+import { cardParams, dateLabel, formatLabel, matchLine, matchTitle, sideLabel, summaryText, teamName } from "./js/card.js?v=202610281925";
+import { drawTournament } from "./js/image.js?v=202610281925";
 
 // id から画面の部品を返す
 const $ = (id) => document.getElementById(id);
@@ -150,9 +150,107 @@ function renderEvents() {
   $("viewBanner").hidden = !viewing;
   document.body.classList.toggle("is-view", Boolean(viewing));
   $("eventPanel").hidden = Boolean(viewing);
-  const select = $("eventSelect");
-  select.replaceChildren(...[...data.list].sort((a, b) => b.updatedAt - a.updatedAt).map((x) => new Option(eventLabel(x), x.id, false, x.id === t.id)));
-  if (document.activeElement !== $("eventName")) $("eventName").value = t.name;
+  $("eventNameText").textContent = eventLabel(t);
+  $("eventNameText").classList.toggle("is-untitled", !t.name);
+}
+
+// 大会を切りかえる
+function switchEvent(id) {
+  data.current = id;
+  persist();
+  renderAll();
+}
+
+// 大会の名前を変える（下から出るシートの入力欄。なくてもOK）
+async function renameEvent() {
+  const t = current();
+  const name = await window.LineShareUI?.ask({ title: "大会の名前", text: "なくてもOK（例：秋のリーグ戦）", input: t.name, ok: "決める", maxLength: LIMITS.title });
+  if (name === null || name === undefined) return;
+  t.name = name.trim().slice(0, LIMITS.title);
+  persist();
+  renderEvents();
+}
+
+// 新しい大会を作る（作ったら名前を聞く。あとでもよい）
+function newEvent() {
+  if (data.list.length >= LIMITS.tournaments) return toast(`保存できる大会は ${LIMITS.tournaments} 件まで。使わないものを消すと作れます`);
+  const t = blankTournament();
+  data.list.push(t);
+  page.now = "prep";
+  switchEvent(t.id);
+  renameEvent();
+}
+
+// いまの大会を複製する
+function copyEvent() {
+  if (data.list.length >= LIMITS.tournaments) return toast(`保存できる大会は ${LIMITS.tournaments} 件まで。使わないものを消すと作れます`);
+  const t = { ...clone(current()), id: newId("q"), createdAt: Date.now(), updatedAt: Date.now() };
+  t.name = `${current().name || "無題の大会"}（コピー）`.slice(0, LIMITS.title);
+  data.list.push(t);
+  switchEvent(t.id);
+  toast("複製しました");
+}
+
+// いまの大会を消す（確かめずに消し、「元に戻す」で戻せる）
+function deleteEvent() {
+  const t = current();
+  const at = data.list.indexOf(t);
+  data.list.splice(at, 1);
+  if (!data.list.length) data.list.push(blankTournament());
+  switchEvent(data.list[0].id);
+  toast(`「${eventLabel(t)}」を消しました`, () => {
+    data.list.splice(at, 0, t);
+    switchEvent(t.id);
+  });
+}
+
+// 「…」のシート：大会の一覧（押すと切りかえ）と、新しく作る・名前を変える・複製・消す
+function openEventMenu() {
+  document.querySelector(".ls-sheet.event-sheet")?.remove();
+  const before = document.activeElement;
+  const t = current();
+  const button = (text, onClick, extra = "") => {
+    const b = Object.assign(document.createElement("button"), { type: "button", className: `ls-button ${extra}`, textContent: text });
+    b.addEventListener("click", () => {
+      close();
+      onClick();
+    });
+    return b;
+  };
+  const sheet = Object.assign(document.createElement("div"), { className: "ls-sheet event-sheet" });
+  const card = Object.assign(document.createElement("div"), { className: "ls-sheet-card" });
+  card.setAttribute("role", "dialog");
+  card.setAttribute("aria-modal", "true");
+  card.setAttribute("aria-label", "大会");
+  card.append(Object.assign(document.createElement("p"), { className: "ls-sheet-title", textContent: "🏆 大会" }));
+  const others = [...data.list].sort((a, b) => b.updatedAt - a.updatedAt);
+  if (others.length > 1) {
+    card.append(Object.assign(document.createElement("p"), { className: "event-sheet-sub", textContent: `切りかえる（${others.length}件）` }));
+    const list = Object.assign(document.createElement("div"), { className: "event-sheet-list" });
+    for (const x of others) {
+      const b = button(`${x.id === t.id ? "✓ " : ""}${eventLabel(x)}・${x.teams.length}チーム`, () => x.id !== t.id && switchEvent(x.id));
+      b.setAttribute("aria-current", String(x.id === t.id));
+      list.append(b);
+    }
+    card.append(list);
+  }
+  const actions = Object.assign(document.createElement("div"), { className: "event-sheet-actions" });
+  actions.append(button("＋ 新しく作る", newEvent, "is-primary"), button("✏️ 名前を変える", renameEvent), button("⧉ 複製する", copyEvent), button("🗑 消す", deleteEvent));
+  card.append(actions);
+  const cancel = Object.assign(document.createElement("button"), { type: "button", className: "ls-sheet-cancel", textContent: "閉じる" });
+  cancel.addEventListener("click", () => close());
+  card.append(cancel);
+  sheet.append(card);
+  const onKey = (e) => e.key === "Escape" && close();
+  function close() {
+    sheet.remove();
+    document.removeEventListener("keydown", onKey);
+    before?.focus?.({ preventScroll: true });
+  }
+  sheet.addEventListener("click", (e) => e.target === sheet && close());
+  document.addEventListener("keydown", onKey);
+  document.body.append(sheet);
+  card.querySelector("button")?.focus();
 }
 
 // ---- 画面：チーム ----
@@ -637,8 +735,12 @@ function renderMatches(c) {
   const play = gen.matches.filter((m) => !m.bye);
   $("matchesEmpty").hidden = gen.matches.length > 0;
   $("matchViews").hidden = !play.length;
-  $("refereeTools").hidden = !play.length || Boolean(viewing);
-  $("clearReferees").hidden = !Object.keys(t.referees || {}).length;
+  // 審判：準備の枠（自動で入れる・全部消す）と、まだ1つもないときの試合の画面の案内
+  const refs = play.filter((m) => t.referees?.[m.id]).length;
+  $("refereeFold").hidden = !play.length || Boolean(viewing);
+  $("clearReferees").hidden = !refs;
+  $("refereeMeta").textContent = refs ? `${refs} / ${play.length}試合に入れた` : "まだ";
+  $("refereeHint").hidden = Boolean(refs) || !play.length || Boolean(viewing);
   const done = play.filter((m) => outcome(t.results[m.id])).length;
   $("matchesMeta").textContent = play.length ? `${done} / ${play.length}試合` : "";
   // 次の試合：順番でいちばん早い、出るチームが決まっていて結果のまだの試合（同じ時刻のほかのコートも）
@@ -931,51 +1033,8 @@ function sendCard() {
 // 押す・入力を受けるしかけを付ける（はじめに1回）
 function bindEvents() {
   // 大会
-  $("eventSelect").addEventListener("change", (e) => {
-    data.current = e.target.value;
-    persist();
-    renderAll();
-  });
-  $("eventName").addEventListener("input", (e) => {
-    current().name = e.target.value.slice(0, LIMITS.title);
-    persist();
-    const opt = [...$("eventSelect").options].find((o) => o.value === current().id);
-    if (opt) opt.textContent = eventLabel(current());
-  });
-  $("newEvent").addEventListener("click", () => {
-    if (data.list.length >= LIMITS.tournaments) return toast(`保存できる大会は ${LIMITS.tournaments} 件まで。使わないものを消すと作れます`);
-    const t = blankTournament();
-    data.list.push(t);
-    data.current = t.id;
-    persist();
-    renderAll();
-    $("eventName").focus();
-  });
-  $("copyEvent").addEventListener("click", () => {
-    if (data.list.length >= LIMITS.tournaments) return toast(`保存できる大会は ${LIMITS.tournaments} 件まで。使わないものを消すと作れます`);
-    const t = { ...clone(current()), id: newId("q"), createdAt: Date.now(), updatedAt: Date.now() };
-    t.name = `${current().name || "無題の大会"}（コピー）`.slice(0, LIMITS.title);
-    data.list.push(t);
-    data.current = t.id;
-    persist();
-    renderAll();
-    toast("複製しました");
-  });
-  $("deleteEvent").addEventListener("click", () => {
-    const t = current();
-    const at = data.list.indexOf(t);
-    data.list.splice(at, 1);
-    if (!data.list.length) data.list.push(blankTournament());
-    data.current = data.list[0].id;
-    persist();
-    renderAll();
-    toast(`「${eventLabel(t)}」を消しました`, () => {
-      data.list.splice(at, 0, t);
-      data.current = t.id;
-      persist();
-      renderAll();
-    });
-  });
+  $("eventName").addEventListener("click", renameEvent);
+  $("eventMenu").addEventListener("click", openEventMenu);
   $("saveView").addEventListener("click", () => {
     if (data.list.length >= LIMITS.tournaments) return toast(`保存できる大会は ${LIMITS.tournaments} 件まで。使わないものを消すと保存できます`);
     const t = { ...cleanTournament(viewing), id: newId("q"), createdAt: Date.now(), updatedAt: Date.now() };

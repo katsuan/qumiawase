@@ -15,19 +15,106 @@ body {
 }
 
 /* ---- 大会 ---- */
+.event-panel {
+  padding: 8px;
+}
+
 .event-bar {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) 52px;
+  align-items: center;
+  gap: 6px;
+}
+
+/* 大会の名前：押すと名前を変える */
+.event-name {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--ls-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.event-name:active {
+  background: var(--ls-accent-soft);
+}
+
+.event-name-label {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--ls-accent-soft);
+  color: var(--ls-accent-ink);
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.event-name-text {
+  overflow: hidden;
+  font-size: 16px;
+  font-weight: 800;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.event-name-text.is-untitled {
+  color: var(--ls-subtext);
+  font-weight: 700;
+}
+
+.event-name-edit {
+  font-size: 14px;
+  opacity: 0.7;
+}
+
+.event-menu {
+  min-height: 48px;
+  padding: 0;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+/* 「…」のシートの中の大会の一覧と、することのボタン */
+.event-sheet-list {
+  display: grid;
+  gap: 6px;
+  max-height: 40vh;
+  overflow: auto;
+}
+
+.event-sheet-list .ls-button,
+.event-sheet-actions .ls-button {
+  justify-content: flex-start;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.event-sheet-list .ls-button[aria-current="true"] {
+  border-color: var(--ls-accent);
+  background: var(--ls-accent-soft);
+  color: var(--ls-accent-ink);
+}
+
+.event-sheet-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 8px;
 }
 
-.event-select {
-  min-width: 0;
-  font-size: 16px;
-}
-
-.event-actions {
-  justify-content: flex-end;
+.event-sheet-sub {
+  margin: 0;
+  color: var(--ls-subtext);
+  font-size: 13px;
+  font-weight: 800;
 }
 
 .view-banner {
@@ -870,4 +957,19 @@ body.is-view #schedFold {
   color: var(--ls-subtext);
   font-size: 13px;
   font-weight: 800;
+}
+
+/* 審判の枠：自動で入れる（大きく）と全部消す（小さく） */
+#refereeFold .team-tools-row {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+}
+
+.referee-hint {
+  margin: 0;
+}
+
+#autoReferees {
+  justify-self: stretch;
 }

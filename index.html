@@ -27,7 +27,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://katsuan.github.io/line-share/shared/ui.css?v=202610261000">
-<link rel="stylesheet" href="style.css?v=202610281921">
+<link rel="stylesheet" href="style.css?v=202610281925">
 </head>
 <body>
 <main class="ls-page ls-stack">
@@ -50,20 +50,15 @@
   </nav>
 
   <div id="pagePrep" class="ls-stack" role="tabpanel" aria-labelledby="pageTabs">
-  <!-- 大会：切りかえ・新しく作る・複製・消す。名前 -->
+  <!-- 大会：1行。名前を押すと名前を変える。「…」で切りかえ・新しく作る・名前を変える・複製・消す -->
   <section id="eventPanel" class="ls-panel event-panel" aria-label="大会">
     <div class="event-bar">
-      <label class="ls-sr-only" for="eventSelect">大会を切りかえる</label>
-      <select id="eventSelect" class="ls-input event-select"></select>
-      <button id="newEvent" class="ls-button" type="button">＋ 新しく</button>
-    </div>
-    <div class="ls-field">
-      <label class="ls-label" for="eventName">大会の名前（なくてもOK）</label>
-      <input id="eventName" class="ls-input" maxlength="30" placeholder="例：秋のリーグ戦" autocomplete="off" enterkeyhint="done">
-    </div>
-    <div class="ls-chips event-actions">
-      <button id="copyEvent" class="ls-chip" type="button">⧉ 複製</button>
-      <button id="deleteEvent" class="ls-chip" type="button">🗑 消す</button>
+      <button id="eventName" class="event-name" type="button" aria-label="大会の名前を変える">
+        <span class="event-name-label">大会</span>
+        <span id="eventNameText" class="event-name-text"></span>
+        <span class="event-name-edit" aria-hidden="true">✏️</span>
+      </button>
+      <button id="eventMenu" class="ls-button event-menu" type="button" aria-haspopup="dialog" aria-label="大会の切りかえ・新しく作る・複製・消す">…</button>
     </div>
   </section>
 
@@ -149,6 +144,19 @@
     </div>
   </details>
 
+  <!-- 審判：自動で入れる（その試合に出ない・同じ時間に試合のないチームから、数がそろうように）・全部消す。
+       1試合ずつの入れかえは、試合の画面の各試合で -->
+  <details id="refereeFold" class="ls-fold" open hidden>
+    <summary><span class="fold-title">🟨 審判</span> <span id="refereeMeta" class="ls-fold-meta"></span></summary>
+    <div class="ls-fold-body ls-stack">
+      <p class="ls-hint">その試合に出ない・同じ時間に試合のないチームから、審判の数がそろうように入れます。1試合ずつの入れかえは、試合の画面で。</p>
+      <div class="team-tools-row">
+        <button id="autoReferees" class="ls-button is-block" type="button">🟨 審判を自動で入れる</button>
+        <button id="clearReferees" class="ls-chip" type="button" hidden>審判を全部消す</button>
+      </div>
+    </div>
+  </details>
+
   <!-- 準備のおわり：試合のページへ（試合の数も） -->
   <button id="goPlay" class="ls-button is-primary is-block go-play" type="button">📋 試合へ</button>
   </div>
@@ -196,11 +204,8 @@
     </div>
     <div id="teamPick" class="ls-chips team-pick" role="radiogroup" aria-label="チーム" hidden></div>
     <div id="teamTools" class="team-tools-row" hidden></div>
-    <!-- 審判：試合ごとに、出ないチームから選ぶ。自動で入れる（審判の少ないチームから）・全部消す -->
-    <div id="refereeTools" class="team-tools-row" hidden>
-      <button id="autoReferees" class="ls-chip" type="button">🟨 審判を自動で入れる</button>
-      <button id="clearReferees" class="ls-chip" type="button" hidden>審判を消す</button>
-    </div>
+    <!-- 審判がまだ1つも入っていないときだけ：準備で自動で入れられる案内 -->
+    <p id="refereeHint" class="ls-hint referee-hint" hidden>🟨 審判は「⚙️ 準備」で自動で入れられます。</p>
     <div id="matches" class="ls-stack"></div>
   </section>
 
@@ -224,7 +229,7 @@
 <section id="printArea" class="print-area" aria-hidden="true"></section>
 <script src="https://katsuan.github.io/line-share/shared/oqrn.js"></script>
 <script src="https://katsuan.github.io/line-share/shared/ui.js?v=202610260300" defer></script>
-<script type="module" src="app.js?v=202610281921"></script>
+<script type="module" src="app.js?v=202610281925"></script>
 <script src="https://katsuan.github.io/line-share/shared/tool-share.js" data-tool="qumiawase" defer></script>
 <script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(() => {});</script>
 </body>
