@@ -1300,6 +1300,26 @@ body.is-view #schedFold {
   font-size: 13px;
 }
 
+/* 総当たりの決まり・トーナメントの決まりの箱 */
+.rule-box {
+  display: grid;
+  gap: 10px;
+  padding: 10px 12px 12px;
+  border: 1px solid var(--ls-line-strong);
+  border-radius: var(--ls-radius-md);
+  background: var(--ls-surface-sub);
+}
+
+.rule-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.rule-box .ls-hint {
+  margin: 0;
+}
+
 /* 形と試合の種類の枠の中の小見出し */
 .sub-head {
   margin: 0;

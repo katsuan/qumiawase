@@ -27,7 +27,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://katsuan.github.io/line-share/shared/ui.css?v=202610261000">
-<link rel="stylesheet" href="style.css?v=202610282158">
+<link rel="stylesheet" href="style.css?v=202610282203">
 </head>
 <body>
 <main class="ls-page ls-stack">
@@ -92,28 +92,36 @@
         <div class="option-row"><span>グループの数</span><div class="stepper" data-opt="groups"></div></div>
         <div class="option-row"><span>上がる数（各グループ）</span><div class="stepper" data-opt="advance"></div></div>
       </div>
-      <div id="legOptions" class="option-row" hidden>
-        <span>総当たりの回数</span>
-        <div class="ls-chips" role="radiogroup" aria-label="総当たりの回数">
-          <button class="ls-chip" type="button" role="radio" data-legs="1">1回</button>
-          <button class="ls-chip" type="button" role="radio" data-legs="2">2回（ホーム・アウェイ）</button>
-        </div>
-      </div>
-      <label id="thirdOption" class="check-row" hidden><input id="thirdPlace" type="checkbox"> 3位決定戦をする</label>
-      <details id="pointsFold" class="ls-fold inner" hidden>
-        <summary>勝ち点 <span id="pointsMeta" class="ls-fold-meta"></span></summary>
-        <div class="ls-fold-body ls-stack">
-          <div class="option-row"><span>勝ち</span><div class="stepper" data-point="win"></div></div>
-          <div class="option-row"><span>引き分け</span><div class="stepper" data-point="draw"></div></div>
-          <div class="option-row"><span>負け</span><div class="stepper" data-point="loss"></div></div>
-          <label class="check-row"><input id="pointsPk" type="checkbox"> 同点なら PK をする（PK勝ち・PK負けの勝ち点）</label>
-          <div id="pkPoints" class="ls-stack" hidden>
-            <div class="option-row"><span>PK勝ち</span><div class="stepper" data-point="pkWin"></div></div>
-            <div class="option-row"><span>PK負け</span><div class="stepper" data-point="pkLoss"></div></div>
+      <!-- 総当たりの決まり（総当たり・グループ）と、トーナメントの決まり（トーナメント・決勝トーナメント）は、箱を分ける -->
+      <section id="leagueRules" class="rule-box" aria-labelledby="leagueRulesTitle" hidden>
+        <h4 id="leagueRulesTitle" class="rule-title">📊 総当たりの決まり</h4>
+        <div id="legOptions" class="option-row">
+          <span>総当たりの回数</span>
+          <div class="ls-chips" role="radiogroup" aria-label="総当たりの回数">
+            <button class="ls-chip" type="button" role="radio" data-legs="1">1回</button>
+            <button class="ls-chip" type="button" role="radio" data-legs="2">2回（ホーム・アウェイ）</button>
           </div>
-          <p class="ls-hint">順位は 勝ち点 → 得失点差 → 総得点 → 直接対決 の順。PK の点は得失点に入れません。PK をしないときは、同点は引き分けです。</p>
         </div>
-      </details>
+        <details id="pointsFold" class="ls-fold inner">
+          <summary>勝ち点 <span id="pointsMeta" class="ls-fold-meta"></span></summary>
+          <div class="ls-fold-body ls-stack">
+            <div class="option-row"><span>勝ち</span><div class="stepper" data-point="win"></div></div>
+            <div class="option-row"><span>引き分け</span><div class="stepper" data-point="draw"></div></div>
+            <div class="option-row"><span>負け</span><div class="stepper" data-point="loss"></div></div>
+            <label class="check-row"><input id="pointsPk" type="checkbox"> 同点なら PK をする（PK勝ち・PK負けの勝ち点）</label>
+            <div id="pkPoints" class="ls-stack" hidden>
+              <div class="option-row"><span>PK勝ち</span><div class="stepper" data-point="pkWin"></div></div>
+              <div class="option-row"><span>PK負け</span><div class="stepper" data-point="pkLoss"></div></div>
+            </div>
+            <p class="ls-hint">順位は 勝ち点 → 得失点差 → 総得点 → 直接対決 の順。PK の点は得失点に入れません。PK をしないときは、同点は引き分けです。</p>
+          </div>
+        </details>
+      </section>
+      <section id="koRules" class="rule-box" aria-labelledby="koRulesTitle" hidden>
+        <h4 id="koRulesTitle" class="rule-title">🗺️ トーナメントの決まり</h4>
+        <label id="thirdOption" class="check-row"><input id="thirdPlace" type="checkbox"> 3位決定戦をする</label>
+        <p class="ls-hint">同点のときは PK で勝ち上がりを決めます（試合の表・トーナメント表で入れられます）。</p>
+      </section>
       <h3 class="sub-head">試合の種類</h3>
       <div id="presetTabs" class="ls-chips preset-tabs" role="tablist" aria-label="試合の種類"></div>
       <p id="presetNote" class="ls-hint"></p>
@@ -234,7 +242,7 @@
 <section id="printArea" class="print-area" aria-hidden="true"></section>
 <script src="https://katsuan.github.io/line-share/shared/oqrn.js"></script>
 <script src="https://katsuan.github.io/line-share/shared/ui.js?v=202610260300" defer></script>
-<script type="module" src="app.js?v=202610282158"></script>
+<script type="module" src="app.js?v=202610282203"></script>
 <script src="https://katsuan.github.io/line-share/shared/tool-share.js" data-tool="qumiawase" defer></script>
 <script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(() => {});</script>
 </body>
