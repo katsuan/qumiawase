@@ -274,6 +274,37 @@ export function timeSchedule(matches, { courts = 1, minutes = 20, rest = 0, avoi
 }
 
 // 時刻の文字（"09:30"）に分を足した時刻の文字を返す。読めないときは ""
+// "HH:MM" を、はじまり（start）からの分にする。読めなければ null
+export function minutesFrom(start, hhmm) {
+  const a = /^(\d{1,2}):(\d{2})$/.exec(String(start || ""));
+  const b = /^(\d{1,2}):(\d{2})$/.exec(String(hhmm || ""));
+  if (!a || !b) return null;
+  return Number(b[1]) * 60 + Number(b[2]) - (Number(a[1]) * 60 + Number(a[2]));
+}
+
+/**
+ * 自動で決めた時刻（timeSchedule の返り値）を、手で直した時刻と遅れで動かす。
+ * fix：{ 試合の id: { time: "HH:MM", court } }（その試合だけ、その時刻・コートに。遅れはのせない）。delays：[{ at（はじまりからの分）, min }]（at 以降にはじまる、手で決めていない試合を min 分あとへ）。
+ * どちらも、時刻の決まりかた（自動）より先に、動かしたあとの時刻で並べなおす。同じコートで時間が重なる試合には clash: true。
+ * fixed（手で直した）・late（遅れでずらした分）を付けて、時刻の順に返す（slot も付けなおす）
+ */
+export function adjustTimes(plan, { start = "09:00", minutes = 20, courts = 1, fix = {}, delays = [] } = {}) {
+  const len = Math.max(1, minutes);
+  const out = plan.map((p) => {
+    const f = fix[p.id];
+    const at = f ? minutesFrom(start, f.time) : null;
+    const base = at === null ? p.start : at;
+    // 手で決めた時刻はそのまま（遅れをのせない）
+    const late = at !== null ? 0 : delays.filter((d) => base >= d.at).reduce((n, d) => n + d.min, 0);
+    const court = f && f.court >= 1 && f.court <= courts ? f.court : p.court;
+    return { ...p, start: base + late, end: base + late + len, court, fixed: at !== null, late };
+  });
+  out.sort((a, b) => a.start - b.start || a.court - b.court);
+  for (const a of out) a.clash = out.some((b) => b !== a && b.court === a.court && b.start < a.end && a.start < b.end);
+  const starts = [...new Set(out.map((o) => o.start))];
+  return out.map((o) => ({ ...o, slot: starts.indexOf(o.start) }));
+}
+
 export function addMinutes(hhmm, minutes) {
   const m = /^(\d{1,2}):(\d{2})$/.exec(String(hhmm || ""));
   if (!m) return "";

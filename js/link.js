@@ -1,9 +1,9 @@
 // くみあわせ：URL の受け渡し。見る人用のリンク（大会の中身を URL にのせる。サーバーなし）・さくせん盤やろくがで開くリンク・
 // さくせん盤から結果を戻すリンク。中身は JSON → UTF-8 → base64url。受けとるときは形を確かめる
 // app.js・js/card.js から読む（import）
-import { LIMITS, QRONOS_URL, ROQGA_URL, SAQSEN_URL, TOOL } from "./settings.js?v=202610282320";
-import { cleanTournament, hexIn, intIn, isObj, resultIn, textIn } from "./store.js?v=202610282320";
-import { DEFAULT_RANK } from "./stats.js?v=202610282320";
+import { LIMITS, QRONOS_URL, ROQGA_URL, SAQSEN_URL, TOOL } from "./settings.js?v=202610282331";
+import { cleanTournament, hexIn, intIn, isObj, resultIn, textIn } from "./store.js?v=202610282331";
+import { DEFAULT_RANK } from "./stats.js?v=202610282331";
 
 // LINE のリンクは 1000 文字まで
 export const LINK_MAX = 1000;
@@ -33,7 +33,7 @@ const shortHex = (hex) => String(hex || "").replace(/^#/, "");
 
 /**
  * 見る人用のリンクにのせる中身（短い形）を返す。チームの id はのせない（並びの順で t1・t2…）。試合の id はチームの id によらないので、結果はそのまま
- * { v, n, f, o: [3位決定戦, 回数, グループ数, 上がる数], p: [勝, 分, 負, PK をする, PK勝ち, PK負け], k?: 順位の決め方（"dfh" など）, s: [時刻を入れる, 日にち, はじまり, コート数, 分, 会場, 連続試合を避ける, 空き時間], t: [[名前, 色], …], r: [[試合の id, 点, 点, PK, PK], …], j: [[試合の id, 審判のチームの並びの番号], …] }
+ * { v, n, f, o: [3位決定戦, 回数, グループ数, 上がる数], p: [勝, 分, 負, PK をする, PK勝ち, PK負け], k?: 順位の決め方（"dfh" など）, x?: 手で直した時刻, y?: 遅れ, s: [時刻を入れる, 日にち, はじまり, コート数, 分, 会場, 連続試合を避ける, 空き時間], t: [[名前, 色], …], r: [[試合の id, 点, 点, PK, PK], …], j: [[試合の id, 審判のチームの並びの番号], …] }
  */
 const RANK_CODES = { gd: "d", gf: "f", h2h: "h" };
 export function packTournament(t) {
@@ -45,6 +45,9 @@ export function packTournament(t) {
     p: [t.points.win, t.points.draw, t.points.loss, ...(t.points.pk ? [1, t.points.pkWin, t.points.pkLoss] : [])],
     // 順位の決め方：はじめの並びとちがうときだけ（d 得失点差・f 総得点・h 直接対決）
     ...(t.rank && t.rank.join() !== DEFAULT_RANK.join() ? { k: t.rank.map((x) => RANK_CODES[x]).join("") } : {}),
+    // 手で直した時刻（[[試合の id, "HHMM", コート], …]）と遅れ（[[はじまりからの分, 分], …]）。あるときだけ
+    ...(Object.keys(t.timeFix || {}).length ? { x: Object.entries(t.timeFix).map(([id, f]) => [id, f.time.replace(":", ""), f.court]) } : {}),
+    ...((t.delays || []).length ? { y: t.delays.map((d) => [d.at, d.min]) } : {}),
     s: [t.sched.on ? 1 : 0, t.sched.date, t.sched.start, t.sched.courts, t.sched.minutes, t.sched.place, t.sched.avoid ? 1 : 0, t.sched.rest],
     t: t.teams.map((team) => [team.name, shortHex(team.color)]),
     r: Object.entries(t.results).map(([id, r]) => [id, ...r.s, ...(r.pk || [])]),
@@ -73,6 +76,8 @@ export function unpackTournament(data) {
     format,
     opts: { thirdPlace: o[0] === 1, legs: o[1], groups: o[2], advance: o[3] },
     points: { win: p[0], draw: p[1], loss: p[2], pk: p[3] === 1, pkWin: p[4], pkLoss: p[5] },
+    timeFix: Object.fromEntries((Array.isArray(data.x) ? data.x.slice(0, 500) : []).filter((r) => Array.isArray(r) && /^\d{4}$/.test(String(r[1]))).map((r) => [String(r[0]), { time: `${String(r[1]).slice(0, 2)}:${String(r[1]).slice(2)}`, court: r[2] }])),
+    delays: (Array.isArray(data.y) ? data.y.slice(0, 20) : []).filter(Array.isArray).map((r) => ({ at: r[0], min: r[1] })),
     rank: typeof data.k === "string" ? [...data.k.slice(0, 3)].map((c) => Object.keys(RANK_CODES).find((x) => RANK_CODES[x] === c)) : undefined,
     sched: { on: s[0] === 1, date: s[1], start: s[2], courts: s[3], minutes: s[4], place: s[5], avoid: s[6] !== 0, rest: s[7] },
     results,

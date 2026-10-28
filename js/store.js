@@ -2,11 +2,11 @@
 // app.js・js/link.js から読む（import）
 //
 // 大会の形：{ id, name, createdAt, updatedAt, teams: [{ id, name, color }], format, opts: { thirdPlace, legs, groups, advance },
-//            rules（大会要項。長い文）, points: { win, draw, loss, pk（総当たりも同点なら PK）, pkWin, pkLoss }, rank（順位の決め方：勝ち点のあとの並び。gd・gf・h2h）, sched: { on（時刻を入れる）, date, start, courts, minutes, place, avoid（連続試合を避ける）, rest（同じチームの空き時間・分） },
+//            rules（大会要項。長い文）, timeFix（手で直した時刻）, delays（遅れ）, points: { win, draw, loss, pk（総当たりも同点なら PK）, pkWin, pkLoss }, rank（順位の決め方：勝ち点のあとの並び。gd・gf・h2h）, sched: { on（時刻を入れる）, date, start, courts, minutes, place, avoid（連続試合を避ける）, rest（同じチームの空き時間・分） },
 //            results: { 試合の id: { s, pk? } }, referees: { 試合の id: 審判のチームの id } }
-import { DEFAULT_POINTS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./settings.js?v=202610282320";
-import { DEFAULT_RANK, rankIn } from "./stats.js?v=202610282320";
-import { liveIn } from "./live.js?v=202610282320"; // つないだ大会の印（関数の中でだけ使う）
+import { DEFAULT_POINTS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./settings.js?v=202610282331";
+import { DEFAULT_RANK, rankIn } from "./stats.js?v=202610282331";
+import { liveIn } from "./live.js?v=202610282331"; // つないだ大会の印（関数の中でだけ使う）
 
 export const STORE_KEY = `${TOOL.key}:tournaments`; // { list: [大会…], current: いま開いている大会の id }
 export const INBOX_KEY = `${TOOL.key}:inbox`; // さくせん盤から戻ってきた結果（同じ端末のとき）
@@ -17,6 +17,17 @@ export const isObj = (v) => Boolean(v) && typeof v === "object" && !Array.isArra
 export const textIn = (v, max) => (typeof v === "string" || typeof v === "number" ? [...String(v)].slice(0, max).join("").trim() : "");
 // 長い文（改行あり）：max 字まで。改行とタブのほかの見えない文字は消す。行の終わりの空白も消す
 export const longTextIn = (v, max) => (typeof v === "string" ? [...v.replace(/\r\n?/g, "\n").replace(/[\u0000-\u0008\u000b-\u001f\u007f]/g, "").replace(/[ \t]+$/gm, "")].slice(0, max).join("").trim() : "");
+// 手で直した時刻の形を確かめる（{ 試合の id: { time: "HH:MM", court: 1〜 } }）
+function timeFixIn(v) {
+  const out = {};
+  if (!isObj(v)) return out;
+  for (const [id, f] of Object.entries(v).slice(0, 500)) {
+    if (!/^[A-Za-z0-9-]{1,16}$/.test(id) || !isObj(f)) continue;
+    const time = typeof f.time === "string" && /^\d{2}:\d{2}$/.test(f.time) ? f.time : "";
+    if (time) out[id] = { time, court: intIn(f.court, 1, LIMITS.courts, 1) };
+  }
+  return out;
+}
 // min〜max の整数にして返す。数でなければ fallback
 export const intIn = (v, min, max, fallback) => {
   const n = Math.floor(Number(v));
@@ -122,6 +133,13 @@ export function cleanTournament(v) {
     },
     results,
     referees,
+    // 手で直した時刻（{ 試合の id: { time, court } }）と遅れ（[{ at（はじまりからの分）, min }]）
+    timeFix: timeFixIn(v.timeFix),
+    delays: (Array.isArray(v.delays) ? v.delays : [])
+      .filter(isObj)
+      .slice(0, 20)
+      .map((d) => ({ at: intIn(d.at, -1440, 1440, 0), min: intIn(d.min, -LIMITS.minutes, LIMITS.minutes, 0) }))
+      .filter((d) => d.min !== 0),
     // みんなで入れる（くらぶボット）につないだ大会だけ。つないでいなければ付けない
     ...(liveIn(v.live) ? { live: liveIn(v.live) } : {})
   };

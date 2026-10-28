@@ -215,3 +215,27 @@ test("決勝トーナメントで同じグループが早く当たらない", ()
     for (const m of first) if (!m.bye) assert.ok(!(m.home.groupRank?.[1] === 1 && m.away.groupRank?.[1] === 1), `${n}チーム：1位どうし`);
   }
 });
+
+// 時刻を手で直す・遅れでずらす（adjustTimes）
+test("時刻を手で直す・遅れ", async () => {
+  const { adjustTimes } = await import("../js/pairing.js");
+  const plan = [
+    { id: "a", start: 0, end: 20, court: 1 },
+    { id: "b", start: 0, end: 20, court: 2 },
+    { id: "c", start: 30, end: 50, court: 1 },
+    { id: "d", start: 60, end: 80, court: 1 }
+  ];
+  // c を 10:00（はじまり 09:00 から60分）のコート2に。d は 09:30 から +10分
+  const out = adjustTimes(plan, { start: "09:00", minutes: 20, courts: 2, fix: { c: { time: "10:00", court: 2 } }, delays: [{ at: 60, min: 10 }] });
+  const by = Object.fromEntries(out.map((p) => [p.id, p]));
+  assert.deepEqual([by.c.start, by.c.court, by.c.fixed, by.c.late], [60, 2, true, 0]); // 手で決めた時刻はそのまま（遅れをのせない）
+  assert.deepEqual([by.d.start, by.d.late], [70, 10]);
+  assert.deepEqual([by.a.start, by.a.late, by.a.fixed], [0, 0, false]);
+  assert.deepEqual(out.map((p) => p.id), ["a", "b", "c", "d"]); // 時刻 → コートの順に並べなおす
+  assert.equal(by.c.slot + 1, by.d.slot);
+  // 同じコートで重なる
+  const clash = adjustTimes(plan, { start: "09:00", minutes: 20, courts: 2, fix: { c: { time: "09:10", court: 1 } } });
+  assert.equal(clash.find((p) => p.id === "c").clash, true);
+  assert.equal(clash.find((p) => p.id === "a").clash, true);
+  assert.equal(clash.find((p) => p.id === "b").clash, false);
+});

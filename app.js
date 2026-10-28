@@ -1,14 +1,14 @@
 // くみあわせ（QumiAwase）：入口。画面（大会・チーム・形・日程・トーナメント表・順位表・試合と結果・送る）を作り、ボタン・入力を受け、部品（js/）をつなぐ。
 // index.html から読む（type="module"）。組み合わせは js/pairing.js、順位と勝ち上がりは js/stats.js、端末に残すのは js/store.js、
 // リンク（見る人用・さくせん盤・ろくが・結果を戻す）は js/link.js、カードは js/card.js、画像は js/image.js、みんなで入れる（くらぶボット）は js/live.js
-import { FORMATS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610282320";
-import { addMinutes, autoReferees, fitOptions, generate, refereeOptions, roundName, timeSchedule } from "./js/pairing.js?v=202610282320";
-import { durationLabel, estimate, outcome, podium, RANK_LABELS, rankIn, resolve, table } from "./js/stats.js?v=202610282320";
-import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610282320";
-import { LINK_MAX, qronosUrl, readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610282320";
-import { cardParams, dateLabel, formatLabel, matchLine, matchTitle, pointsLabel, sideLabel, summaryText, teamName } from "./js/card.js?v=202610282320";
-import { drawTournament } from "./js/image.js?v=202610282320";
-import { adminKey, botUrlIn, fromServer, inputKey, liveCall, liveError, liveUrl, newLiveId, overlay, PASS_MAX, PASS_MIN, queue, readLive, sessionKey, setSessionKey, toServer } from "./js/live.js?v=202610282320";
+import { FORMATS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610282331";
+import { addMinutes, adjustTimes, autoReferees, fitOptions, generate, refereeOptions, roundName, timeSchedule } from "./js/pairing.js?v=202610282331";
+import { durationLabel, estimate, outcome, podium, RANK_LABELS, rankIn, resolve, table } from "./js/stats.js?v=202610282331";
+import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610282331";
+import { LINK_MAX, qronosUrl, readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610282331";
+import { cardParams, dateLabel, formatLabel, matchLine, matchTitle, pointsLabel, sideLabel, summaryText, teamName } from "./js/card.js?v=202610282331";
+import { drawTournament } from "./js/image.js?v=202610282331";
+import { adminKey, botUrlIn, fromServer, inputKey, liveCall, liveError, liveUrl, newLiveId, overlay, PASS_MAX, PASS_MIN, queue, readLive, sessionKey, setSessionKey, toServer } from "./js/live.js?v=202610282331";
 
 // id から画面の部品を返す
 const $ = (id) => document.getElementById(id);
@@ -74,7 +74,10 @@ function change(fn, message = "") {
   const changed = structureKey(t) !== key;
   const lost = Object.keys(t.results).length > 0 && changed;
   if (lost) t.results = {};
-  if (changed) t.referees = {}; // 組み合わせが変わったら、審判も入れなおし
+  if (changed) {
+    t.referees = {}; // 組み合わせが変わったら、審判も入れなおし
+    t.timeFix = {}; // 手で直した時刻も（試合が変わるため）
+  }
   persist();
   renderAll();
   // 元に戻す：変える前の大会にもどす
@@ -97,7 +100,10 @@ function compute() {
   const t = current();
   const gen = generate(t.teams, t.format, t.opts);
   const s = t.sched;
-  const plan = timeSchedule(gen.matches, { courts: s.courts, minutes: s.minutes, rest: s.rest, avoid: s.avoid }).map((p) => (s.on ? { ...p, time: addMinutes(s.start, p.start) } : p));
+  // 自動で決めた時刻に、手で直した時刻と遅れをのせる（時刻を入れているときだけ）
+  let auto = timeSchedule(gen.matches, { courts: s.courts, minutes: s.minutes, rest: s.rest, avoid: s.avoid });
+  if (s.on) auto = adjustTimes(auto, { start: s.start, minutes: s.minutes, courts: s.courts, fix: t.timeFix || {}, delays: t.delays || [] });
+  const plan = auto.map((p) => (s.on ? { ...p, time: addMinutes(s.start, p.start) } : p));
   const sched = s.on && plan.length ? plan : null;
   const timeOf = Object.fromEntries((sched || []).map((p) => [p.id, p]));
   const numberOf = Object.fromEntries(plan.map((p, i) => [p.id, i + 1]));
@@ -722,6 +728,35 @@ function toggleActive(mid) {
   card?.focus({ preventScroll: true });
 }
 
+// ⏱ 遅れ：次の試合（まだの、いちばん早い試合）から、まとめて後ろへ。どこからずらしたかを覚える（あとで結果を入れても戻らない）
+function renderDelay(c) {
+  const { t, plan } = c;
+  const show = t.sched.on && !viewing && !planLocked() && plan.length > 0;
+  $("delayBar").hidden = !show;
+  if (!show) return;
+  const total = (t.delays || []).reduce((n, d) => n + d.min, 0);
+  const from = (t.delays || []).length ? addMinutes(t.sched.start, Math.min(...t.delays.map((d) => d.at))) : "";
+  $("delayText").textContent = total ? `⏱ 遅れ ${total > 0 ? "+" : ""}${total}分（${from} の試合から）` : "⏱ 遅れ なし";
+  $("delayClear").hidden = !total;
+}
+
+// 遅れを足す（d 分。マイナスで減らす）：次の試合の、遅れをのせる前の時刻から
+function addDelay(d) {
+  const c = compute();
+  const t = c.t;
+  const byId = Object.fromEntries(c.gen.matches.map((m) => [m.id, m]));
+  const next = c.plan.find((p) => !byId[p.id].bye && c.resolved[p.id]?.home && c.resolved[p.id]?.away && !outcome(t.results[p.id])) || c.plan.find((p) => !outcome(t.results[p.id]));
+  if (!next) return toast("まだの試合がありません");
+  const at = next.start - next.late;
+  const delays = [...(t.delays || [])];
+  const last = delays.at(-1);
+  if (last && last.at === at) last.min += d;
+  else delays.push({ at, min: d });
+  t.delays = delays.filter((x) => x.min !== 0);
+  persist();
+  renderResults();
+}
+
 // 試合1つのカード（見出し・時刻・2チームと点・PK・さくせん盤やろくがで開く）の HTML を返す
 function matchHtml(c, m) {
   const { t, gen, timeOf, numberOf, resolved } = c;
@@ -731,7 +766,9 @@ function matchHtml(c, m) {
   const s = timeOf[m.id];
   // 時刻ごとの見出しの下（順番の見方）では、時刻をくり返さない（コートだけ）
   const underTime = view.mode === "order" && s;
-  const when = underTime ? (t.sched.courts > 1 ? `コート${s.court}` : "") : s ? `${s.time}${t.sched.courts > 1 ? `・コート${s.court}` : ""}` : numberOf[m.id] ? `第${numberOf[m.id]}試合` : "";
+  // 手で直した（✏️）・遅れでずらした（⏱+分）・同じコートで重なる（⚠️）の印
+  const marks = s ? `${s.fixed ? " ✏️" : ""}${s.late ? ` ⏱${s.late > 0 ? "+" : ""}${s.late}分` : ""}${s.clash ? " ⚠️重なり" : ""}` : "";
+  const when = (underTime ? (t.sched.courts > 1 ? `コート${s.court}` : "") : s ? `${s.time}${t.sched.courts > 1 ? `・コート${s.court}` : ""}` : numberOf[m.id] ? `第${numberOf[m.id]}試合` : "") + marks;
   const done = Boolean(outcome(res));
   const next = c.next?.has(m.id);
   // 入力中のカードだけ、点を変えるボタンなどを出す
@@ -766,10 +803,17 @@ function matchHtml(c, m) {
   // 点の行の下の審判：入力中は選ぶ欄、ほかは入っていればラベルとチーム名（どちらもまん中そろえ）
   const refLabel = active ? "" : refereeLabel(c, m);
   const refRow = active ? refereeHtml(c, m, true) : refLabel ? `<div class="referee-row"><span>🟨 審判</span><b>${esc(refLabel)}</b></div>` : "";
+  // 入力中のカード：時刻とコートを手で直す（時刻を入れている大会で、準備を変えられる人だけ）
+  const timeRow =
+    active && s && t.sched.on && !planLocked()
+      ? `<div class="time-row"><span>🕘</span><input type="time" class="ls-input" value="${esc(s.time)}" data-fix-time="${esc(m.id)}" aria-label="${esc(matchTitle(m, gen))}の時刻">${
+          t.sched.courts > 1 ? `<select data-fix-court="${esc(m.id)}" aria-label="コート">${Array.from({ length: t.sched.courts }, (_, i) => `<option value="${i + 1}" ${s.court === i + 1 ? "selected" : ""}>コート${i + 1}</option>`).join("")}</select>` : ""
+        }${s.fixed ? `<button class="ls-chip" type="button" data-fix-clear="${esc(m.id)}">自動にもどす</button>` : ""}</div>`
+      : "";
   // 押せるカード（出るチームが決まっていて、入れられるとき）：見出しをボタンにする（キーボードでも）
   const tappable = ready && !readOnly();
   const head = tappable ? ` data-tap="${esc(m.id)}" role="button" tabindex="0" aria-expanded="${active}" aria-label="${esc(matchTitle(m, gen))}：${active ? "入れるのをやめる" : "点を入れる"}"` : "";
-  return `<article class="match ${done ? "is-done" : ""} ${next ? "is-next" : ""} ${tappable ? "is-tappable" : ""} ${active ? "is-active" : ""}" data-mid="${esc(m.id)}"><div class="match-head"${head}><span>${badge}${esc(matchTitle(m, gen))}</span><span>${esc(when)}${clearBtn}</span></div><div class="match-sides">${side(m.home, r.home, 0)}<span class="match-vs" aria-hidden="true">-</span>${side(m.away, r.away, 1)}</div>${refRow}${pkRow}${actions}</article>`;
+  return `<article class="match ${done ? "is-done" : ""} ${next ? "is-next" : ""} ${tappable ? "is-tappable" : ""} ${active ? "is-active" : ""}" data-mid="${esc(m.id)}"><div class="match-head"${head}><span>${badge}${esc(matchTitle(m, gen))}</span><span>${esc(when)}${clearBtn}</span></div><div class="match-sides">${side(m.home, r.home, 0)}<span class="match-vs" aria-hidden="true">-</span>${side(m.away, r.away, 1)}</div>${refRow}${pkRow}${timeRow}${actions}</article>`;
 }
 
 /**
@@ -963,6 +1007,7 @@ function renderMatches(c) {
   const waiting = plan.filter((p) => !byIdAll[p.id].bye && resolved[p.id]?.home && resolved[p.id]?.away && !outcome(t.results[p.id]));
   c.next = new Set(waiting.length ? waiting.filter((p) => p.start === waiting[0].start).map((p) => p.id) : []);
   $("jumpNext").hidden = !c.next.size || view.mode === "team";
+  renderDelay(c);
   renderViewTools(c);
   const byId = Object.fromEntries(gen.matches.map((m) => [m.id, m]));
   const parts = [];
@@ -1268,6 +1313,21 @@ function sendCard() {
 
 // 押す・入力を受けるしかけを付ける（はじめに1回）
 function bindEvents() {
+  // ⏱ 遅れ
+  $("delayMinus").addEventListener("click", () => addDelay(-5));
+  $("delayPlus").addEventListener("click", () => addDelay(5));
+  $("delayClear").addEventListener("click", () => {
+    const t = current();
+    const before = t.delays;
+    t.delays = [];
+    persist();
+    renderResults();
+    toast("遅れをなくしました", () => {
+      current().delays = before;
+      persist();
+      renderResults();
+    });
+  });
   // 大会要項：入れるたびに残す（共有中の運営なら、少し待ってからボットへ）
   $("rulesText").addEventListener("input", (e) => {
     current().rules = e.target.value.slice(0, LIMITS.rules);
@@ -1433,6 +1493,15 @@ function bindEvents() {
     if (b && !readOnly()) return setScore(b.dataset.mid, b.dataset.score, Number(b.dataset.k), Number(b.dataset.d));
     const clear = e.target.closest("[data-clear]");
     if (clear) return clearScore(clear.dataset.clear);
+    const fixClear = e.target.closest("[data-fix-clear]");
+    if (fixClear && !planLocked()) {
+      const t = current();
+      t.timeFix = { ...(t.timeFix || {}) };
+      delete t.timeFix[fixClear.dataset.fixClear];
+      persist();
+      renderResults();
+      return toast("自動の時刻にもどしました");
+    }
     // 点・審判・リンクのほかを押したら、その試合を入力中にする／やめる
     if (e.target.closest("button, a, select, input, label, .match-actions")) return;
     const card = e.target.closest(".match.is-tappable");
@@ -1446,6 +1515,21 @@ function bindEvents() {
   });
 
   // 審判を選ぶ（「−」はなし）
+  // 時刻・コートを手で直す
+  $("matches").addEventListener("change", (e) => {
+    const el = e.target.closest("[data-fix-time], [data-fix-court]");
+    if (!el || planLocked() || viewing) return;
+    const mid = el.dataset.fixTime || el.dataset.fixCourt;
+    const card = el.closest(".match");
+    const time = card.querySelector("[data-fix-time]")?.value || "";
+    const court = Number(card.querySelector("[data-fix-court]")?.value || compute().timeOf[mid]?.court || 1);
+    if (!/^\d{2}:\d{2}$/.test(time)) return;
+    const t = current();
+    t.timeFix = { ...(t.timeFix || {}), [mid]: { time, court } };
+    persist();
+    renderResults();
+    toast(`時刻を ${time} にしました（✏️。「自動にもどす」で戻せます）`);
+  });
   $("matches").addEventListener("change", (e) => {
     const sel = e.target.closest("[data-referee]");
     if (!sel || readOnly()) return;
