@@ -1,13 +1,13 @@
 // くみあわせ（QumiAwase）：入口。画面（大会・チーム・形・日程・トーナメント表・順位表・試合と結果・送る）を作り、ボタン・入力を受け、部品（js/）をつなぐ。
 // index.html から読む（type="module"）。組み合わせは js/pairing.js、順位と勝ち上がりは js/stats.js、端末に残すのは js/store.js、
 // リンク（見る人用・さくせん盤・ろくが・結果を戻す）は js/link.js、カードは js/card.js、画像は js/image.js
-import { FORMATS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610282147";
-import { addMinutes, autoReferees, fitOptions, generate, refereeOptions, roundName, timeSchedule } from "./js/pairing.js?v=202610282147";
-import { durationLabel, estimate, outcome, podium, resolve, table } from "./js/stats.js?v=202610282147";
-import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610282147";
-import { LINK_MAX, qronosUrl, readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610282147";
-import { cardParams, dateLabel, formatLabel, matchLine, matchTitle, sideLabel, summaryText, teamName } from "./js/card.js?v=202610282147";
-import { drawTournament } from "./js/image.js?v=202610282147";
+import { FORMATS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610282153";
+import { addMinutes, autoReferees, fitOptions, generate, refereeOptions, roundName, timeSchedule } from "./js/pairing.js?v=202610282153";
+import { durationLabel, estimate, outcome, podium, resolve, table } from "./js/stats.js?v=202610282153";
+import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610282153";
+import { LINK_MAX, qronosUrl, readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610282153";
+import { cardParams, dateLabel, formatLabel, matchLine, matchTitle, sideLabel, summaryText, teamName } from "./js/card.js?v=202610282153";
+import { drawTournament } from "./js/image.js?v=202610282153";
 
 // id から画面の部品を返す
 const $ = (id) => document.getElementById(id);
@@ -512,7 +512,9 @@ function renderBracket({ t, gen, resolved }) {
         const cls = id ? `${r.winner === id && !m.bye ? "is-win" : ""} ${id === mine() ? "is-mine" : ""}` : "is-tbd";
         return `<div class="${cls}">${dotHtml(id)}<span class="name">${esc(label)}</span><b>${esc(score)}</b></div>`;
       };
-      return `<div class="bracket-slot"><div class="bracket-match">${row(m.home, r.home, 0)}${row(m.away, r.away, 1)}</div></div>`;
+      // 2チームが決まった試合は、押すと点を入れる窓（見るだけのときは試合の表へ）
+      const tap = r.home && r.away && !m.bye ? ` role="button" tabindex="0" data-goto="${esc(m.id)}" aria-label="${esc(`${teamName(t, r.home)} 対 ${teamName(t, r.away)}`)}：${viewing ? "試合の表で見る" : "点を入れる"}"` : "";
+      return `<div class="bracket-slot"><div class="bracket-match ${tap ? "is-tappable" : ""}"${tap}>${row(m.home, r.home, 0)}${row(m.away, r.away, 1)}</div></div>`;
     });
     // 決勝の前の回は2試合ずつ組にする（組の右に縦の線を引いて、次の回の試合につなぐ。次の回の i 試合目は、この回の 2i・2i+1 試合目の勝者）
     const body = [];
@@ -554,7 +556,7 @@ function crossHtml(c, ids, ms, key) {
 }
 
 /**
- * 総当たり表のマスから開く「点を入れる」窓。− 数 ＋ は試合の表と同じで、入れるとすぐ順位表・総当たり表・試合の表に出る。
+ * 総当たり表のマス・トーナメント表の試合から開く「点を入れる」窓（トーナメントで同点なら PK も）。− 数 ＋ は試合の表と同じで、入れるとすぐ順位表・総当たり表・試合の表に出る。
  * 「結果を消す」（元に戻すつき）・「試合の表で見る」・閉じる
  */
 function openScoreSheet(mid) {
@@ -582,9 +584,13 @@ function openScoreSheet(mid) {
       const win = (o === "home" && k === 0) || (o === "away" && k === 1);
       return `<div class="match-side ${win ? "is-win" : ""}">${dotHtml(id)}<span class="name">${esc(name)}</span>${scoreHtml(m.id, "s", k, res ? res.s[k] : null, `${name}の点`)}</div>`;
     };
+    // トーナメントで同点のときは PK も（試合の表と同じ）
+    const isKo = m.stage === "ko" || m.stage === "third";
+    const pkHtml = isKo && res && res.s[0] === res.s[1] ? `<div class="pk-row"><span>PK（同点のとき。左が上のチーム）</span><div class="pk-steppers">${scoreHtml(m.id, "pk", 0, res.pk ? res.pk[0] : null, "ホームの PK")}${scoreHtml(m.id, "pk", 1, res.pk ? res.pk[1] : null, "アウェイの PK")}</div></div>` : "";
     card.innerHTML = `<p id="scoreSheetTitle" class="ls-sheet-title">${esc(matchTitle(m, gen))}</p>
       <p class="score-sheet-sub">${esc([when, ref ? `🟨 審判 ${teamName(t, ref)}` : ""].filter(Boolean).join("　"))}</p>
       <div class="score-sheet-sides">${side(r.home, 0)}${side(r.away, 1)}</div>
+      ${pkHtml}
       <div class="score-sheet-actions">
         ${res ? `<button class="ls-chip" type="button" data-sheet-clear>結果を消す</button>` : ""}
         <button class="ls-chip" type="button" data-sheet-goto>📋 試合の表で見る</button>
@@ -697,7 +703,7 @@ function matchHtml(c, m) {
   };
   const pkRow =
     isKo && res && res.s[0] === res.s[1]
-      ? `<div class="pk-row"><span>PK（同点のとき）</span>${viewing ? `<b>${res.pk ? `${res.pk[0]} - ${res.pk[1]}` : "–"}</b>` : `<div class="pk-steppers">${scoreHtml(m.id, "pk", 0, res.pk ? res.pk[0] : null, "ホームの PK")}${scoreHtml(m.id, "pk", 1, res.pk ? res.pk[1] : null, "アウェイの PK")}</div>`}</div>`
+      ? `<div class="pk-row"><span>PK（同点のとき。左が上のチーム）</span>${viewing ? `<b>${res.pk ? `${res.pk[0]} - ${res.pk[1]}` : "–"}</b>` : `<div class="pk-steppers">${scoreHtml(m.id, "pk", 0, res.pk ? res.pk[0] : null, "ホームの PK")}${scoreHtml(m.id, "pk", 1, res.pk ? res.pk[1] : null, "アウェイの PK")}</div>`}</div>`
       : "";
   let actions = "";
   // 終わった試合は「結果を消す」を見出しの右に小さく（さくせん盤・ろくがは出さない）
@@ -1353,10 +1359,18 @@ function bindEvents() {
     if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 90, behavior: "smooth" });
   });
   // 準備のおわり：試合のページへ（いちばん上から）
-  // 総当たり表のマス：その場で点を入れる窓を開く（見るだけのときは試合の表へ）
-  $("standings").addEventListener("click", (e) => {
+  // 総当たり表のマス・トーナメント表の試合：その場で点を入れる窓を開く（見るだけのときは試合の表へ）
+  for (const id of ["standings", "bracket"]) {
+    $(id).addEventListener("click", (e) => {
+      const b = e.target.closest("[data-goto]");
+      if (b) (viewing ? gotoMatch : openScoreSheet)(b.dataset.goto);
+    });
+  }
+  $("bracket").addEventListener("keydown", (e) => {
     const b = e.target.closest("[data-goto]");
-    if (b) (viewing ? gotoMatch : openScoreSheet)(b.dataset.goto);
+    if (!b || (e.key !== "Enter" && e.key !== " ")) return;
+    e.preventDefault();
+    (viewing ? gotoMatch : openScoreSheet)(b.dataset.goto);
   });
   $("goPlay").addEventListener("click", () => {
     page.now = "play";

@@ -464,10 +464,10 @@ body {
   font-weight: 600;
 }
 
+/* PK：見出しを上に1行、その下に上・下のチームの順で2つ（せまい画面で見出しが折れないように） */
 .pk-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
+  grid-template-columns: minmax(0, 1fr);
   gap: 8px;
   padding-top: 6px;
   border-top: 1px dashed var(--ls-line);
@@ -476,8 +476,13 @@ body {
 }
 
 .pk-row .pk-steppers {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 6px;
+}
+
+.pk-row .score-stepper {
+  grid-template-columns: minmax(40px, 1fr) 44px minmax(40px, 1fr);
 }
 
 .referee-row {
@@ -857,6 +862,22 @@ body {
 .cross-table tr.is-mine td {
   background: var(--ls-accent-soft);
   color: var(--ls-accent-ink);
+}
+
+/* トーナメント表：押せる試合（2チームが決まったもの） */
+.bracket-match.is-tappable {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.bracket-match.is-tappable:hover,
+.bracket-match.is-tappable:focus-visible {
+  border-color: var(--ls-accent);
+  outline: none;
+}
+
+.score-sheet .pk-row {
+  margin-top: 8px;
 }
 
 /* 総当たり表から開く「点を入れる」窓 */
