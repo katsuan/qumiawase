@@ -1,14 +1,14 @@
 // くみあわせ（QumiAwase）：入口。画面（大会・チーム・形・日程・トーナメント表・順位表・試合と結果・送る）を作り、ボタン・入力を受け、部品（js/）をつなぐ。
 // index.html から読む（type="module"）。組み合わせは js/pairing.js、順位と勝ち上がりは js/stats.js、端末に残すのは js/store.js、
 // リンク（見る人用・さくせん盤・ろくが・結果を戻す）は js/link.js、カードは js/card.js、画像は js/image.js、みんなで入れる（くらぶボット）は js/live.js
-import { FORMATS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610282318";
-import { addMinutes, autoReferees, fitOptions, generate, refereeOptions, roundName, timeSchedule } from "./js/pairing.js?v=202610282318";
-import { durationLabel, estimate, outcome, podium, RANK_LABELS, rankIn, resolve, table } from "./js/stats.js?v=202610282318";
-import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610282318";
-import { LINK_MAX, qronosUrl, readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610282318";
-import { cardParams, dateLabel, formatLabel, matchLine, matchTitle, pointsLabel, sideLabel, summaryText, teamName } from "./js/card.js?v=202610282318";
-import { drawTournament } from "./js/image.js?v=202610282318";
-import { adminKey, botUrlIn, fromServer, inputKey, liveCall, liveError, liveUrl, newLiveId, overlay, PASS_MAX, PASS_MIN, queue, readLive, sessionKey, setSessionKey, toServer } from "./js/live.js?v=202610282318";
+import { FORMATS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610282320";
+import { addMinutes, autoReferees, fitOptions, generate, refereeOptions, roundName, timeSchedule } from "./js/pairing.js?v=202610282320";
+import { durationLabel, estimate, outcome, podium, RANK_LABELS, rankIn, resolve, table } from "./js/stats.js?v=202610282320";
+import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610282320";
+import { LINK_MAX, qronosUrl, readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610282320";
+import { cardParams, dateLabel, formatLabel, matchLine, matchTitle, pointsLabel, sideLabel, summaryText, teamName } from "./js/card.js?v=202610282320";
+import { drawTournament } from "./js/image.js?v=202610282320";
+import { adminKey, botUrlIn, fromServer, inputKey, liveCall, liveError, liveUrl, newLiveId, overlay, PASS_MAX, PASS_MIN, queue, readLive, sessionKey, setSessionKey, toServer } from "./js/live.js?v=202610282320";
 
 // id から画面の部品を返す
 const $ = (id) => document.getElementById(id);
@@ -522,37 +522,49 @@ const mine = () => (view.mode === "team" ? view.team : "");
 const dotHtml = (id) => `<i class="dot" style="background:${esc(teamById(id)?.color || "transparent")}"></i>`;
 
 // トーナメント表（回ごとの列）と、優勝・準優勝・3位を描きなおす
-function renderBracket({ t, gen, resolved }) {
+function renderBracket(c) {
+  const { t, gen, resolved, timeOf, numberOf } = c;
   const ko = gen.matches.filter((m) => m.stage === "ko");
   $("bracketPanel").hidden = !ko.length;
   if (!ko.length) return;
   const total = Math.max(...ko.map((m) => m.round));
+  // 試合の箱：上に時刻とコート（時刻がなければ何試合目）、2チームと点。2チームが決まった試合は、押すと点を入れる窓（見るだけのときは試合の表へ）
+  const box = (m) => {
+    const r = resolved[m.id] || {};
+    const res = t.results[m.id];
+    const row = (side, id, k) => {
+      const label = id ? teamName(t, id) : side.empty ? "シード" : sideLabel(side, gen);
+      const score = res && !m.bye ? `${res.s[k]}${res.pk ? `(${res.pk[k]})` : ""}` : "";
+      const cls = id ? `${r.winner === id && !m.bye ? "is-win" : ""} ${id === mine() ? "is-mine" : ""}` : "is-tbd";
+      return `<div class="${cls}">${dotHtml(id)}<span class="name">${esc(label)}</span><b>${esc(score)}</b></div>`;
+    };
+    const s = timeOf[m.id];
+    const when = m.bye ? "" : s ? `${s.time}${t.sched.courts > 1 ? `・コート${s.court}` : ""}` : numberOf[m.id] ? `第${numberOf[m.id]}試合` : "";
+    const tap = r.home && r.away && !m.bye ? ` role="button" tabindex="0" data-goto="${esc(m.id)}" aria-label="${esc(`${teamName(t, r.home)} 対 ${teamName(t, r.away)}`)}：${readOnly() ? "試合の表で見る" : "点を入れる"}"` : "";
+    return `<div class="bracket-slot"><div class="bracket-match ${tap ? "is-tappable" : ""}"${tap}><p class="bracket-when">${esc(when || "\u00a0")}</p>${row(m.home, r.home, 0)}${row(m.away, r.away, 1)}</div></div>`;
+  };
+  // 3位決定戦：決勝の列の下に置く。どの列にも同じ高さの下の段をつけて、線の高さがずれないようにする
+  const third = gen.matches.find((m) => m.stage === "third");
+  const foot = (round) => (third ? `<div class="bracket-foot">${round === total ? `<p class="bracket-third-title">🥉 3位決定戦</p>${box(third)}` : ""}</div>` : "");
   const cols = [];
   for (let round = 1; round <= total; round++) {
-    const list = ko.filter((m) => m.round === round);
-    const boxes = list.map((m) => {
-      const r = resolved[m.id] || {};
-      const res = t.results[m.id];
-      const row = (side, id, k) => {
-        const label = id ? teamName(t, id) : side.empty ? "シード" : sideLabel(side, gen);
-        const score = res && !m.bye ? `${res.s[k]}${res.pk ? `(${res.pk[k]})` : ""}` : "";
-        const cls = id ? `${r.winner === id && !m.bye ? "is-win" : ""} ${id === mine() ? "is-mine" : ""}` : "is-tbd";
-        return `<div class="${cls}">${dotHtml(id)}<span class="name">${esc(label)}</span><b>${esc(score)}</b></div>`;
-      };
-      // 2チームが決まった試合は、押すと点を入れる窓（見るだけのときは試合の表へ）
-      const tap = r.home && r.away && !m.bye ? ` role="button" tabindex="0" data-goto="${esc(m.id)}" aria-label="${esc(`${teamName(t, r.home)} 対 ${teamName(t, r.away)}`)}：${readOnly() ? "試合の表で見る" : "点を入れる"}"` : "";
-      return `<div class="bracket-slot"><div class="bracket-match ${tap ? "is-tappable" : ""}"${tap}>${row(m.home, r.home, 0)}${row(m.away, r.away, 1)}</div></div>`;
-    });
+    const boxes = ko.filter((m) => m.round === round).map(box);
     // 決勝の前の回は2試合ずつ組にする（組の右に縦の線を引いて、次の回の試合につなぐ。次の回の i 試合目は、この回の 2i・2i+1 試合目の勝者）
     const body = [];
     if (round < total) for (let i = 0; i < boxes.length; i += 2) body.push(boxes[i + 1] ? `<div class="bracket-pair">${boxes[i]}${boxes[i + 1]}</div>` : boxes[i]);
     else body.push(...boxes);
-    cols.push(`<div class="bracket-col"><h3>${esc(roundName(round, total))}</h3><div class="bracket-col-body">${body.join("")}</div></div>`);
+    cols.push(`<div class="bracket-col ${third ? "has-foot" : ""}"><h3>${esc(roundName(round, total))}</h3><div class="bracket-col-body">${body.join("")}</div>${foot(round)}</div>`);
   }
   $("bracket").innerHTML = cols.join("");
+  // 優勝・準優勝・3位は1行ずつ
   const p = podium(gen, resolved);
   $("champion").hidden = !p.first;
-  if (p.first) $("champion").textContent = `🏆 優勝 ${teamName(t, p.first)}${p.second ? `　🥈 ${teamName(t, p.second)}` : ""}${p.third ? `　🥉 ${teamName(t, p.third)}` : ""}`;
+  if (p.first)
+    $("champion").innerHTML = [
+      `<p>🏆 優勝　${esc(teamName(t, p.first))}</p>`,
+      p.second ? `<p>🥈 準優勝　${esc(teamName(t, p.second))}</p>` : "",
+      p.third ? `<p>🥉 3位　${esc(teamName(t, p.third))}</p>` : ""
+    ].join("");
 }
 
 /**

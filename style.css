@@ -762,11 +762,61 @@ body {
 }
 
 .champion {
+  display: grid;
+  gap: 2px;
   padding: 10px 12px;
   border-radius: var(--ls-radius-md);
   background: var(--ls-accent-soft);
   color: var(--ls-accent-ink);
   font-weight: 800;
+}
+
+.champion p {
+  margin: 0;
+}
+
+.champion p:first-child {
+  font-size: 17px;
+}
+
+/* トーナメント表の試合の箱：上に時刻とコート */
+.bracket-match .bracket-when {
+  margin: 0;
+  padding: 2px 8px 0;
+  color: var(--ls-subtext);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* 3位決定戦（決勝の列の下）。どの列にも同じ高さの下の段をつけて、線の高さをそろえる */
+.bracket-col.has-foot {
+  grid-template-rows: auto 1fr auto;
+}
+
+.bracket-foot {
+  display: grid;
+  align-content: start;
+  gap: 2px;
+  height: 124px;
+  padding-top: 10px;
+}
+
+.bracket-third-title {
+  margin: 0;
+  color: var(--ls-subtext);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.bracket-foot .bracket-slot {
+  padding: 0;
+}
+
+/* 3位決定戦は線でつながない */
+.bracket-foot .bracket-match::before,
+.bracket-foot .bracket-match::after {
+  display: none;
 }
 
 /* ---- 順位表 ---- */
