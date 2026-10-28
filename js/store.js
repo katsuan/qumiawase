@@ -2,9 +2,9 @@
 // app.js・js/link.js から読む（import）
 //
 // 大会の形：{ id, name, createdAt, updatedAt, teams: [{ id, name, color }], format, opts: { thirdPlace, legs, groups, advance },
-//            points: { win, draw, loss }, sched: { on（時刻を入れる）, date, start, courts, minutes, place, avoid（連続試合を避ける）, rest（同じチームの空き時間・分） },
+//            points: { win, draw, loss, pk（総当たりも同点なら PK）, pkWin, pkLoss }, sched: { on（時刻を入れる）, date, start, courts, minutes, place, avoid（連続試合を避ける）, rest（同じチームの空き時間・分） },
 //            results: { 試合の id: { s, pk? } }, referees: { 試合の id: 審判のチームの id } }
-import { DEFAULT_POINTS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./settings.js?v=202610282155";
+import { DEFAULT_POINTS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./settings.js?v=202610282158";
 
 export const STORE_KEY = `${TOOL.key}:tournaments`; // { list: [大会…], current: いま開いている大会の id }
 export const INBOX_KEY = `${TOOL.key}:inbox`; // さくせん盤から戻ってきた結果（同じ端末のとき）
@@ -102,7 +102,7 @@ export function cleanTournament(v) {
       groups: intIn(opts.groups, 1, 16, 2),
       advance: intIn(opts.advance, 1, 16, 2)
     },
-    points: { win: intIn(points.win, 0, 9, 3), draw: intIn(points.draw, 0, 9, 1), loss: intIn(points.loss, 0, 9, 0) },
+    points: { win: intIn(points.win, 0, 9, 3), draw: intIn(points.draw, 0, 9, 1), loss: intIn(points.loss, 0, 9, 0), pk: points.pk === true, pkWin: intIn(points.pkWin, 0, 9, 2), pkLoss: intIn(points.pkLoss, 0, 9, 1) },
     sched: {
       on: sched.on === true,
       date: dateIn(sched.date),

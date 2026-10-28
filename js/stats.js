@@ -15,9 +15,10 @@ export function outcome(result) {
 }
 
 // 空の行（順位表の1チームぶん）を返す
-const emptyRow = (id) => ({ id, played: 0, win: 0, draw: 0, loss: 0, gf: 0, ga: 0, gd: 0, pts: 0 });
+const emptyRow = (id) => ({ id, played: 0, win: 0, draw: 0, loss: 0, pkWin: 0, pkLoss: 0, gf: 0, ga: 0, gd: 0, pts: 0 });
 
-// 試合のならびから、チームごとの成績（勝ち点・得失点）を数えて { id: 行 } で返す。PK は勝ち点に入れない（引き分け）
+// 試合のならびから、チームごとの成績（勝ち点・得失点）を数えて { id: 行 } で返す。
+// 同点で PK が決まったとき、points.pk なら PK勝ち・PK負けの勝ち点（pkWin・pkLoss）、そうでなければ引き分け。PK の点は得失点に入れない
 function tally(ids, matches, results, points) {
   const rows = Object.fromEntries(ids.map((id) => [id, emptyRow(id)]));
   for (const m of matches) {
@@ -26,7 +27,8 @@ function tally(ids, matches, results, points) {
     const a = m.away.team;
     if (!r || !Array.isArray(r.s) || !rows[h] || !rows[a]) continue;
     const [gh, ga] = r.s;
-    for (const [id, gf, gaa] of [[h, gh, ga], [a, ga, gh]]) {
+    const pk = points.pk && gh === ga && Array.isArray(r.pk) && r.pk[0] !== r.pk[1] ? r.pk : null;
+    for (const [id, gf, gaa, k] of [[h, gh, ga, 0], [a, ga, gh, 1]]) {
       const row = rows[id];
       row.played += 1;
       row.gf += gf;
@@ -34,6 +36,8 @@ function tally(ids, matches, results, points) {
       row.gd = row.gf - row.ga;
       if (gf > gaa) (row.win += 1), (row.pts += points.win);
       else if (gf < gaa) (row.loss += 1), (row.pts += points.loss);
+      else if (pk && pk[k] > pk[1 - k]) (row.pkWin += 1), (row.pts += points.pkWin ?? points.draw);
+      else if (pk) (row.pkLoss += 1), (row.pts += points.pkLoss ?? points.draw);
       else (row.draw += 1), (row.pts += points.draw);
     }
   }

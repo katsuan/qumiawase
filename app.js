@@ -1,13 +1,13 @@
 // くみあわせ（QumiAwase）：入口。画面（大会・チーム・形・日程・トーナメント表・順位表・試合と結果・送る）を作り、ボタン・入力を受け、部品（js/）をつなぐ。
 // index.html から読む（type="module"）。組み合わせは js/pairing.js、順位と勝ち上がりは js/stats.js、端末に残すのは js/store.js、
 // リンク（見る人用・さくせん盤・ろくが・結果を戻す）は js/link.js、カードは js/card.js、画像は js/image.js
-import { FORMATS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610282155";
-import { addMinutes, autoReferees, fitOptions, generate, refereeOptions, roundName, timeSchedule } from "./js/pairing.js?v=202610282155";
-import { durationLabel, estimate, outcome, podium, resolve, table } from "./js/stats.js?v=202610282155";
-import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610282155";
-import { LINK_MAX, qronosUrl, readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610282155";
-import { cardParams, dateLabel, formatLabel, matchLine, matchTitle, sideLabel, summaryText, teamName } from "./js/card.js?v=202610282155";
-import { drawTournament } from "./js/image.js?v=202610282155";
+import { FORMATS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610282158";
+import { addMinutes, autoReferees, fitOptions, generate, refereeOptions, roundName, timeSchedule } from "./js/pairing.js?v=202610282158";
+import { durationLabel, estimate, outcome, podium, resolve, table } from "./js/stats.js?v=202610282158";
+import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610282158";
+import { LINK_MAX, qronosUrl, readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610282158";
+import { cardParams, dateLabel, formatLabel, matchLine, matchTitle, pointsLabel, sideLabel, summaryText, teamName } from "./js/card.js?v=202610282158";
+import { drawTournament } from "./js/image.js?v=202610282158";
 
 // id から画面の部品を返す
 const $ = (id) => document.getElementById(id);
@@ -130,7 +130,7 @@ function applyPreset(key) {
   change((t) => {
     t.preset = p.key;
     Object.assign(t.sched, { minutes: p.minutes, rest: p.rest, avoid: true });
-    t.points = { ...p.points };
+    t.points = { ...t.points, ...p.points }; // PK をするかは、そのまま
     t.opts.thirdPlace = p.thirdPlace;
   }, `${p.label}の初期設定にしました`);
 }
@@ -438,10 +438,12 @@ function renderFormat() {
   const maxGroups = Math.max(1, Math.floor(t.teams.length / 2));
   stepper(document.querySelector('[data-opt="groups"]'), { get: () => opts.groups, set: (v) => change((x) => (x.opts.groups = v)), min: 1, max: maxGroups, label: "グループの数" });
   stepper(document.querySelector('[data-opt="advance"]'), { get: () => opts.advance, set: (v) => change((x) => (x.opts.advance = v)), min: 1, max: Math.max(1, Math.floor(t.teams.length / opts.groups)), label: "上がる数" });
-  for (const key of ["win", "draw", "loss"]) {
+  for (const key of ["win", "draw", "loss", "pkWin", "pkLoss"]) {
     stepper(document.querySelector(`[data-point="${key}"]`), { get: () => t.points[key], set: (v) => ((t.points[key] = v), (t.preset = ""), persist(), renderPresets(), renderFormat(), renderResults()), min: 0, max: 9, label: "勝ち点" });
   }
-  $("pointsMeta").textContent = `勝${t.points.win}・分${t.points.draw}・負${t.points.loss}`;
+  $("pointsPk").checked = t.points.pk;
+  $("pkPoints").hidden = !t.points.pk;
+  $("pointsMeta").textContent = pointsLabel(t.points);
 }
 
 // 時間と日程の欄（コート・1試合の時間・連続試合と空き時間・時刻を入れるか）を描きなおす
@@ -544,8 +546,10 @@ function crossHtml(c, ids, ms, key) {
       if (!o) return `<button type="button" class="cross-item is-wait" data-goto="${esc(m.id)}">${esc(when(m))}</button>`;
       const mineHome = m.home.team === a;
       const [x, y] = mineHome ? res.s : [res.s[1], res.s[0]];
-      const mark = x > y ? "win" : x < y ? "loss" : "draw";
-      return `<button type="button" class="cross-item is-${mark}" data-goto="${esc(m.id)}"><i>${{ win: "○", loss: "●", draw: "△" }[mark]}</i>${esc(x)}-${esc(y)}</button>`;
+      // 同点で PK が決まったとき（PK をする総当たり）は、PK の勝ち負けで ○●、「PK」をそえる
+      const pk = t.points.pk && x === y && res.pk && res.pk[0] !== res.pk[1] ? (mineHome ? res.pk : [res.pk[1], res.pk[0]]) : null;
+      const mark = x > y || (pk && pk[0] > pk[1]) ? "win" : x < y || pk ? "loss" : "draw";
+      return `<button type="button" class="cross-item is-${mark}" data-goto="${esc(m.id)}"><i>${{ win: "○", loss: "●", draw: "△" }[mark]}</i>${esc(x)}-${esc(y)}${pk ? `<small>PK${esc(pk[0])}-${esc(pk[1])}</small>` : ""}</button>`;
     });
     return `<td>${items.join("")}</td>`;
   };
@@ -585,8 +589,8 @@ function openScoreSheet(mid) {
       return `<div class="match-side ${win ? "is-win" : ""}">${dotHtml(id)}<span class="name">${esc(name)}</span>${scoreHtml(m.id, "s", k, res ? res.s[k] : null, `${name}の点`)}</div>`;
     };
     // トーナメントで同点のときは PK も（試合の表と同じ）
-    const isKo = m.stage === "ko" || m.stage === "third";
-    const pkHtml = isKo && res && res.s[0] === res.s[1] ? `<div class="pk-row"><span>PK（同点のとき）</span><div class="pk-steppers">${scoreHtml(m.id, "pk", 0, res.pk ? res.pk[0] : null, "ホームの PK")}<span class="match-vs" aria-hidden="true">-</span>${scoreHtml(m.id, "pk", 1, res.pk ? res.pk[1] : null, "アウェイの PK")}</div></div>` : "";
+    const withPk = m.stage === "ko" || m.stage === "third" || Boolean(t.points.pk); // トーナメントと、PK をする総当たり
+    const pkHtml = withPk && res && res.s[0] === res.s[1] ? `<div class="pk-row"><span>PK（同点のとき）</span><div class="pk-steppers">${scoreHtml(m.id, "pk", 0, res.pk ? res.pk[0] : null, "ホームの PK")}<span class="match-vs" aria-hidden="true">-</span>${scoreHtml(m.id, "pk", 1, res.pk ? res.pk[1] : null, "アウェイの PK")}</div></div>` : "";
     card.innerHTML = `<p id="scoreSheetTitle" class="ls-sheet-title">${esc(matchTitle(m, gen))}</p>
       <p class="score-sheet-sub">${esc([when, ref ? `🟨 審判 ${teamName(t, ref)}` : ""].filter(Boolean).join("　"))}</p>
       <div class="match-sides score-sheet-sides">${side(r.home, 0)}<span class="match-vs" aria-hidden="true">-</span>${side(r.away, 1)}</div>
@@ -652,10 +656,10 @@ function renderStandings(c) {
     .map((g) => {
       const ms = gen.matches.filter((m) => (g.key ? m.group === g.key : m.stage === "league"));
       const rows = table(g.ids, ms, t.results, t.points)
-        .map((r) => `<tr class="${r.id === mine() ? "is-mine" : ""}"><td>${r.rank}</td><td class="team">${dotHtml(r.id)}${esc(teamName(t, r.id))}</td><td>${r.played}</td><td>${r.win}</td><td>${r.draw}</td><td>${r.loss}</td><td>${r.gf}</td><td>${r.ga}</td><td>${r.gd > 0 ? "+" : ""}${r.gd}</td><td class="pts">${r.pts}</td></tr>`)
+        .map((r) => `<tr class="${r.id === mine() ? "is-mine" : ""}"><td>${r.rank}</td><td class="team">${dotHtml(r.id)}${esc(teamName(t, r.id))}</td><td>${r.played}</td><td>${r.win}</td>${t.points.pk ? `<td>${r.pkWin}</td><td>${r.pkLoss}</td>` : ""}<td>${r.draw}</td><td>${r.loss}</td><td>${r.gf}</td><td>${r.ga}</td><td>${r.gd > 0 ? "+" : ""}${r.gd}</td><td class="pts">${r.pts}</td></tr>`)
         .join("");
       const ranked = table(g.ids, ms, t.results, t.points).map((r) => r.id);
-      return `<div class="table-wrap"><table class="standing-table">${g.key ? `<caption>${esc(g.key)}組</caption>` : ""}<thead><tr><th></th><th class="team">チーム</th><th>試</th><th>勝</th><th>分</th><th>負</th><th>得</th><th>失</th><th>差</th><th>点</th></tr></thead><tbody>${rows}</tbody></table></div>${crossHtml(c, ranked, ms, g.key)}`;
+      return `<div class="table-wrap"><table class="standing-table">${g.key ? `<caption>${esc(g.key)}組</caption>` : ""}<thead><tr><th></th><th class="team">チーム</th><th>試</th><th>勝</th>${t.points.pk ? `<th title="PK勝ち">PK勝</th><th title="PK負け">PK負</th>` : ""}<th>分</th><th>負</th><th>得</th><th>失</th><th>差</th><th>点</th></tr></thead><tbody>${rows}</tbody></table></div>${crossHtml(c, ranked, ms, g.key)}`;
     })
     .join("");
 }
@@ -693,7 +697,7 @@ function matchHtml(c, m) {
   const when = underTime ? (t.sched.courts > 1 ? `コート${s.court}` : "") : s ? `${s.time}${t.sched.courts > 1 ? `・コート${s.court}` : ""}` : numberOf[m.id] ? `第${numberOf[m.id]}試合` : "";
   const done = Boolean(outcome(res));
   const next = c.next?.has(m.id);
-  const isKo = m.stage === "ko" || m.stage === "third";
+  const withPk = m.stage === "ko" || m.stage === "third" || Boolean(t.points.pk); // トーナメントと、PK をする総当たり
   const o = outcome(res);
   const side = (sideDef, id, k) => {
     const name = id ? teamName(t, id) : sideLabel(sideDef, gen);
@@ -702,7 +706,7 @@ function matchHtml(c, m) {
     return `<div class="match-side ${id ? "" : "is-tbd"} ${win ? "is-win" : ""}">${dotHtml(id)}<span class="name">${esc(name)}</span>${ready && !viewing ? scoreHtml(m.id, "s", k, value, `${name}の点`) : `<b>${value ?? ""}</b>`}</div>`;
   };
   const pkRow =
-    isKo && res && res.s[0] === res.s[1]
+    withPk && res && res.s[0] === res.s[1]
       ? `<div class="pk-row"><span>PK（同点のとき）</span>${viewing ? `<b>${res.pk ? `${res.pk[0]} - ${res.pk[1]}` : "–"}</b>` : `<div class="pk-steppers">${scoreHtml(m.id, "pk", 0, res.pk ? res.pk[0] : null, "ホームの PK")}<span class="match-vs" aria-hidden="true">-</span>${scoreHtml(m.id, "pk", 1, res.pk ? res.pk[1] : null, "アウェイの PK")}</div>`}</div>`
       : "";
   let actions = "";
@@ -1260,6 +1264,13 @@ function bindEvents() {
 
   // 形
   $("thirdPlace").addEventListener("change", (e) => change((t) => (t.opts.thirdPlace = e.target.checked)));
+  // 総当たりも同点なら PK（PK勝ち・PK負けの勝ち点）。組み合わせは変わらないので、描きなおすだけ
+  $("pointsPk").addEventListener("change", (e) => {
+    current().points.pk = e.target.checked;
+    persist();
+    renderFormat();
+    renderResults();
+  });
   document.querySelectorAll("[data-legs]").forEach((b) => b.addEventListener("click", () => change((t) => (t.opts.legs = Number(b.dataset.legs)))));
 
   // 時間と日程：連続試合を避ける・続けてもよい

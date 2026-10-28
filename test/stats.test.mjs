@@ -97,3 +97,16 @@ test("見こみ：試合の数・1チームの最多の試合の数・かかる�
   assert.equal(durationLabel(40), "約40分");
   assert.equal(durationLabel(120), "約2時間");
 });
+
+// 総当たりの PK：points.pk なら、同点で PK が決まった試合は PK勝ち・PK負けの勝ち点（しないなら引き分け）
+test("総当たりの PK の勝ち点", () => {
+  const ms = [{ id: "a", home: { team: "x" }, away: { team: "y" } }];
+  const results = { a: { s: [1, 1], pk: [4, 3] } };
+  const off = table(["x", "y"], ms, results, { win: 3, draw: 1, loss: 0 });
+  assert.deepEqual(off.map((r) => [r.id, r.pts, r.draw]), [["x", 1, 1], ["y", 1, 1]]);
+  const on = table(["y", "x"], ms, results, { win: 3, draw: 1, loss: 0, pk: true, pkWin: 2, pkLoss: 1 });
+  assert.deepEqual(on.map((r) => [r.id, r.pts, r.pkWin, r.pkLoss, r.draw, r.gd]), [["x", 2, 1, 0, 0, 0], ["y", 1, 0, 1, 0, 0]]);
+  // PK がまだ入っていなければ引き分け
+  const wait = table(["x", "y"], ms, { a: { s: [1, 1] } }, { win: 3, draw: 1, loss: 0, pk: true, pkWin: 2, pkLoss: 1 });
+  assert.deepEqual(wait.map((r) => r.pts), [1, 1]);
+});

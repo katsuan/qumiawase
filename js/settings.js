@@ -40,7 +40,8 @@ export const LIMITS = {
 };
 
 // 勝ち点（はじめの値。設定で変えられる）
-export const DEFAULT_POINTS = { win: 3, draw: 1, loss: 0 };
+// pk：総当たりでも、同点なら PK をして PK勝ち・PK負けの勝ち点にする（しないときは引き分け）
+export const DEFAULT_POINTS = { win: 3, draw: 1, loss: 0, pk: false, pkWin: 2, pkLoss: 1 };
 
 // 作れる形
 export const FORMATS = {

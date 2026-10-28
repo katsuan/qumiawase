@@ -29,7 +29,7 @@ test("見る人用のリンク：中身をのせて、読みもどせる（チ�
   assert.deepEqual(back.teams.map((x) => x.id), ["t1", "t2", "t3", "t4", "t5"]);
   assert.equal(back.format, "league");
   assert.equal(back.opts.legs, 2);
-  assert.deepEqual(back.points, { win: 2, draw: 1, loss: 0 });
+  assert.deepEqual(back.points, { win: 2, draw: 1, loss: 0, pk: false, pkWin: 2, pkLoss: 1 });
   assert.deepEqual(back.sched, t.sched);
   assert.deepEqual(back.results, t.results);
   assert.equal(back.teams[3].name, XSS.slice(0, 20), "文字は文字のまま（上限あり）");
@@ -117,4 +117,15 @@ test("くろのすの色：明るい色（白・黄）は読める濃さに。�
     assert.ok(parseInt(v.slice(2, 4), 16) < 160, `${light} → ${v}（暗くなる）`);
   }
   assert.equal(readableHex("red"), "");
+});
+
+// 見る人用のリンク：総当たりの PK の勝ち点も運ぶ（PK をしないときは、前と同じ3つ）
+test("リンクで PK の勝ち点を運ぶ", () => {
+  const base = { name: "", teams: [{ id: "t1", name: "a", color: "#22a447" }, { id: "t2", name: "b", color: "#ffffff" }], format: "league", opts: { thirdPlace: false, legs: 1, groups: 1, advance: 1 }, sched: { on: false, date: "", start: "09:00", courts: 1, minutes: 20, place: "", avoid: true, rest: 10 }, results: {}, referees: {} };
+  const on = packTournament({ ...base, points: { win: 3, draw: 1, loss: 0, pk: true, pkWin: 2, pkLoss: 1 } });
+  assert.deepEqual(on.p, [3, 1, 0, 1, 2, 1]);
+  assert.deepEqual(unpackTournament(on).points, { win: 3, draw: 1, loss: 0, pk: true, pkWin: 2, pkLoss: 1 });
+  const off = packTournament({ ...base, points: { win: 3, draw: 1, loss: 0, pk: false, pkWin: 2, pkLoss: 1 } });
+  assert.deepEqual(off.p, [3, 1, 0]);
+  assert.equal(unpackTournament(off).points.pk, false);
 });
