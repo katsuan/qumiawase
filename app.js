@@ -1,13 +1,13 @@
 // くみあわせ（QumiAwase）：入口。画面（大会・チーム・形・日程・トーナメント表・順位表・試合と結果・送る）を作り、ボタン・入力を受け、部品（js/）をつなぐ。
 // index.html から読む（type="module"）。組み合わせは js/pairing.js、順位と勝ち上がりは js/stats.js、端末に残すのは js/store.js、
 // リンク（見る人用・さくせん盤・ろくが・結果を戻す）は js/link.js、カードは js/card.js、画像は js/image.js
-import { FORMATS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610282116";
-import { addMinutes, autoReferees, fitOptions, generate, refereeOptions, roundName, timeSchedule } from "./js/pairing.js?v=202610282116";
-import { durationLabel, estimate, outcome, podium, resolve, table } from "./js/stats.js?v=202610282116";
-import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610282116";
-import { LINK_MAX, qronosUrl, readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610282116";
-import { cardParams, dateLabel, formatLabel, matchLine, matchTitle, sideLabel, summaryText, teamName } from "./js/card.js?v=202610282116";
-import { drawTournament } from "./js/image.js?v=202610282116";
+import { FORMATS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610282119";
+import { addMinutes, autoReferees, fitOptions, generate, refereeOptions, roundName, timeSchedule } from "./js/pairing.js?v=202610282119";
+import { durationLabel, estimate, outcome, podium, resolve, table } from "./js/stats.js?v=202610282119";
+import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610282119";
+import { LINK_MAX, qronosUrl, readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610282119";
+import { cardParams, dateLabel, formatLabel, matchLine, matchTitle, sideLabel, summaryText, teamName } from "./js/card.js?v=202610282119";
+import { drawTournament } from "./js/image.js?v=202610282119";
 
 // id から画面の部品を返す
 const $ = (id) => document.getElementById(id);
@@ -984,9 +984,9 @@ function printSummary(c) {
     <h1>🏆 ${esc(t.name || "組み合わせ")}</h1>
     <p>${esc([when, `${formatLabel(t)}・${t.teams.length}チーム`].filter(Boolean).join("　"))}</p>
     <p>${esc(`1試合${t.sched.minutes}分・コート${t.sched.courts}${t.sched.avoid ? `・同じチームの空き時間${t.sched.rest}分` : ""}${t.sched.on ? `・${t.sched.start}〜` : ""}`)}</p>
-    <h2>チーム</h2>${teams}
-    ${$("standings").innerHTML.trim() ? `<h2>順位表</h2>${$("standings").innerHTML}` : ""}
-    ${gen.matches.some((m) => m.stage === "ko") ? `<h2>トーナメント表</h2><div class="bracket">${$("bracket").innerHTML}</div>` : ""}
+    <section class="print-keep"><h2>チーム</h2>${teams}</section>
+    ${$("standings").innerHTML.trim() ? `<section><h2>順位表</h2>${$("standings").innerHTML}</section>` : ""}
+    ${gen.matches.some((m) => m.stage === "ko") ? `<section class="print-keep"><h2>トーナメント表</h2><div class="bracket">${$("bracket").innerHTML}</div></section>` : ""}
     <h2>試合</h2>
     <table class="print-table"><thead><tr><th>No</th><th>時刻</th><th>コート</th><th>試合</th><th>ホーム</th><th>結果</th><th>アウェイ</th><th>審判</th></tr></thead><tbody>${rows}</tbody></table>
     <p class="print-foot">${esc(TOOL.name)}（${esc(TOOL.en)}）で作りました</p>`;

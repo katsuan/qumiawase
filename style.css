@@ -857,10 +857,72 @@ body.is-view #schedFold {
     display: none !important;
   }
 
+  /* 端末が暗い表示でも、紙には明るい色で（うすい文字・線が消えないように） */
   .print-area {
+    --ls-surface: #ffffff;
+    --ls-surface-sub: #f8f7fb;
+    --ls-text: #1f1f1c;
+    --ls-subtext: #6b6a63;
+    --ls-faint: #8a8982;
+    --ls-line: rgba(31, 31, 28, 0.18);
+    --ls-line-strong: rgba(31, 31, 28, 0.45);
     display: block;
     color: #1f1f1c;
     font-size: 11pt;
+  }
+
+  /* ページの区切り：チーム・トーナメント表・グループごとの順位表は途中で切らない。見出しだけがページの最後に残らないように */
+  .print-area .print-keep,
+  .print-area .table-wrap,
+  .print-area .bracket {
+    break-inside: avoid;
+  }
+
+  .print-area h2 + * {
+    break-before: avoid;
+  }
+
+  .print-table tr {
+    break-inside: avoid;
+  }
+
+  .print-table thead {
+    display: table-header-group;
+  }
+
+  /* トーナメント表は1ページに入る大きさに（32チームでも） */
+  .print-area .bracket {
+    gap: 12px;
+    font-size: 8.5pt;
+  }
+
+  .print-area .bracket-slot {
+    padding: 2px 0;
+  }
+
+  .print-area .bracket-match {
+    border-width: 1px;
+    background: none;
+    font-size: inherit;
+  }
+
+  .print-area .bracket-match > div {
+    min-height: 16pt;
+    padding: 0 5px;
+  }
+
+  .print-area .bracket-pair::after {
+    right: -7px;
+  }
+
+  .print-area .bracket-col:not(:last-child) .bracket-match::after {
+    right: -7px;
+    width: 6px;
+  }
+
+  .print-area .bracket-col + .bracket-col .bracket-match::before {
+    left: -7px;
+    width: 6px;
   }
 
   .print-area h1 {
@@ -880,10 +942,6 @@ body.is-view #schedFold {
     overflow: visible;
   }
 
-  .print-area .bracket-match,
-  .print-area .standing-table {
-    break-inside: avoid;
-  }
 
   .print-table {
     width: 100%;
