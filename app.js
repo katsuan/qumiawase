@@ -1,14 +1,14 @@
 // くみあわせ（QumiAwase）：入口。画面（大会・チーム・形・日程・トーナメント表・順位表・試合と結果・送る）を作り、ボタン・入力を受け、部品（js/）をつなぐ。
 // index.html から読む（type="module"）。組み合わせは js/pairing.js、順位と勝ち上がりは js/stats.js、端末に残すのは js/store.js、
 // リンク（見る人用・さくせん盤・ろくが・結果を戻す）は js/link.js、カードは js/card.js、画像は js/image.js、みんなで入れる（くらぶボット）は js/live.js
-import { FORMATS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610282234";
-import { addMinutes, autoReferees, fitOptions, generate, refereeOptions, roundName, timeSchedule } from "./js/pairing.js?v=202610282234";
-import { durationLabel, estimate, outcome, podium, RANK_LABELS, rankIn, resolve, table } from "./js/stats.js?v=202610282234";
-import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610282234";
-import { LINK_MAX, qronosUrl, readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610282234";
-import { cardParams, dateLabel, formatLabel, matchLine, matchTitle, pointsLabel, sideLabel, summaryText, teamName } from "./js/card.js?v=202610282234";
-import { drawTournament } from "./js/image.js?v=202610282234";
-import { adminKey, botUrlIn, fromServer, inputKey, liveCall, liveError, liveUrl, newLiveId, overlay, PASS_MAX, PASS_MIN, queue, readLive, sessionKey, setSessionKey, toServer } from "./js/live.js?v=202610282234";
+import { FORMATS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610282248";
+import { addMinutes, autoReferees, fitOptions, generate, refereeOptions, roundName, timeSchedule } from "./js/pairing.js?v=202610282248";
+import { durationLabel, estimate, outcome, podium, RANK_LABELS, rankIn, resolve, table } from "./js/stats.js?v=202610282248";
+import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610282248";
+import { LINK_MAX, qronosUrl, readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610282248";
+import { cardParams, dateLabel, formatLabel, matchLine, matchTitle, pointsLabel, sideLabel, summaryText, teamName } from "./js/card.js?v=202610282248";
+import { drawTournament } from "./js/image.js?v=202610282248";
+import { adminKey, botUrlIn, fromServer, inputKey, liveCall, liveError, liveUrl, newLiveId, overlay, PASS_MAX, PASS_MIN, queue, readLive, sessionKey, setSessionKey, toServer } from "./js/live.js?v=202610282248";
 
 // id から画面の部品を返す
 const $ = (id) => document.getElementById(id);
@@ -751,16 +751,30 @@ function matchHtml(c, m) {
     </div>`;
   }
   const badge = next ? `<span class="next-badge">▶ 次の試合</span>` : done ? `<span class="done-badge">✓ 終わり</span>` : "";
+  // 点の行の下の審判：入力中は選ぶ欄、ほかは入っていればラベルとチーム名（どちらもまん中そろえ）
+  const refLabel = active ? "" : refereeLabel(c, m);
+  const refRow = active ? refereeHtml(c, m, true) : refLabel ? `<div class="referee-row"><span>🟨 審判</span><b>${esc(refLabel)}</b></div>` : "";
   // 押せるカード（出るチームが決まっていて、入れられるとき）：見出しをボタンにする（キーボードでも）
   const tappable = ready && !readOnly();
   const head = tappable ? ` data-tap="${esc(m.id)}" role="button" tabindex="0" aria-expanded="${active}" aria-label="${esc(matchTitle(m, gen))}：${active ? "入れるのをやめる" : "点を入れる"}"` : "";
-  return `<article class="match ${done ? "is-done" : ""} ${next ? "is-next" : ""} ${tappable ? "is-tappable" : ""} ${active ? "is-active" : ""}" data-mid="${esc(m.id)}"><div class="match-head"${head}><span>${badge}${esc(matchTitle(m, gen))}</span><span>${esc(when)}${clearBtn}</span></div><div class="match-sides">${side(m.home, r.home, 0)}<span class="match-vs" aria-hidden="true">-</span>${side(m.away, r.away, 1)}</div>${pkRow}${refereeHtml(c, m, active)}${actions}</article>`;
+  return `<article class="match ${done ? "is-done" : ""} ${next ? "is-next" : ""} ${tappable ? "is-tappable" : ""} ${active ? "is-active" : ""}" data-mid="${esc(m.id)}"><div class="match-head"${head}><span>${badge}${esc(matchTitle(m, gen))}</span><span>${esc(when)}${clearBtn}</span></div><div class="match-sides">${side(m.home, r.home, 0)}<span class="match-vs" aria-hidden="true">-</span>${side(m.away, r.away, 1)}</div>${refRow}${pkRow}${actions}</article>`;
 }
 
 /**
  * 審判の行の HTML を返す：その試合に出ない・同じ時間に試合のないチームから選ぶ（いなければ「−」だけ）。
  * 入れたチームがあとで出ることになったとき（勝ち上がり・時間の重なり）は ⚠️ をつける。見るだけのときは文字だけ
  */
+// 審判の文字（チーム名。あとで出ることになったら ⚠️ つき）。入っていなければ ""
+function refereeLabel(c, m) {
+  const { t, gen, plan, resolved } = c;
+  const now = t.referees?.[m.id] || "";
+  if (!now) return "";
+  const options = refereeOptions(m, t.teams.map((x) => x.id), resolved, plan, gen.matches);
+  const r = resolved[m.id] || {};
+  if (options.includes(now)) return teamName(t, now);
+  return `${teamName(t, now)}${r.home === now || r.away === now ? "（⚠️ この試合に出る）" : "（⚠️ 同じ時間に試合）"}`;
+}
+
 function refereeHtml(c, m, active = false) {
   const { t, gen, plan, resolved } = c;
   const now = t.referees?.[m.id] || "";

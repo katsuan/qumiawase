@@ -548,6 +548,24 @@ body {
   text-align: right;
 }
 
+/* 試合のカードの審判（点の行の下）：ラベルとチーム名・選ぶ欄をまん中そろえ */
+.match .referee-row {
+  grid-template-columns: auto minmax(0, 14em);
+  justify-content: center;
+}
+
+/* 文字だけ（ふだんのカード）は、ラベルと名前の幅だけにして、まん中に */
+.match div.referee-row {
+  grid-template-columns: auto auto;
+}
+
+.match .referee-row b {
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* 審判の選択。iPhone で拡大されないよう 16px */
 .referee-row select {
   width: 100%;
