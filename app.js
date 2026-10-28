@@ -1,13 +1,13 @@
 // くみあわせ（QumiAwase）：入口。画面（大会・チーム・形・日程・トーナメント表・順位表・試合と結果・送る）を作り、ボタン・入力を受け、部品（js/）をつなぐ。
 // index.html から読む（type="module"）。組み合わせは js/pairing.js、順位と勝ち上がりは js/stats.js、端末に残すのは js/store.js、
 // リンク（見る人用・さくせん盤・ろくが・結果を戻す）は js/link.js、カードは js/card.js、画像は js/image.js
-import { FORMATS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610281359";
-import { addMinutes, autoReferees, fitOptions, generate, refereeOptions, roundName, timeSchedule } from "./js/pairing.js?v=202610281359";
-import { durationLabel, estimate, outcome, podium, resolve, table } from "./js/stats.js?v=202610281359";
-import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610281359";
-import { LINK_MAX, qronosUrl, readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610281359";
-import { cardParams, dateLabel, formatLabel, matchLine, matchTitle, sideLabel, summaryText, teamName } from "./js/card.js?v=202610281359";
-import { drawTournament } from "./js/image.js?v=202610281359";
+import { FORMATS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610281402";
+import { addMinutes, autoReferees, fitOptions, generate, refereeOptions, roundName, timeSchedule } from "./js/pairing.js?v=202610281402";
+import { durationLabel, estimate, outcome, podium, resolve, table } from "./js/stats.js?v=202610281402";
+import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610281402";
+import { LINK_MAX, qronosUrl, readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610281402";
+import { cardParams, dateLabel, formatLabel, matchLine, matchTitle, sideLabel, summaryText, teamName } from "./js/card.js?v=202610281402";
+import { drawTournament } from "./js/image.js?v=202610281402";
 
 // id から画面の部品を返す
 const $ = (id) => document.getElementById(id);
@@ -502,7 +502,7 @@ function sectionTitle(m, gen) {
 }
 
 /**
- * そのチームの試合を返す：決まっている試合と、トーナメントの勝ち進み（勝てば・負けたら3位決定戦）、グループから上がれたときの決勝トーナメントのはじめ。
+ * そのチームの試合を返す：決まっている試合と、トーナメントの勝ち進み（勝てば決勝まで・負けたら3位決定戦）。グループのときは、1位で上がったときの決勝トーナメントから決勝まで。
  * [{ m, kind: "fixed"|"win"|"lose"|"advance", mine（勝ち進みのとき、このチームが入る側） }] を、試合の順に返す
  */
 function teamPath(c, id) {
@@ -510,36 +510,37 @@ function teamPath(c, id) {
   const has = (m) => resolved[m.id]?.home === id || resolved[m.id]?.away === id;
   const out = gen.matches.filter((m) => !m.bye && has(m)).map((m) => ({ m, kind: "fixed" }));
   const seen = new Set(out.map((x) => x.m.id));
-  // トーナメント：いま勝ち残っている最後の試合（不戦勝もふくむ）から、勝ったら出る試合をたどる
-  const ko = gen.matches.filter((m) => m.stage === "ko" && (has(m) || (m.bye && resolved[m.id]?.winner === id))).sort((a, b) => a.round - b.round);
-  let cur = ko.at(-1);
-  if (cur && resolved[cur.id]?.loser !== id) {
+  const add = (x) => !seen.has(x.m.id) && (seen.add(x.m.id), out.push(x));
+  // cur（このチームが出る・出るかもしれない試合）から、勝ったら出る試合（決勝まで）と、負けたら出る3位決定戦をたどる
+  const follow = (cur) => {
     for (;;) {
       const third = gen.matches.find((x) => x.stage === "third" && (x.home.loserOf === cur.id || x.away.loserOf === cur.id));
-      if (third && !seen.has(third.id) && resolved[cur.id]?.winner !== id) {
-        out.push({ m: third, kind: "lose", mine: third.home.loserOf === cur.id ? third.home : third.away });
-        seen.add(third.id);
-      }
+      if (third && resolved[cur.id]?.winner !== id) add({ m: third, kind: "lose", mine: third.home.loserOf === cur.id ? third.home : third.away });
       if (resolved[cur.id]?.winner && resolved[cur.id].winner !== id) break;
       const next = gen.matches.find((x) => x.stage === "ko" && (x.home.winnerOf === cur.id || x.away.winnerOf === cur.id));
       if (!next) break;
-      if (!seen.has(next.id)) {
-        out.push({ m: next, kind: "win", mine: next.home.winnerOf === cur.id ? next.home : next.away });
-        seen.add(next.id);
-      }
+      add({ m: next, kind: "win", mine: next.home.winnerOf === cur.id ? next.home : next.away });
       cur = next;
     }
-  }
-  // グループ：まだ上がるチームが決まっていなければ、決勝トーナメントのいちばん早い試合（上がれば）
-  const inGroup = gen.groups?.some((g) => g.ids.includes(id));
-  if (inGroup && !ko.length) {
-    const first = gen.matches.filter((m) => m.stage === "ko" && !m.bye).sort((a, b) => (numberOf[a.id] ?? 0) - (numberOf[b.id] ?? 0))[0];
-    if (first) out.push({ m: first, kind: "advance" });
+  };
+  // トーナメント：いま勝ち残っている最後の試合（不戦勝もふくむ）から
+  const ko = gen.matches.filter((m) => m.stage === "ko" && (has(m) || (m.bye && resolved[m.id]?.winner === id))).sort((a, b) => a.round - b.round);
+  const cur = ko.at(-1);
+  if (cur && resolved[cur.id]?.loser !== id) follow(cur);
+  // グループ：まだ上がるチームが決まっていなければ、1位で上がったときの決勝トーナメントの試合から、決勝まで
+  const group = gen.groups?.find((g) => g.ids.includes(id));
+  if (group && !ko.length) {
+    const firstKo = gen.matches.find((m) => m.stage === "ko" && [m.home, m.away].some((sd) => sd.groupRank?.[0] === group.key && sd.groupRank[1] === 1));
+    if (firstKo) {
+      const mine = firstKo.home.groupRank?.[0] === group.key && firstKo.home.groupRank[1] === 1 ? firstKo.home : firstKo.away;
+      if (!firstKo.bye) add({ m: firstKo, kind: "advance", mine });
+      follow(firstKo);
+    }
   }
   return out.sort((a, b) => (numberOf[a.m.id] ?? 0) - (numberOf[b.m.id] ?? 0));
 }
 
-const KIND_LABEL = { fixed: "", win: "（勝てば）", lose: "（負けたら）", advance: "（上がれば）" };
+const KIND_LABEL = { fixed: "", win: "（勝てば）", lose: "（負けたら）", advance: "（1位で上がれば）" };
 
 // teamPath の1つの試合の、相手の呼び名を返す（決まっていればチーム名、まだなら「準決勝 2の勝者」など）
 // チーム別の行の相手（決まっていればチームの id。未定なら null）
@@ -600,9 +601,14 @@ function renderViewTools(c) {
   if (view.mode === "team") {
     $("teamPick").innerHTML = t.teams.map((x) => `<button class="ls-chip" type="button" role="radio" data-team="${esc(x.id)}" aria-checked="${esc(x.id === view.team)}">${dotHtml(x.id)}${esc(teamName(t, x.id))}</button>`).join("");
     const url = teamQronosUrl(c, view.team);
-    $("teamTools").innerHTML = url
+    // 最多の試合の数：決まっている試合 ＋ 勝ち進んだとき（3位決定戦は決勝のかわりなので数えない）
+    const path = teamPath(c, view.team);
+    const fixed = path.filter((x) => x.kind === "fixed").length;
+    const more = path.filter((x) => x.kind === "win" || x.kind === "advance").length;
+    const most = more ? `<p class="path-note">📏 最多 ${esc(fixed + more)}試合（決まっている ${esc(fixed)}試合 ＋ 勝ち進めば ${esc(more)}試合）</p>` : "";
+    $("teamTools").innerHTML = most + (url
       ? `<a class="ls-chip" href="${esc(url)}" target="_blank" rel="noopener">⏳ この試合をくろのすでカウントダウン</a>`
-      : `<p class="ls-hint">⏳ 「時刻を入れる」で日にちとはじまりを入れると、このチームの試合をくろのすでカウントダウンできます。</p>`;
+      : `<p class="ls-hint">⏳ 「時刻を入れる」で日にちとはじまりを入れると、このチームの試合をくろのすでカウントダウンできます。</p>`);
   }
   const all = allQronosUrl(c);
   $("qronosAll").hidden = !all;
