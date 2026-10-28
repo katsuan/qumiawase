@@ -4,8 +4,9 @@
 // 大会の形：{ id, name, createdAt, updatedAt, teams: [{ id, name, color }], format, opts: { thirdPlace, legs, groups, advance },
 //            points: { win, draw, loss, pk（総当たりも同点なら PK）, pkWin, pkLoss }, rank（順位の決め方：勝ち点のあとの並び。gd・gf・h2h）, sched: { on（時刻を入れる）, date, start, courts, minutes, place, avoid（連続試合を避ける）, rest（同じチームの空き時間・分） },
 //            results: { 試合の id: { s, pk? } }, referees: { 試合の id: 審判のチームの id } }
-import { DEFAULT_POINTS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./settings.js?v=202610282215";
-import { DEFAULT_RANK, rankIn } from "./stats.js?v=202610282215";
+import { DEFAULT_POINTS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./settings.js?v=202610282229";
+import { DEFAULT_RANK, rankIn } from "./stats.js?v=202610282229";
+import { liveIn } from "./live.js?v=202610282229"; // つないだ大会の印（関数の中でだけ使う）
 
 export const STORE_KEY = `${TOOL.key}:tournaments`; // { list: [大会…], current: いま開いている大会の id }
 export const INBOX_KEY = `${TOOL.key}:inbox`; // さくせん盤から戻ってきた結果（同じ端末のとき）
@@ -117,7 +118,9 @@ export function cleanTournament(v) {
       rest: intIn(sched.rest, 0, LIMITS.minutes, 10)
     },
     results,
-    referees
+    referees,
+    // みんなで入れる（くらぶボット）につないだ大会だけ。つないでいなければ付けない
+    ...(liveIn(v.live) ? { live: liveIn(v.live) } : {})
   };
 }
 

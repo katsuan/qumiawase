@@ -1407,3 +1407,53 @@ body.is-view #schedFold {
 #autoReferees {
   justify-self: stretch;
 }
+
+/* ---- みんなで入れる（くらぶボット） ---- */
+.live-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-block: 8px;
+  border-color: var(--ls-accent);
+}
+
+.live-bar-text {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  font-size: 14px;
+}
+
+.live-bar-text span {
+  color: var(--ls-subtext);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.live-bar-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.live-bar-actions .ls-chip.is-primary {
+  border-color: var(--ls-accent);
+  background: var(--ls-accent);
+  color: #fff;
+}
+
+.live-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pass-sheet .ls-input {
+  font-size: 16px;
+}
+
+.pass-error {
+  margin: 0;
+  color: var(--ls-danger, #c0392b);
+}

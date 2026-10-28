@@ -27,7 +27,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://katsuan.github.io/line-share/shared/ui.css?v=202610261000">
-<link rel="stylesheet" href="style.css?v=202610282215">
+<link rel="stylesheet" href="style.css?v=202610282229">
 </head>
 <body>
 <main class="ls-page ls-stack">
@@ -180,6 +180,14 @@
   </div>
 
   <div id="pagePlay" class="ls-stack" role="tabpanel" aria-labelledby="pageTabs" hidden>
+  <!-- みんなで入れる（くらぶボット）につないだ大会：いつ読みなおしたか・🔄・点を入れる（合言葉） -->
+  <section id="liveBar" class="ls-panel live-bar" aria-label="みんなで共有" hidden>
+    <p class="live-bar-text"><b>📡 みんなで共有中</b><span id="liveStatus"></span></p>
+    <div class="live-bar-actions">
+      <button id="liveRefresh" class="ls-chip" type="button">🔄 更新</button>
+      <button id="liveRoleBtn" class="ls-chip" type="button">✏️ 点を入れる</button>
+    </div>
+  </section>
     <!-- 大会の見出し：名前・形・見こみ（試合のタブのいちばん上） -->
     <section class="ls-panel play-head" aria-label="大会">
       <p id="playTitle" class="play-title"></p>
@@ -239,6 +247,12 @@
     <p class="ls-hint">見る人用のリンクには、大会の中身がそのまま入ります（サーバーには送りません）。開いた人は見るだけ。この端末に保存すると、結果を入れられます。</p>
   </section>
 
+  <!-- みんなで入れる：くらぶボット（使う人の GAS）の「🏆 大会」につなぐ。つながなくても、これまでどおり端末の中だけで使える -->
+  <details id="liveFold" class="ls-fold">
+    <summary><span class="fold-title">📡 みんなで入れる</span> <span id="liveMeta" class="ls-fold-meta"></span></summary>
+    <div id="liveBody" class="ls-fold-body ls-stack"></div>
+  </details>
+
   </div>
 
   <div data-tool-share></div>
@@ -247,7 +261,8 @@
 <section id="printArea" class="print-area" aria-hidden="true"></section>
 <script src="https://katsuan.github.io/line-share/shared/oqrn.js"></script>
 <script src="https://katsuan.github.io/line-share/shared/ui.js?v=202610260300" defer></script>
-<script type="module" src="app.js?v=202610282215"></script>
+<script src="https://katsuan.github.io/line-share/shared/qlove-bot.js"></script>
+<script type="module" src="app.js?v=202610282229"></script>
 <script src="https://katsuan.github.io/line-share/shared/tool-share.js" data-tool="qumiawase" defer></script>
 <script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(() => {});</script>
 </body>

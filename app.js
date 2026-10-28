@@ -1,13 +1,14 @@
 // くみあわせ（QumiAwase）：入口。画面（大会・チーム・形・日程・トーナメント表・順位表・試合と結果・送る）を作り、ボタン・入力を受け、部品（js/）をつなぐ。
 // index.html から読む（type="module"）。組み合わせは js/pairing.js、順位と勝ち上がりは js/stats.js、端末に残すのは js/store.js、
-// リンク（見る人用・さくせん盤・ろくが・結果を戻す）は js/link.js、カードは js/card.js、画像は js/image.js
-import { FORMATS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610282215";
-import { addMinutes, autoReferees, fitOptions, generate, refereeOptions, roundName, timeSchedule } from "./js/pairing.js?v=202610282215";
-import { durationLabel, estimate, outcome, podium, RANK_LABELS, rankIn, resolve, table } from "./js/stats.js?v=202610282215";
-import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610282215";
-import { LINK_MAX, qronosUrl, readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610282215";
-import { cardParams, dateLabel, formatLabel, matchLine, matchTitle, pointsLabel, sideLabel, summaryText, teamName } from "./js/card.js?v=202610282215";
-import { drawTournament } from "./js/image.js?v=202610282215";
+// リンク（見る人用・さくせん盤・ろくが・結果を戻す）は js/link.js、カードは js/card.js、画像は js/image.js、みんなで入れる（くらぶボット）は js/live.js
+import { FORMATS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610282229";
+import { addMinutes, autoReferees, fitOptions, generate, refereeOptions, roundName, timeSchedule } from "./js/pairing.js?v=202610282229";
+import { durationLabel, estimate, outcome, podium, RANK_LABELS, rankIn, resolve, table } from "./js/stats.js?v=202610282229";
+import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610282229";
+import { LINK_MAX, qronosUrl, readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610282229";
+import { cardParams, dateLabel, formatLabel, matchLine, matchTitle, pointsLabel, sideLabel, summaryText, teamName } from "./js/card.js?v=202610282229";
+import { drawTournament } from "./js/image.js?v=202610282229";
+import { adminKey, botUrlIn, fromServer, inputKey, liveCall, liveError, liveUrl, newLiveId, overlay, PASS_MAX, PASS_MIN, queue, readLive, sessionKey, setSessionKey, toServer } from "./js/live.js?v=202610282229";
 
 // id から画面の部品を返す
 const $ = (id) => document.getElementById(id);
@@ -30,6 +31,18 @@ let data = loadAll(); // { list: [大会…], current: いまの大会の id }�
 let viewing = readView(location.search); // 見る人用のリンクで開いた大会（この端末に保存するまで、ここだけ）
 let warnedSave = false; // 端末に残せなかったことを、もう知らせたか
 
+// みんなで入れる（くらぶボット）：合言葉から作った key。sessionStorage に置けない端末のために、開いているあいだもここに覚える
+const liveKeys = {};
+// つないだ大会での、この端末の役割（"admin"＝運営・"input"＝入力の人・""＝見るだけ）。つないでいなければ null
+function liveRole(t = current()) {
+  if (!t || !t.live || viewing) return null;
+  return (sessionKey(t.live.id) || liveKeys[t.live.id] || {}).role || "";
+}
+// 点・審判を入れられないか（見る人用のリンク・つないだ大会で合言葉をまだ入れていない）
+const readOnly = () => Boolean(viewing) || liveRole() === "";
+// 準備（チーム・形・時間）を変えられないか（つないだ大会で運営でない）
+const planLocked = () => liveRole() !== null && liveRole() !== "admin";
+
 // いま画面に出している大会を返す（見る人用のリンクで開いたときは、その大会）
 function current() {
   return viewing || data.list.find((t) => t.id === data.current) || data.list[0];
@@ -43,6 +56,7 @@ function persist() {
     warnedSave = true;
     toast("この端末に残せませんでした（空きがない・プライベートブラウズなど）。閉じると消えます");
   }
+  liveAfterSave();
 }
 
 // 組み合わせが変わる元（チームの並び・形・設定）を1つの文字にして返す。変わったら、入れた結果は使えない
@@ -98,9 +112,9 @@ const page = { now: "", play: "matches" };
 
 // ページのタブと、準備・試合のどちらを出すかを描きなおす（見る人用のリンクのときは試合だけ）
 function renderPage() {
-  if (viewing) page.now = "play";
+  if (viewing || planLocked()) page.now = "play";
   if (!page.now) page.now = Object.keys(current().results).length ? "play" : "prep";
-  $("pageTabs").hidden = Boolean(viewing);
+  $("pageTabs").hidden = Boolean(viewing) || planLocked(); // 見るだけ・つないだ大会で運営でないときは、試合だけ
   document.querySelectorAll("[data-page]").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.page === page.now)));
   $("pagePrep").hidden = page.now !== "prep";
   $("pagePlay").hidden = page.now !== "play";
@@ -525,7 +539,7 @@ function renderBracket({ t, gen, resolved }) {
         return `<div class="${cls}">${dotHtml(id)}<span class="name">${esc(label)}</span><b>${esc(score)}</b></div>`;
       };
       // 2チームが決まった試合は、押すと点を入れる窓（見るだけのときは試合の表へ）
-      const tap = r.home && r.away && !m.bye ? ` role="button" tabindex="0" data-goto="${esc(m.id)}" aria-label="${esc(`${teamName(t, r.home)} 対 ${teamName(t, r.away)}`)}：${viewing ? "試合の表で見る" : "点を入れる"}"` : "";
+      const tap = r.home && r.away && !m.bye ? ` role="button" tabindex="0" data-goto="${esc(m.id)}" aria-label="${esc(`${teamName(t, r.home)} 対 ${teamName(t, r.away)}`)}：${readOnly() ? "試合の表で見る" : "点を入れる"}"` : "";
       return `<div class="bracket-slot"><div class="bracket-match ${tap ? "is-tappable" : ""}"${tap}>${row(m.home, r.home, 0)}${row(m.away, r.away, 1)}</div></div>`;
     });
     // 決勝の前の回は2試合ずつ組にする（組の右に縦の線を引いて、次の回の試合につなぐ。次の回の i 試合目は、この回の 2i・2i+1 試合目の勝者）
@@ -713,15 +727,15 @@ function matchHtml(c, m) {
     const name = id ? teamName(t, id) : sideLabel(sideDef, gen);
     const win = (o === "home" && k === 0) || (o === "away" && k === 1);
     const value = res ? res.s[k] : null;
-    return `<div class="match-side ${id ? "" : "is-tbd"} ${win ? "is-win" : ""}">${dotHtml(id)}<span class="name">${esc(name)}</span>${ready && !viewing ? scoreHtml(m.id, "s", k, value, `${name}の点`) : `<b>${value ?? ""}</b>`}</div>`;
+    return `<div class="match-side ${id ? "" : "is-tbd"} ${win ? "is-win" : ""}">${dotHtml(id)}<span class="name">${esc(name)}</span>${ready && !readOnly() ? scoreHtml(m.id, "s", k, value, `${name}の点`) : `<b>${value ?? ""}</b>`}</div>`;
   };
   const pkRow =
     withPk && res && res.s[0] === res.s[1]
-      ? `<div class="pk-row"><span>PK（同点のとき）</span>${viewing ? `<b>${res.pk ? `${res.pk[0]} - ${res.pk[1]}` : "–"}</b>` : `<div class="pk-steppers">${scoreHtml(m.id, "pk", 0, res.pk ? res.pk[0] : null, "ホームの PK")}<span class="match-vs" aria-hidden="true">-</span>${scoreHtml(m.id, "pk", 1, res.pk ? res.pk[1] : null, "アウェイの PK")}</div>`}</div>`
+      ? `<div class="pk-row"><span>PK（同点のとき）</span>${readOnly() ? `<b>${res.pk ? `${res.pk[0]} - ${res.pk[1]}` : "–"}</b>` : `<div class="pk-steppers">${scoreHtml(m.id, "pk", 0, res.pk ? res.pk[0] : null, "ホームの PK")}<span class="match-vs" aria-hidden="true">-</span>${scoreHtml(m.id, "pk", 1, res.pk ? res.pk[1] : null, "アウェイの PK")}</div>`}</div>`
       : "";
   let actions = "";
   // 終わった試合は「結果を消す」を見出しの右に小さく（さくせん盤・ろくがは出さない）
-  const clearBtn = ready && done && !viewing ? `<button class="ls-chip clear-chip" type="button" data-clear="${esc(m.id)}">結果を消す</button>` : "";
+  const clearBtn = ready && done && !readOnly() ? `<button class="ls-chip clear-chip" type="button" data-clear="${esc(m.id)}">結果を消す</button>` : "";
   if (ready && !done) {
     const home = teamById(r.home);
     const away = teamById(r.away);
@@ -732,7 +746,7 @@ function matchHtml(c, m) {
     actions = `<div class="match-actions" id="tools-${esc(m.id)}" ${open ? "" : "hidden"}>
       <a class="ls-chip" href="${esc(saqsen)}" target="_blank" rel="noopener">⚽ さくせん盤で開く</a>
       <a class="ls-chip" href="${esc(roqgaUrl({ home: named(home), away: named(away) }))}" target="_blank" rel="noopener">📹 ろくがで撮る</a>
-      ${res && !viewing ? `<button class="ls-chip" type="button" data-clear="${esc(m.id)}">結果を消す</button>` : ""}
+      ${res && !readOnly() ? `<button class="ls-chip" type="button" data-clear="${esc(m.id)}">結果を消す</button>` : ""}
     </div>`;
   }
   const badge = next ? `<span class="next-badge">▶ 次の試合</span>` : done ? `<span class="done-badge">✓ 終わり</span>` : "";
@@ -754,7 +768,7 @@ function refereeHtml(c, m) {
   const label = now ? `${teamName(t, now)}${clash ? why : ""}` : "−";
   const done = Boolean(outcome(t.results[m.id]));
   if (done && !now) return "";
-  if (viewing || done) return `<div class="referee-row"><span>🟨 審判</span><b>${esc(label)}</b></div>`;
+  if (readOnly() || done) return `<div class="referee-row"><span>🟨 審判</span><b>${esc(label)}</b></div>`;
   if (!options.length && !now) return `<div class="referee-row"><span>🟨 審判</span><b>−</b></div>`;
   const list = clash ? [now, ...options] : options;
   const opts = list.map((id) => `<option value="${esc(id)}" ${esc(id === now ? "selected" : "")}>${esc(id === now && clash ? label : teamName(t, id))}</option>`).join("");
@@ -907,10 +921,10 @@ function renderMatches(c) {
   $("matchViews").hidden = !play.length;
   // 審判：準備の枠（自動で入れる・全部消す）と、まだ1つもないときの試合の画面の案内
   const refs = play.filter((m) => t.referees?.[m.id]).length;
-  $("refereeFold").hidden = !play.length || Boolean(viewing);
+  $("refereeFold").hidden = !play.length || readOnly() || liveRole() === "input";
   $("clearReferees").hidden = !refs;
   $("refereeMeta").textContent = refs ? `${refs} / ${play.length}試合に入れた` : "まだ";
-  $("refereeHint").hidden = Boolean(refs) || !play.length || Boolean(viewing);
+  $("refereeHint").hidden = Boolean(refs) || !play.length || readOnly();
   const done = play.filter((m) => outcome(t.results[m.id])).length;
   $("matchesMeta").textContent = play.length ? `${done} / ${play.length}試合` : "";
   // 次の試合：順番でいちばん早い、出るチームが決まっていて結果のまだの試合（同じ時刻のほかのコートも）
@@ -989,6 +1003,7 @@ function renderResults() {
 
 // 画面をまるごと描きなおす
 function renderAll() {
+  renderLive();
   renderPage();
   renderPresets();
   renderEvents();
@@ -1205,6 +1220,17 @@ function sendCard() {
 
 // 押す・入力を受けるしかけを付ける（はじめに1回）
 function bindEvents() {
+  // みんなで入れる
+  $("liveBody").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-live]");
+    if (b) onLiveAction(b.dataset.live);
+  });
+  $("liveRefresh").addEventListener("click", async () => {
+    const t = current();
+    if (t.live.pending.length && liveRole(t)) await liveFlush();
+    else if (await livePull({ quiet: false })) toast("読みなおしました");
+  });
+  $("liveRoleBtn").addEventListener("click", () => (liveRole() ? $("liveFold").scrollIntoView({ behavior: "smooth", block: "center" }) : liveUnlock()));
   // 大会
   $("eventName").addEventListener("click", renameEvent);
   $("eventMenu").addEventListener("click", openEventMenu);
@@ -1326,7 +1352,7 @@ function bindEvents() {
   // 試合：点・PK・結果を消す
   $("matches").addEventListener("click", (e) => {
     const b = e.target.closest("[data-score]");
-    if (b && !viewing) return setScore(b.dataset.mid, b.dataset.score, Number(b.dataset.k), Number(b.dataset.d));
+    if (b && !readOnly()) return setScore(b.dataset.mid, b.dataset.score, Number(b.dataset.k), Number(b.dataset.d));
     const clear = e.target.closest("[data-clear]");
     if (clear) return clearScore(clear.dataset.clear);
     // 点・審判・リンクのほかを押したら、その試合の「さくせん盤・ろくが」を広げる／たたむ
@@ -1343,7 +1369,7 @@ function bindEvents() {
   // 審判を選ぶ（「−」はなし）
   $("matches").addEventListener("change", (e) => {
     const sel = e.target.closest("[data-referee]");
-    if (!sel || viewing) return;
+    if (!sel || readOnly()) return;
     const t = current();
     t.referees = { ...(t.referees || {}) };
     if (sel.value) t.referees[sel.dataset.referee] = sel.value;
@@ -1400,14 +1426,14 @@ function bindEvents() {
   for (const id of ["standings", "bracket"]) {
     $(id).addEventListener("click", (e) => {
       const b = e.target.closest("[data-goto]");
-      if (b) (viewing ? gotoMatch : openScoreSheet)(b.dataset.goto);
+      if (b) (readOnly() ? gotoMatch : openScoreSheet)(b.dataset.goto);
     });
   }
   $("bracket").addEventListener("keydown", (e) => {
     const b = e.target.closest("[data-goto]");
     if (!b || (e.key !== "Enter" && e.key !== " ")) return;
     e.preventDefault();
-    (viewing ? gotoMatch : openScoreSheet)(b.dataset.goto);
+    (readOnly() ? gotoMatch : openScoreSheet)(b.dataset.goto);
   });
   $("goPlay").addEventListener("click", () => {
     page.now = "play";
@@ -1435,6 +1461,403 @@ function bindEvents() {
 }
 
 // はじめに動かす：名前を出し、受けとった結果を入れ、画面を作る
+// ---- みんなで入れる（くらぶボットの「🏆 大会」。js/live.js） ----
+// つないでいない大会は、これまでどおり端末の中だけ。つないだ大会だけ、点を1試合ずつ送り、ほかの端末の点を読みなおす
+
+const LIVE_POLL_MS = 20000;
+const livePlanSent = {}; // 大会の id → ボットにある組み合わせ（チーム・形・時間）の文字。運営が変えたら送る
+const liveShadow = {}; // 大会の id → ボットの結果・審判に、送るのを待っているものをのせたもの（どこが変わったかを見る）
+let liveBusy = false;
+let livePutTimer = 0;
+let liveMessage = ""; // 最後にうまくいかなかったこと（画面に出す）
+
+// 組み合わせ（結果・審判のほか）の文字
+const planText = (t) => {
+  const { results, referees, ...rest } = toServer(t);
+  return JSON.stringify(rest);
+};
+const resultText = (t) => JSON.stringify([t.results, t.referees]);
+
+// その大会の key（{ role, key }）を覚える・忘れる
+function rememberKey(id, value) {
+  if (value) liveKeys[id] = value;
+  else delete liveKeys[id];
+  setSessionKey(id, value);
+}
+
+// 端末に残したあと（persist）：つないだ大会なら、変わったところを送る。運営が組み合わせを変えたら、まるごと送る
+function liveAfterSave() {
+  const t = current();
+  const role = liveRole(t);
+  if (!role) return;
+  const id = t.live.id;
+  if (livePlanSent[id] === undefined) livePlanSent[id] = planText(t);
+  if (liveShadow[id] === undefined) liveShadow[id] = resultText(t);
+  if (role === "admin" && planText(t) !== livePlanSent[id]) {
+    clearTimeout(livePutTimer);
+    livePutTimer = setTimeout(() => livePut(), 1200);
+    return;
+  }
+  // 結果・審判の、変わった試合だけを待っているものに足す
+  const [r0, f0] = JSON.parse(liveShadow[id]);
+  const ids = new Set([...Object.keys(r0), ...Object.keys(t.results), ...Object.keys(f0), ...Object.keys(t.referees)]);
+  let pending = t.live.pending;
+  for (const mid of ids) {
+    if (JSON.stringify(r0[mid] ?? null) !== JSON.stringify(t.results[mid] ?? null)) pending = queue(pending, { mid, result: t.results[mid] || null });
+    if ((f0[mid] || "") !== (t.referees[mid] || "")) pending = queue(pending, { mid, ref: t.referees[mid] || "" });
+  }
+  if (pending === t.live.pending) return;
+  t.live.pending = pending;
+  liveShadow[id] = resultText(t);
+  saveAll(data);
+  liveFlush();
+}
+
+// その大会を、ボットから読んだものに置きかえる（data.list の中で）
+function liveReplace(next) {
+  const i = data.list.findIndex((x) => x.id === next.id);
+  if (i < 0) return;
+  data.list[i] = next;
+  liveShadow[next.id] = resultText(next);
+  if (!livePutTimer) livePlanSent[next.id] = planText(next);
+  saveAll(data);
+}
+
+// ボットから読みなおす（変わっていなければ何もしない）。読めたら true
+async function livePull({ quiet = true } = {}) {
+  const t = current();
+  if (!t.live || viewing || liveBusy) return false;
+  const res = await liveCall(t.live.bot, "get", { id: t.live.id, since: t.live.version });
+  if (!res.ok) {
+    liveMessage = liveError(res);
+    if (!quiet) toast(liveMessage);
+    renderLive();
+    return false;
+  }
+  liveMessage = "";
+  const now = data.list.find((x) => x.id === t.id);
+  if (!now || !now.live) return false;
+  if (res.same) {
+    now.live.at = Date.now();
+    saveAll(data);
+  } else {
+    const next = fromServer(now, res.data, res.version, { keepPlan: Boolean(livePutTimer) });
+    if (next) liveReplace(next);
+    renderAll();
+  }
+  renderLive();
+  return true;
+}
+
+// 待っている点・審判を、1つずつ送る。送り終わったら読みなおす
+async function liveFlush() {
+  const t = current();
+  const role = liveRole(t);
+  if (!role || liveBusy) return;
+  liveBusy = true;
+  try {
+    const { key } = sessionKey(t.live.id) || liveKeys[t.live.id];
+    while (t.live.pending.length) {
+      const op = t.live.pending[0];
+      const res = await liveCall(t.live.bot, "score", { id: t.live.id, key, ...op });
+      if (!res.ok) {
+        liveMessage = liveError(res);
+        if (res.error === "pass") {
+          rememberKey(t.live.id, null);
+          toast("合言葉が変わったようです。もう一度入れてね");
+          renderAll();
+        }
+        if (["bad", "none"].includes(res.error)) t.live.pending.shift(); // 送っても受けとられないものは、待たない
+        else break;
+        continue;
+      }
+      t.live.pending.shift();
+      saveAll(data);
+    }
+  } finally {
+    liveBusy = false;
+  }
+  await livePull();
+}
+
+// 運営：組み合わせを変えたので、大会をまるごと送る（ほかの人が先に点を入れていたら、読みなおしてから送りなおす）
+async function livePut(retry = true) {
+  livePutTimer = 0;
+  const t = current();
+  if (liveRole(t) !== "admin") return;
+  const { key } = sessionKey(t.live.id) || liveKeys[t.live.id];
+  const sent = planText(t);
+  const res = await liveCall(t.live.bot, "put", { id: t.live.id, key, base: t.live.version, data: toServer(overlay(t, t.live.pending)) });
+  if (res.ok) {
+    t.live.version = res.version;
+    t.live.pending = [];
+    livePlanSent[t.live.id] = sent;
+    liveShadow[t.live.id] = resultText(t);
+    liveMessage = "";
+    saveAll(data);
+    renderLive();
+    return;
+  }
+  if (res.error === "stale" && retry) {
+    // ほかの人の点を読み、この端末の組み合わせはそのまま（keepPlan）で送りなおす
+    livePutTimer = -1;
+    const got = await liveCall(t.live.bot, "get", { id: t.live.id });
+    livePutTimer = 0;
+    if (got.ok && got.data) {
+      const next = fromServer(t, got.data, got.version, { keepPlan: true });
+      next.referees = t.referees; // 審判は、運営がまとめて入れたもの（この端末）を残す
+      const i = data.list.findIndex((x) => x.id === t.id);
+      data.list[i] = next;
+      saveAll(data);
+      renderAll();
+      return livePut(false);
+    }
+  }
+  liveMessage = liveError(res);
+  toast(liveMessage);
+  renderLive();
+}
+
+// 合言葉を入れる窓（入れる文字は伏せる。「見せる」で見える）。入れた文字か null を返す
+function askPass({ title, text, ok = "入れる" }) {
+  return new Promise((resolve) => {
+    document.querySelector(".ls-sheet.pass-sheet")?.remove();
+    const before = document.activeElement;
+    const sheet = Object.assign(document.createElement("div"), { className: "ls-sheet pass-sheet" });
+    sheet.innerHTML = `<form class="ls-sheet-card" role="dialog" aria-modal="true" aria-labelledby="passTitle">
+      <p id="passTitle" class="ls-sheet-title">${esc(title)}</p>
+      <p class="ls-ask-text">${esc(text)}</p>
+      <input class="ls-input" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" minlength="${PASS_MIN}" maxlength="${PASS_MAX}" aria-label="${esc(title)}" required>
+      <label class="check-row"><input type="checkbox" data-show> 見せる</label>
+      <p class="pass-error ls-hint" hidden></p>
+      <div class="ls-sheet-actions"><button class="ls-button" type="button" data-no>やめる</button><button class="ls-button is-primary" type="submit">${esc(ok)}</button></div>
+    </form>`;
+    const field = sheet.querySelector("input.ls-input");
+    const close = (value) => {
+      sheet.remove();
+      document.removeEventListener("keydown", onKey);
+      before?.focus?.({ preventScroll: true });
+      resolve(value);
+    };
+    const onKey = (e) => e.key === "Escape" && close(null);
+    sheet.querySelector("[data-show]").addEventListener("change", (e) => (field.type = e.target.checked ? "text" : "password"));
+    sheet.querySelector("[data-no]").addEventListener("click", () => close(null));
+    sheet.addEventListener("click", (e) => e.target === sheet && close(null));
+    sheet.querySelector("form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const v = field.value.trim();
+      if (v.length < PASS_MIN) {
+        const err = sheet.querySelector(".pass-error");
+        err.hidden = false;
+        err.textContent = `${PASS_MIN}文字以上で入れてね`;
+        return field.focus();
+      }
+      close(v);
+    });
+    document.addEventListener("keydown", onKey);
+    document.body.append(sheet);
+    field.focus();
+  });
+}
+
+// 合言葉を入れて、この大会で点を入れられるようにする（運営の合言葉でも、入力の合言葉でもよい）
+async function liveUnlock() {
+  const t = current();
+  if (!t.live) return;
+  const pass = await askPass({ title: "✏️ 点を入れる", text: "運営から聞いた「入力の合言葉」を入れてね（運営の人は、運営の合言葉）。この端末には残しません。" });
+  if (!pass) return;
+  toast("確かめています…");
+  // 入力の合言葉として確かめ、ちがえば運営の合言葉として確かめる
+  for (const make of [() => inputKey(t.live.id, pass), () => adminKey(pass)]) {
+    const key = await make();
+    const res = await liveCall(t.live.bot, "check", { id: t.live.id, key });
+    if (res.ok) {
+      rememberKey(t.live.id, { role: res.role, key });
+      toast(res.role === "admin" ? "運営として入れられます" : "点を入れられます");
+      renderAll();
+      liveFlush();
+      return;
+    }
+    if (res.error !== "pass") return toast(liveError(res));
+  }
+  toast(liveError({ error: "pass" }));
+}
+
+// 運営：いまの大会を、くらぶボットにのせる（みんなで入れられるようにする）
+async function liveStart() {
+  const t = current();
+  const bot = window.QloveBotLink?.get() || "";
+  if (!bot) return toast("先に、くらぶボットの URL を入れてね");
+  const admin = await askPass({ title: "📡 運営の合言葉", text: "くらぶボットを作った人（システム管理者）が決めた「運営の合言葉」を入れてね。" });
+  if (!admin) return;
+  const input = await askPass({ title: "🔑 入力の合言葉を決める", text: "コートで点を入れる人に、口で伝える合言葉です（4文字以上）。リンクには入りません。", ok: "決める" });
+  if (!input) return;
+  const id = newLiveId();
+  toast("のせています…");
+  const [aKey, iKey] = [await adminKey(admin), await inputKey(id, input)];
+  const res = await liveCall(bot, "create", { id, adminKey: aKey, inputKey: iKey, data: toServer(t) });
+  if (!res.ok) return toast(liveError(res));
+  t.live = { id, bot, version: res.version, pending: [], at: Date.now() };
+  rememberKey(id, { role: "admin", key: aKey });
+  livePlanSent[id] = planText(t);
+  liveShadow[id] = resultText(t);
+  saveAll(data);
+  renderAll();
+  toast(seasonal("みんなで入れられるようにしました。「🔗 共有リンク」を送ってね"));
+}
+
+// 運営：入力の合言葉を変える（前の合言葉の人は、入れられなくなる）
+async function liveChangeInput() {
+  const t = current();
+  if (liveRole(t) !== "admin") return;
+  const input = await askPass({ title: "🔑 入力の合言葉を変える", text: "新しい合言葉を、点を入れる人に伝えなおしてね。前の合言葉では入れられなくなります。", ok: "変える" });
+  if (!input) return;
+  const { key } = sessionKey(t.live.id) || liveKeys[t.live.id];
+  const res = await liveCall(t.live.bot, "put", { id: t.live.id, key, base: t.live.version, data: toServer(overlay(t, t.live.pending)), inputKey: await inputKey(t.live.id, input) });
+  if (!res.ok) return toast(liveError(res));
+  t.live.version = res.version;
+  saveAll(data);
+  toast("入力の合言葉を変えました");
+  renderLive();
+}
+
+// この端末で、つなぐのをやめる（ボットの大会はそのまま。この端末の大会は、ふつうの大会にもどる）
+async function liveLeave() {
+  const t = current();
+  if (!t.live) return;
+  const yes = await window.LineShareUI?.ask({ title: "📴 つなぐのをやめる", text: "この端末の大会は、ふつうの大会（端末の中だけ）にもどります。くらぶボットの大会と、ほかの人の端末はそのままです。", ok: "やめる", cancel: "もどる" });
+  if (!yes) return;
+  if (t.live.pending.length) toast(`送れていない点が ${t.live.pending.length} 件ありました（この端末には入っています）`);
+  rememberKey(t.live.id, null);
+  delete t.live;
+  saveAll(data);
+  renderAll();
+}
+
+// くらぶボットの URL を入れる（Q キットの QloveBotLink。🏆 大会の機能があるか確かめてから）
+async function liveSetBot() {
+  const text = $("liveBotUrl").value.trim();
+  if (!botUrlIn(text)) return toast("くらぶボットの URL（https://script.google.com/macros/s/…/exec）を入れてね");
+  const res = await liveCall(text, "get", { id: "00000000000000000000" });
+  if (res.error === "net") return toast(liveError(res));
+  if (res.error === "auth") return toast(liveError(res));
+  const saved = window.QloveBotLink?.set(text);
+  if (!saved?.ok) return toast("この端末に残せませんでした");
+  toast("くらぶボットとつなぎました");
+  renderLive();
+}
+
+// 「📡 みんなで入れる」の欄と、試合のページの上の知らせを描きなおす
+function renderLive() {
+  const t = current();
+  const role = liveRole(t);
+  const fold = $("liveFold");
+  fold.hidden = Boolean(viewing);
+  $("liveBar").hidden = !t.live || Boolean(viewing);
+  if (t.live && !viewing) {
+    const at = t.live.at ? new Date(t.live.at) : null;
+    const time = at ? `${at.getHours()}:${String(at.getMinutes()).padStart(2, "0")}` : "";
+    const wait = t.live.pending.length;
+    $("liveStatus").textContent = [liveMessage ? "⚠️ つながっていません" : time ? `${time} に読みなおし` : "まだ読んでいません", wait ? `送るのを待っている ${wait} 件` : ""].filter(Boolean).join("・");
+    $("liveRoleBtn").textContent = role === "admin" ? "🔓 運営" : role === "input" ? "🔓 入力できる" : "✏️ 点を入れる";
+    $("liveRoleBtn").classList.toggle("is-primary", !role);
+  }
+  $("liveMeta").textContent = t.live ? (role === "admin" ? "運営" : role === "input" ? "入力" : "見るだけ") : "";
+  const bot = window.QloveBotLink?.get() || "";
+  let html = "";
+  if (t.live) {
+    html = `<p class="ls-hint">この大会は、くらぶボットで共有しています。点は1試合ずつ送り、ほかの人の点は20秒ごと（と 🔄）に読みなおします。電波がないときは、この端末にためて、つながったら送ります。</p>
+      <div class="live-actions">
+        <button class="ls-button is-primary" type="button" data-live="copy">🔗 共有リンクをコピー</button>
+        ${role === "admin" ? `<button class="ls-button" type="button" data-live="input">🔑 入力の合言葉を変える</button>` : ""}
+        ${role ? `<button class="ls-chip" type="button" data-live="lock">🔒 この端末で入れるのをやめる</button>` : ""}
+        <button class="ls-chip" type="button" data-live="leave">📴 つなぐのをやめる</button>
+      </div>
+      <p class="ls-hint">共有リンクには合言葉は入りません。点を入れる人には、入力の合言葉を口で伝えてね。見る人は、リンクを開くだけ。</p>`;
+  } else if (!window.QloveBotLink) {
+    html = `<p class="ls-hint">くらぶボットの部品を読めませんでした（電波を確かめてね）。</p>`;
+  } else if (!bot) {
+    html = `<p class="ls-hint">くらぶボットとつなぐと、運営・コートの入力の人・見る人で、同じ結果を見られます（つながなくても、これまでどおり使えます）。</p>
+      <label class="ls-label" for="liveBotUrl">くらぶボットの URL</label>
+      <input id="liveBotUrl" class="ls-input" type="url" inputmode="url" autocomplete="off" placeholder="https://script.google.com/macros/s/…/exec">
+      <button class="ls-button" type="button" data-live="bot">つなぐ</button>`;
+  } else {
+    html = `<p class="ls-hint">くらぶボットにつないであります。この大会をのせると、運営・コートの入力の人・見る人で同じ結果を見られます（入れた点はすぐ送り、ほかの人の点を読みなおします）。</p>
+      <button class="ls-button is-primary is-block" type="button" data-live="start">📡 この大会をみんなで入れる</button>
+      <button class="ls-chip" type="button" data-live="forget">くらぶボットの URL を変える</button>`;
+  }
+  $("liveBody").innerHTML = html;
+}
+
+// 「📡 みんなで入れる」のボタン
+async function onLiveAction(kind) {
+  const t = current();
+  if (kind === "bot") return liveSetBot();
+  if (kind === "start") return liveStart();
+  if (kind === "forget") {
+    window.QloveBotLink?.clear();
+    return renderLive();
+  }
+  if (kind === "copy") {
+    const url = liveUrl(t.live, TOOL.url);
+    try {
+      await navigator.clipboard.writeText(url);
+      toast("共有リンクをコピーしました");
+    } catch {
+      window.LineShareUI?.ask({ title: "共有リンク", text: "長押しでコピーしてね", input: url, readonly: true, ok: "閉じる", cancel: null });
+    }
+    return;
+  }
+  if (kind === "input") return liveChangeInput();
+  if (kind === "lock") {
+    rememberKey(t.live.id, null);
+    toast("この端末では、見るだけにしました");
+    return renderAll();
+  }
+  if (kind === "leave") return liveLeave();
+}
+
+// ?live=…&bot=… で開いたとき：この端末にその大会があれば開き、なければボットから読んで足す
+async function openLiveLink(link) {
+  history.replaceState(null, "", location.pathname);
+  let t = data.list.find((x) => x.live && x.live.id === link.id);
+  if (!t) {
+    const res = await liveCall(link.bot, "get", { id: link.id });
+    if (!res.ok || !res.data) return toast(liveError(res));
+    const base = { ...blankTournament(), id: newId("q"), createdAt: Date.now(), live: { id: link.id, bot: link.bot, version: 0, pending: [], at: 0 } };
+    t = fromServer(base, res.data, res.version);
+    if (!t) return toast(liveError({ error: "bad" }));
+    data.list.unshift(t);
+    liveShadow[link.id] = resultText(t);
+    livePlanSent[link.id] = planText(t);
+  }
+  data.current = t.id;
+  page.now = "play";
+  saveAll(data);
+  renderAll();
+  if (!liveRole(t)) toast("見るだけで開きました。点を入れる人は「✏️ 点を入れる」から合言葉を入れてね");
+  livePull();
+}
+
+// 開いているあいだ、ときどき読みなおす（画面が見えているときだけ）。電波がもどったら、待っているものを送る
+function startLivePolling() {
+  // はじめの印：開いたときの結果・組み合わせを「ボットと同じ」とみなす（このあと入れたものだけを送る）
+  for (const t of data.list) {
+    if (!t.live) continue;
+    liveShadow[t.live.id] = resultText(overlay(t, []));
+    livePlanSent[t.live.id] = planText(t);
+  }
+  const tick = () => {
+    const t = current();
+    if (!t.live || viewing || document.visibilityState !== "visible") return;
+    if (t.live.pending.length && liveRole(t)) liveFlush();
+    else livePull();
+  };
+  setInterval(tick, LIVE_POLL_MS);
+  document.addEventListener("visibilitychange", tick);
+  window.addEventListener("online", tick);
+}
+
 function init() {
   document.title = `${TOOL.name}｜${TOOL.copy}`;
   $("toolName").textContent = TOOL.name;
@@ -1452,7 +1875,12 @@ function init() {
     history.replaceState(null, "", location.pathname);
     toast("見る人用のリンクが読めませんでした（途中で切れていないか確かめてね）");
   }
+  startLivePolling();
   applyIncoming([...(incoming ? [incoming] : []), ...takeInbox()]);
+  // みんなで入れる：?live=…&bot=… で開いた大会・ときどき読みなおす
+  const link = readLive(location.search);
+  if (link && !viewing) openLiveLink(link);
+  else if (current().live && !viewing) livePull();
   if (viewing) return; // 見るだけのときは、使い方を出さない
   window.LineShareUI?.firstTip(
     TOOL.key,
