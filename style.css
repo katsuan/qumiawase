@@ -514,6 +514,32 @@ body {
   border-color: #d9622b;
 }
 
+.match-tools > summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  color: var(--ls-subtext);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  list-style: none;
+}
+
+.match-tools > summary::-webkit-details-marker {
+  display: none;
+}
+
+.match-tools > summary::after {
+  content: "＋";
+  margin-left: auto;
+  font-size: 15px;
+}
+
+.match-tools[open] > summary::after {
+  content: "−";
+}
+
 .match-actions {
   display: flex;
   flex-wrap: wrap;

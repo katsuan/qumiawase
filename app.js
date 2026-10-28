@@ -1,13 +1,13 @@
 // くみあわせ（QumiAwase）：入口。画面（大会・チーム・形・日程・トーナメント表・順位表・試合と結果・送る）を作り、ボタン・入力を受け、部品（js/）をつなぐ。
 // index.html から読む（type="module"）。組み合わせは js/pairing.js、順位と勝ち上がりは js/stats.js、端末に残すのは js/store.js、
 // リンク（見る人用・さくせん盤・ろくが・結果を戻す）は js/link.js、カードは js/card.js、画像は js/image.js
-import { FORMATS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610281925";
-import { addMinutes, autoReferees, fitOptions, generate, refereeOptions, roundName, timeSchedule } from "./js/pairing.js?v=202610281925";
-import { durationLabel, estimate, outcome, podium, resolve, table } from "./js/stats.js?v=202610281925";
-import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610281925";
-import { LINK_MAX, qronosUrl, readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610281925";
-import { cardParams, dateLabel, formatLabel, matchLine, matchTitle, sideLabel, summaryText, teamName } from "./js/card.js?v=202610281925";
-import { drawTournament } from "./js/image.js?v=202610281925";
+import { FORMATS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610282112";
+import { addMinutes, autoReferees, fitOptions, generate, refereeOptions, roundName, timeSchedule } from "./js/pairing.js?v=202610282112";
+import { durationLabel, estimate, outcome, podium, resolve, table } from "./js/stats.js?v=202610282112";
+import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610282112";
+import { LINK_MAX, qronosUrl, readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610282112";
+import { cardParams, dateLabel, formatLabel, matchLine, matchTitle, sideLabel, summaryText, teamName } from "./js/card.js?v=202610282112";
+import { drawTournament } from "./js/image.js?v=202610282112";
 
 // id から画面の部品を返す
 const $ = (id) => document.getElementById(id);
@@ -543,6 +543,9 @@ function scoreHtml(mid, kind, k, value, label) {
   return `<div class="score-stepper ${value === null ? "is-empty" : ""}"><button type="button" data-score="${kind}" data-k="${k}" data-d="-1" data-mid="${esc(mid)}" aria-label="${esc(label)}をへらす">−</button><output><button type="button" class="score-now" data-score="${kind}" data-k="${k}" data-d="0" data-mid="${esc(mid)}" aria-label="${esc(label)}（いま ${shown}）">${shown}</button></output><button type="button" data-score="${kind}" data-k="${k}" data-d="1" data-mid="${esc(mid)}" aria-label="${esc(label)}をふやす">＋</button></div>`;
 }
 
+// 試合ごとの「さくせん盤・ろくが」の開け閉め（試合の id → 開いているか）。描きなおしても戻らないように
+const toolsOpen = new Map();
+
 // 試合1つのカード（見出し・時刻・2チームと点・PK・さくせん盤やろくがで開く）の HTML を返す
 function matchHtml(c, m) {
   const { t, gen, timeOf, numberOf, resolved } = c;
@@ -575,11 +578,13 @@ function matchHtml(c, m) {
     const away = teamById(r.away);
     const named = (x) => ({ name: teamName(t, x.id), color: x.color });
     const saqsen = saqsenUrl({ home: named(home), away: named(away), place: t.sched.on ? t.sched.place : "", date: t.sched.on ? t.sched.date : "", time: s?.time || "", tid: t.id, mid: m.id });
-    actions = `<div class="match-actions">
+    // 毎回並ぶとくどいので、たたむ（次の試合だけ開いておく。開け閉めは覚えておく）
+    const open = toolsOpen.has(m.id) ? toolsOpen.get(m.id) : next;
+    actions = `<details class="match-tools" data-tools="${esc(m.id)}" ${open ? "open" : ""}><summary>⚽ さくせん盤・📹 ろくが</summary><div class="match-actions">
       <a class="ls-chip" href="${esc(saqsen)}" target="_blank" rel="noopener">⚽ さくせん盤で開く</a>
       <a class="ls-chip" href="${esc(roqgaUrl({ home: named(home), away: named(away) }))}" target="_blank" rel="noopener">📹 ろくがで撮る</a>
       ${res && !viewing ? `<button class="ls-chip" type="button" data-clear="${esc(m.id)}">結果を消す</button>` : ""}
-    </div>`;
+    </div></details>`;
   }
   const badge = next ? `<span class="next-badge">▶ 次の試合</span>` : done ? `<span class="done-badge">✓ 終わり</span>` : "";
   return `<article class="match ${done ? "is-done" : ""} ${next ? "is-next" : ""}" data-mid="${esc(m.id)}"><div class="match-head"><span>${badge}${esc(matchTitle(m, gen))}</span><span>${esc(when)}${clearBtn}</span></div>${side(m.home, r.home, 0)}${side(m.away, r.away, 1)}${pkRow}${refereeHtml(c, m)}${actions}</article>`;
@@ -1136,6 +1141,15 @@ function bindEvents() {
   });
 
   // 審判を選ぶ（「−」はなし）
+  // toggle は泡立たないので、つかまえる側で受ける
+  $("matches").addEventListener(
+    "toggle",
+    (e) => {
+      const d = e.target.closest?.("[data-tools]");
+      if (d) toolsOpen.set(d.dataset.tools, d.open);
+    },
+    true
+  );
   $("matches").addEventListener("change", (e) => {
     const sel = e.target.closest("[data-referee]");
     if (!sel || viewing) return;
