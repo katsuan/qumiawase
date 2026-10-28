@@ -2,13 +2,13 @@
 // app.js から読む（import）
 //
 // つながなければ、これまでどおり端末の中だけで動く（オフラインでも使える）。つないだ大会（t.live）だけ、点を1試合ずつボットに送り、
-// ほかの端末が入れた点を読みなおす（🔄 更新・開いているあいだは自動）。電波がないときは端末にためておき（t.live.pending）、つながったら送る。
+// ほかの端末が入れた点は「🔄 更新」で読みなおす（GAS をあまり呼ばないため、自動では読まない）。電波がないときは端末にためておき（t.live.pending）、つながったら送る。
 //
 // 合言葉（docs/security.md の W7）：URL にも localStorage にも残さない。生の合言葉は送らない。
 //   入力の合言葉 → PBKDF2（SHA-256・塩 "qumiawase:" + 大会の番号・10万回・32バイト）。ジェンダーリビールと同じ考え
 //   運営の合言葉 → SHA-256("qumiawase:admin:" + 合言葉)（ボットのスクリプト プロパティにあるものとくらべる）
 //   できた key は、そのタブの sessionStorage にだけ置く（タブを閉じれば消える。読みこみなおしでは聞きなおさない）
-import { cleanTournament, isObj, resultIn } from "./store.js?v=202610282311";
+import { cleanTournament, isObj, resultIn } from "./store.js?v=202610282312";
 
 // くらぶボットの URL（GAS のウェブアプリ …/exec だけ。Q キットの shared/qlove-bot.js と同じ形）
 const BOT_URL = /^https:\/\/script\.google\.com\/(?:a\/[A-Za-z0-9.-]+\/)?macros\/s\/[A-Za-z0-9_-]{20,120}\/exec$/;
