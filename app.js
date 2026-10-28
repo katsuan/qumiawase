@@ -1,13 +1,13 @@
 // くみあわせ（QumiAwase）：入口。画面（大会・チーム・形・日程・トーナメント表・順位表・試合と結果・送る）を作り、ボタン・入力を受け、部品（js/）をつなぐ。
 // index.html から読む（type="module"）。組み合わせは js/pairing.js、順位と勝ち上がりは js/stats.js、端末に残すのは js/store.js、
 // リンク（見る人用・さくせん盤・ろくが・結果を戻す）は js/link.js、カードは js/card.js、画像は js/image.js
-import { FORMATS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610280831";
-import { addMinutes, fitOptions, generate, roundName, timeSchedule } from "./js/pairing.js?v=202610280831";
-import { durationLabel, estimate, outcome, podium, resolve, table } from "./js/stats.js?v=202610280831";
-import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610280831";
-import { qronosUrl, readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610280831";
-import { cardParams, dateLabel, formatLabel, matchLine, matchTitle, sideLabel, summaryText, teamName } from "./js/card.js?v=202610280831";
-import { drawTournament } from "./js/image.js?v=202610280831";
+import { FORMATS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610281302";
+import { addMinutes, fitOptions, generate, roundName, timeSchedule } from "./js/pairing.js?v=202610281302";
+import { durationLabel, estimate, outcome, podium, resolve, table } from "./js/stats.js?v=202610281302";
+import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610281302";
+import { qronosUrl, readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610281302";
+import { cardParams, dateLabel, formatLabel, matchLine, matchTitle, sideLabel, summaryText, teamName } from "./js/card.js?v=202610281302";
+import { drawTournament } from "./js/image.js?v=202610281302";
 
 // id から画面の部品を返す
 const $ = (id) => document.getElementById(id);
@@ -293,7 +293,7 @@ function nextTeamId(t) {
 // ---- 画面：形と日程 ----
 
 // − 数 ＋ の部品を el に作る（get で今の数、set で変える。min〜max、step ずつ）
-function stepper(el, { get, set, min, max, step = 1, label }) {
+function stepper(el, { get, set, min, max, step = 1, label, typed = false }) {
   const value = get();
   el.innerHTML = `<button type="button" data-d="-1" aria-label="${esc(label)}をへらす" ${esc(value <= min ? "disabled" : "")}>−</button><output aria-label="${esc(label)}">${esc(value)}</output><button type="button" data-d="1" aria-label="${esc(label)}をふやす" ${esc(value >= max ? "disabled" : "")}>＋</button>`;
   el.onclick = (e) => {
@@ -301,6 +301,18 @@ function stepper(el, { get, set, min, max, step = 1, label }) {
     if (!d) return;
     set(Math.min(max, Math.max(min, get() + d * step)));
   };
+  if (!typed) return;
+  // typed のときは、数字を押して直接入れられる欄にする（入れおわったら範囲におさめる）
+  const input = Object.assign(document.createElement("input"), { type: "number", inputMode: "numeric", min, max, step: 1, value });
+  input.setAttribute("aria-label", label);
+  el.querySelector("output").replaceWith(input);
+  input.onfocus = () => input.select();
+  input.onchange = () => {
+    const n = Math.round(Number(input.value));
+    if (!Number.isFinite(n) || input.value === "") return void (input.value = get());
+    set(Math.min(max, Math.max(min, n)));
+  };
+  input.onkeydown = (e) => e.key === "Enter" && input.blur();
 }
 
 // 形（トーナメント・総当たり・グループ）と、その設定・勝ち点を描きなおす
@@ -355,8 +367,8 @@ function renderSched() {
     renderResults();
   };
   stepper(document.querySelector('[data-sched="courts"]'), { get: () => s.courts, set: setSched("courts"), min: 1, max: LIMITS.courts, label: "コートの数" });
-  stepper(document.querySelector('[data-sched="minutes"]'), { get: () => s.minutes, set: setSched("minutes"), min: 5, max: LIMITS.minutes, step: 5, label: "1試合の時間" });
-  stepper(document.querySelector('[data-sched="rest"]'), { get: () => s.rest, set: setSched("rest"), min: 0, max: LIMITS.minutes, step: 5, label: "空き時間" });
+  stepper(document.querySelector('[data-sched="minutes"]'), { get: () => s.minutes, set: setSched("minutes"), min: 1, max: LIMITS.minutes, label: "1試合の時間", typed: true });
+  stepper(document.querySelector('[data-sched="rest"]'), { get: () => s.rest, set: setSched("rest"), min: 0, max: LIMITS.minutes, label: "空き時間", typed: true });
 }
 
 // 見こみ（試合の数・1チームの最多の試合の数・かかる時間）を、形の下と試合のタブの見出しに出す

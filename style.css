@@ -173,6 +173,34 @@ body {
   text-align: center;
 }
 
+/* 押して直接打ちこめる数字（1試合の時間・空き時間）。iPhone で拡大されないよう 16px 以上 */
+.stepper input {
+  width: 3.2em;
+  min-width: 0;
+  padding: 4px 0;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--ls-text);
+  font: inherit;
+  font-size: 17px;
+  font-weight: 800;
+  text-align: center;
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.stepper input::-webkit-outer-spin-button,
+.stepper input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.stepper input:focus {
+  outline: 2px solid var(--ls-accent);
+  background: var(--ls-surface-2, transparent);
+}
+
 /* iPhone で日付・時刻の欄がずれないように（ほかのツールと同じ） */
 .when-row {
   display: grid;
