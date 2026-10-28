@@ -139,3 +139,16 @@ test("大会要項の文", async () => {
   assert.equal("rules" in packTournament(t), false);
   assert.equal(cleanTournament({ teams: [], rules: 5 }).rules, "");
 });
+
+// 手で直した時刻・遅れ：形を確かめて残す。見る人用のリンクにものせる
+test("手で直した時刻と遅れ", async () => {
+  const { cleanTournament } = await import("../js/store.js");
+  const t = cleanTournament({ teams: [{ name: "a" }, { name: "b" }], timeFix: { "L1-1": { time: "10:30", court: 2 }, "<x>": { time: "10:00" }, "L1-2": { time: "25:99" } }, delays: [{ at: 20, min: 10 }, { at: 0, min: 0 }, "x"] });
+  assert.deepEqual(t.timeFix, { "L1-1": { time: "10:30", court: 2 } });
+  assert.deepEqual(t.delays, [{ at: 20, min: 10 }]);
+  const back = unpackTournament(packTournament(t));
+  assert.deepEqual(back.timeFix, t.timeFix);
+  assert.deepEqual(back.delays, t.delays);
+  const plain = packTournament(cleanTournament({ teams: [{ name: "a" }, { name: "b" }] }));
+  assert.equal("x" in plain || "y" in plain, false);
+});

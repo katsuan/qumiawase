@@ -93,8 +93,19 @@ export function table(ids, matches, results, points, order = DEFAULT_RANK) {
   return rank(ids.map((id) => rows[id]), keys).map((row, i) => ({ ...row, rank: i + 1 }));
 }
 
-// その試合のならびに、結果がまだ入っていない試合がないか（全部終わったか）を返す
-export const finished = (matches, results) => matches.every((m) => m.bye || outcome(results[m.id]));
+/**
+ * 1試合が終わったか：点が入っていて、PK で決める試合（トーナメント・PK をする総当たり）が同点なら PK も決まっていること。
+ * points は勝ち点（pk を見る。なければ総当たりの同点は引き分けで終わり）
+ */
+export function isDone(match, result, points = {}) {
+  const o = outcome(result);
+  if (!o) return false;
+  if (o !== "draw") return true;
+  return !(match.stage === "ko" || match.stage === "third" || (points.pk && (match.stage === "league" || match.stage === "group")));
+}
+
+// その試合のならびに、まだ終わっていない試合がないか（全部終わったか）を返す
+export const finished = (matches, results, points = {}) => matches.every((m) => m.bye || isDone(m, results[m.id], points));
 
 /**
  * トーナメントの勝ち上がりを決める：試合ごとの、ホーム・アウェイのチーム（まだ決まらなければ null）と、勝ったチーム・負けたチームを返す。
@@ -107,7 +118,7 @@ export function resolve(gen, ids, results, points, order = DEFAULT_RANK) {
   const groupRanks = {};
   for (const g of gen.groups || []) {
     const ms = gen.matches.filter((m) => m.stage === "group" && m.group === g.key);
-    if (ms.length && finished(ms, results)) groupRanks[g.key] = table(g.ids, ms, results, points, order).map((r) => r.id);
+    if (ms.length && finished(ms, results, points)) groupRanks[g.key] = table(g.ids, ms, results, points, order).map((r) => r.id);
   }
   // 側（チーム・勝者・敗者・グループの順位）から、決まっていればチームの id を返す
   const teamOf = (side) => {

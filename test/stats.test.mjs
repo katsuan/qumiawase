@@ -130,3 +130,24 @@ test("順位の決め方を並べかえる", () => {
   // 形がちがえば、はじめの並び
   assert.deepEqual(top(["gf", "gf", "x"]), ["x", "y"]);
 });
+
+// 終わったか：PK で決める試合の同点は、PK が決まってから。グループの順位も、それまで決めない
+test("PK がまだの同点は終わっていない", async () => {
+  const { isDone, finished } = await import("../js/stats.js");
+  const ko = { id: "K1-1", stage: "ko" };
+  const lg = { id: "L1-1", stage: "league" };
+  assert.equal(isDone(ko, { s: [1, 1] }), false);
+  assert.equal(isDone(ko, { s: [1, 1], pk: [4, 3] }), true);
+  assert.equal(isDone(lg, { s: [1, 1] }, { pk: false }), true); // 引き分けで終わり
+  assert.equal(isDone(lg, { s: [1, 1] }, { pk: true }), false);
+  assert.equal(isDone(lg, { s: [2, 1] }, { pk: true }), true);
+  assert.equal(finished([lg], { "L1-1": { s: [1, 1] } }, { pk: true }), false);
+  // グループで PK をするとき：同点の PK が入るまで、決勝トーナメントに上がるチームを決めない
+  const gen = generate(["a", "b", "c", "d"].map((id) => ({ id })), "groups", { groups: 2, advance: 1 });
+  const results = Object.fromEntries(gen.matches.filter((m) => m.stage === "group").map((m) => [m.id, { s: [1, 1] }]));
+  const P = { win: 3, draw: 1, loss: 0, pk: true, pkWin: 2, pkLoss: 1 };
+  const final = gen.matches.find((m) => m.stage === "ko");
+  assert.equal(resolve(gen, ["a", "b", "c", "d"], results, P)[final.id].home, null);
+  for (const id of Object.keys(results)) results[id].pk = [5, 4];
+  assert.ok(resolve(gen, ["a", "b", "c", "d"], results, P)[final.id].home);
+});

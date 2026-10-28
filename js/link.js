@@ -1,9 +1,9 @@
 // くみあわせ：URL の受け渡し。見る人用のリンク（大会の中身を URL にのせる。サーバーなし）・さくせん盤やろくがで開くリンク・
 // さくせん盤から結果を戻すリンク。中身は JSON → UTF-8 → base64url。受けとるときは形を確かめる
 // app.js・js/card.js から読む（import）
-import { LIMITS, QRONOS_URL, ROQGA_URL, SAQSEN_URL, TOOL } from "./settings.js?v=202610282331";
-import { cleanTournament, hexIn, intIn, isObj, resultIn, textIn } from "./store.js?v=202610282331";
-import { DEFAULT_RANK } from "./stats.js?v=202610282331";
+import { LIMITS, QRONOS_URL, ROQGA_URL, SAQSEN_URL, TOOL } from "./settings.js?v=202610290019";
+import { cleanTournament, hexIn, isObj, resultIn, textIn } from "./store.js?v=202610290019";
+import { DEFAULT_RANK } from "./stats.js?v=202610290019";
 
 // LINE のリンクは 1000 文字まで
 export const LINK_MAX = 1000;
@@ -123,9 +123,6 @@ export function readView(search) {
   const q = new URLSearchParams(search);
   return q.has("view") ? unpackTournament(decode(q.get("view"))) : null;
 }
-
-// 数（0〜max）に丸める（さくせん盤と同じ形で点を渡すときに使う）
-export const scoreOf = (v) => intIn(v, 0, LIMITS.score, 0);
 
 /**
  * くろのす（カウントダウン）のボードを開くリンクを返す：試合ごとの「あと◯分」を並べる（12件まで）。

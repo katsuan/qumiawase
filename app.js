@@ -1,14 +1,14 @@
 // くみあわせ（QumiAwase）：入口。画面（大会・チーム・形・日程・トーナメント表・順位表・試合と結果・送る）を作り、ボタン・入力を受け、部品（js/）をつなぐ。
 // index.html から読む（type="module"）。組み合わせは js/pairing.js、順位と勝ち上がりは js/stats.js、端末に残すのは js/store.js、
 // リンク（見る人用・さくせん盤・ろくが・結果を戻す）は js/link.js、カードは js/card.js、画像は js/image.js、みんなで入れる（くらぶボット）は js/live.js
-import { FORMATS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610282331";
-import { addMinutes, adjustTimes, autoReferees, fitOptions, generate, refereeOptions, roundName, timeSchedule } from "./js/pairing.js?v=202610282331";
-import { durationLabel, estimate, outcome, podium, RANK_LABELS, rankIn, resolve, table } from "./js/stats.js?v=202610282331";
-import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610282331";
-import { LINK_MAX, qronosUrl, readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610282331";
-import { cardParams, dateLabel, formatLabel, matchLine, matchTitle, pointsLabel, sideLabel, summaryText, teamName } from "./js/card.js?v=202610282331";
-import { drawTournament } from "./js/image.js?v=202610282331";
-import { adminKey, botUrlIn, fromServer, inputKey, liveCall, liveError, liveUrl, newLiveId, overlay, PASS_MAX, PASS_MIN, queue, readLive, sessionKey, setSessionKey, toServer } from "./js/live.js?v=202610282331";
+import { FORMATS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610290019";
+import { addMinutes, adjustTimes, autoReferees, fitOptions, generate, refereeOptions, roundName, timeSchedule } from "./js/pairing.js?v=202610290019";
+import { durationLabel, estimate, isDone, outcome, podium, RANK_LABELS, rankIn, resolve, table } from "./js/stats.js?v=202610290019";
+import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610290019";
+import { LINK_MAX, qronosUrl, readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610290019";
+import { cardParams, dateLabel, formatLabel, matchLine, matchTitle, pointsLabel, sideLabel, summaryText, teamName } from "./js/card.js?v=202610290019";
+import { drawTournament } from "./js/image.js?v=202610290019";
+import { adminKey, botUrlIn, fromServer, inputKey, liveCall, liveError, liveUrl, newLiveId, overlay, PASS_MAX, PASS_MIN, queue, readLive, sessionKey, setSessionKey, toServer } from "./js/live.js?v=202610290019";
 
 // id から画面の部品を返す
 const $ = (id) => document.getElementById(id);
@@ -529,7 +529,7 @@ const dotHtml = (id) => `<i class="dot" style="background:${esc(teamById(id)?.co
 
 // トーナメント表（回ごとの列）と、優勝・準優勝・3位を描きなおす
 function renderBracket(c) {
-  const { t, gen, resolved, timeOf, numberOf } = c;
+  const { t, gen, resolved } = c;
   const ko = gen.matches.filter((m) => m.stage === "ko");
   $("bracketPanel").hidden = !ko.length;
   if (!ko.length) return;
@@ -544,8 +544,7 @@ function renderBracket(c) {
       const cls = id ? `${r.winner === id && !m.bye ? "is-win" : ""} ${id === mine() ? "is-mine" : ""}` : "is-tbd";
       return `<div class="${cls}">${dotHtml(id)}<span class="name">${esc(label)}</span><b>${esc(score)}</b></div>`;
     };
-    const s = timeOf[m.id];
-    const when = m.bye ? "" : s ? `${s.time}${t.sched.courts > 1 ? `・コート${s.court}` : ""}` : numberOf[m.id] ? `第${numberOf[m.id]}試合` : "";
+    const when = m.bye ? "" : whenText(c, m);
     const tap = r.home && r.away && !m.bye ? ` role="button" tabindex="0" data-goto="${esc(m.id)}" aria-label="${esc(`${teamName(t, r.home)} 対 ${teamName(t, r.away)}`)}：${readOnly() ? "試合の表で見る" : "点を入れる"}"` : "";
     return `<div class="bracket-slot"><div class="bracket-match ${tap ? "is-tappable" : ""}"${tap}><p class="bracket-when">${esc(when || "\u00a0")}</p>${row(m.home, r.home, 0)}${row(m.away, r.away, 1)}</div></div>`;
   };
@@ -624,16 +623,15 @@ function openScoreSheet(mid) {
     const r = resolved[m.id] || {};
     const res = t.results[m.id];
     const o = outcome(res);
-    const when = c.timeOf[m.id] ? `${c.timeOf[m.id].time}${t.sched.courts > 1 ? `・コート${c.timeOf[m.id].court}` : ""}` : c.numberOf[m.id] ? `第${c.numberOf[m.id]}試合` : "";
+    const when = whenText(c, m);
     const ref = t.referees?.[m.id];
     const side = (id, k) => {
       const name = teamName(t, id);
       const win = (o === "home" && k === 0) || (o === "away" && k === 1);
       return `<div class="match-side ${win ? "is-win" : ""}">${dotHtml(id)}<span class="name">${esc(name)}</span>${scoreHtml(m.id, "s", k, res ? res.s[k] : null, `${name}の点`)}</div>`;
     };
-    // トーナメントで同点のときは PK も（試合の表と同じ）
-    const withPk = m.stage === "ko" || m.stage === "third" || Boolean(t.points.pk); // トーナメントと、PK をする総当たり
-    const pkHtml = withPk && res && res.s[0] === res.s[1] ? `<div class="pk-row"><span>PK（同点のとき）</span><div class="pk-steppers">${scoreHtml(m.id, "pk", 0, res.pk ? res.pk[0] : null, "ホームの PK")}<span class="match-vs" aria-hidden="true">-</span>${scoreHtml(m.id, "pk", 1, res.pk ? res.pk[1] : null, "アウェイの PK")}</div></div>` : "";
+    // PK で決める試合で同点のときは PK も（試合の表と同じ）
+    const pkHtml = pkAllowed(t, m) && res && res.s[0] === res.s[1] ? `<div class="pk-row"><span>PK（同点のとき）</span>${pkStepsHtml(m, res)}</div>` : "";
     card.innerHTML = `<p id="scoreSheetTitle" class="ls-sheet-title">${esc(matchTitle(m, gen))}</p>
       <p class="score-sheet-sub">${esc([when, ref ? `🟨 審判 ${teamName(t, ref)}` : ""].filter(Boolean).join("　"))}</p>
       <div class="match-sides score-sheet-sides">${side(r.home, 0)}<span class="match-vs" aria-hidden="true">-</span>${side(r.away, 1)}</div>
@@ -745,10 +743,12 @@ function addDelay(d) {
   const c = compute();
   const t = c.t;
   const byId = Object.fromEntries(c.gen.matches.map((m) => [m.id, m]));
-  const next = c.plan.find((p) => !byId[p.id].bye && c.resolved[p.id]?.home && c.resolved[p.id]?.away && !outcome(t.results[p.id])) || c.plan.find((p) => !outcome(t.results[p.id]));
+  const next = c.plan.find((p) => !byId[p.id].bye && c.resolved[p.id]?.home && c.resolved[p.id]?.away && !doneOf(t, byId[p.id])) || c.plan.find((p) => !doneOf(t, byId[p.id]));
   if (!next) return toast("まだの試合がありません");
   const at = next.start - next.late;
-  const delays = [...(t.delays || [])];
+  // 遅れは「なし」より前にはしない（予定より早めることはしない）
+  if ((t.delays || []).reduce((n, x) => n + x.min, 0) + d < 0) return toast("遅れがないので、これより早くはできません");
+  const delays = [...(t.delays || [])].map((x) => ({ ...x }));
   const last = delays.at(-1);
   if (last && last.at === at) last.min += d;
   else delays.push({ at, min: d });
@@ -756,6 +756,20 @@ function addDelay(d) {
   persist();
   renderResults();
 }
+
+// その試合は終わったか（PK で決める試合の同点は、PK が決まってから）
+const doneOf = (t, m) => isDone(m, t.results[m.id], t.points);
+// その試合で PK を入れるか（トーナメントと、PK をする総当たり）
+const pkAllowed = (t, m) => m.stage === "ko" || m.stage === "third" || Boolean(t.points.pk);
+// PK の − 数 ＋（左右のチームの下にそろえる）
+const pkStepsHtml = (m, res) =>
+  `<div class="pk-steppers">${scoreHtml(m.id, "pk", 0, res.pk ? res.pk[0] : null, "ホームの PK")}<span class="match-vs" aria-hidden="true">-</span>${scoreHtml(m.id, "pk", 1, res.pk ? res.pk[1] : null, "アウェイの PK")}</div>`;
+// 試合のいつ（「10:40・コート2」。時刻を入れていなければ「第5試合」）
+const whenText = (c, m) => {
+  const s = c.timeOf[m.id];
+  if (s) return `${s.time}${c.t.sched.courts > 1 ? `・コート${s.court}` : ""}`;
+  return c.numberOf[m.id] ? `第${c.numberOf[m.id]}試合` : "";
+};
 
 // 試合1つのカード（見出し・時刻・2チームと点・PK・さくせん盤やろくがで開く）の HTML を返す
 function matchHtml(c, m) {
@@ -768,12 +782,11 @@ function matchHtml(c, m) {
   const underTime = view.mode === "order" && s;
   // 手で直した（✏️）・遅れでずらした（⏱+分）・同じコートで重なる（⚠️）の印
   const marks = s ? `${s.fixed ? " ✏️" : ""}${s.late ? ` ⏱${s.late > 0 ? "+" : ""}${s.late}分` : ""}${s.clash ? " ⚠️重なり" : ""}` : "";
-  const when = (underTime ? (t.sched.courts > 1 ? `コート${s.court}` : "") : s ? `${s.time}${t.sched.courts > 1 ? `・コート${s.court}` : ""}` : numberOf[m.id] ? `第${numberOf[m.id]}試合` : "") + marks;
-  const done = Boolean(outcome(res));
+  const when = (underTime ? (t.sched.courts > 1 ? `コート${s.court}` : "") : whenText(c, m)) + marks;
+  const done = doneOf(t, m);
   const next = c.next?.has(m.id);
   // 入力中のカードだけ、点を変えるボタンなどを出す
   const active = ready && !readOnly() && activeMatch === m.id;
-  const withPk = m.stage === "ko" || m.stage === "third" || Boolean(t.points.pk); // トーナメントと、PK をする総当たり
   const o = outcome(res);
   const side = (sideDef, id, k) => {
     const name = id ? teamName(t, id) : sideLabel(sideDef, gen);
@@ -782,9 +795,7 @@ function matchHtml(c, m) {
     return `<div class="match-side ${id ? "" : "is-tbd"} ${win ? "is-win" : ""}">${dotHtml(id)}<span class="name">${esc(name)}</span>${active ? scoreHtml(m.id, "s", k, value, `${name}の点`) : `<b class="${value === null ? "is-empty" : ""}">${ready && value === null ? "–" : value ?? ""}</b>`}</div>`;
   };
   const pkRow =
-    withPk && res && res.s[0] === res.s[1]
-      ? `<div class="pk-row"><span>PK（同点のとき）</span>${!active ? `<b>${res.pk ? `${res.pk[0]} - ${res.pk[1]}` : "–"}</b>` : `<div class="pk-steppers">${scoreHtml(m.id, "pk", 0, res.pk ? res.pk[0] : null, "ホームの PK")}<span class="match-vs" aria-hidden="true">-</span>${scoreHtml(m.id, "pk", 1, res.pk ? res.pk[1] : null, "アウェイの PK")}</div>`}</div>`
-      : "";
+    pkAllowed(t, m) && res && res.s[0] === res.s[1] ? `<div class="pk-row"><span>PK（同点のとき）</span>${active ? pkStepsHtml(m, res) : `<b>${res.pk ? `${res.pk[0]} - ${res.pk[1]}` : "–"}</b>`}</div>` : "";
   let actions = "";
   // 終わった試合は「結果を消す」を見出しの右に小さく（さくせん盤・ろくがは出さない）
   const clearBtn = active && done ? `<button class="ls-chip clear-chip" type="button" data-clear="${esc(m.id)}">結果を消す</button>` : "";
@@ -796,13 +807,13 @@ function matchHtml(c, m) {
     actions = `<div class="match-actions">
       <a class="ls-chip" href="${esc(saqsen)}" target="_blank" rel="noopener">⚽ さくせん盤で開く</a>
       <a class="ls-chip" href="${esc(roqgaUrl({ home: named(home), away: named(away) }))}" target="_blank" rel="noopener">📹 ろくがで撮る</a>
-      ${res && !readOnly() ? `<button class="ls-chip" type="button" data-clear="${esc(m.id)}">結果を消す</button>` : ""}
+      ${res ? `<button class="ls-chip" type="button" data-clear="${esc(m.id)}">結果を消す</button>` : ""}
     </div>`;
   }
   const badge = next ? `<span class="next-badge">▶ 次の試合</span>` : done ? `<span class="done-badge">✓ 終わり</span>` : "";
   // 点の行の下の審判：入力中は選ぶ欄、ほかは入っていればラベルとチーム名（どちらもまん中そろえ）
   const refLabel = active ? "" : refereeLabel(c, m);
-  const refRow = active ? refereeHtml(c, m, true) : refLabel ? `<div class="referee-row"><span>🟨 審判</span><b>${esc(refLabel)}</b></div>` : "";
+  const refRow = active ? refereeHtml(c, m) : refLabel ? `<div class="referee-row"><span>🟨 審判</span><b>${esc(refLabel)}</b></div>` : "";
   // 入力中のカード：時刻とコートを手で直す（時刻を入れている大会で、準備を変えられる人だけ）
   const timeRow =
     active && s && t.sched.on && !planLocked()
@@ -813,39 +824,34 @@ function matchHtml(c, m) {
   // 押せるカード（出るチームが決まっていて、入れられるとき）：見出しをボタンにする（キーボードでも）
   const tappable = ready && !readOnly();
   const head = tappable ? ` data-tap="${esc(m.id)}" role="button" tabindex="0" aria-expanded="${active}" aria-label="${esc(matchTitle(m, gen))}：${active ? "入れるのをやめる" : "点を入れる"}"` : "";
-  return `<article class="match ${done ? "is-done" : ""} ${next ? "is-next" : ""} ${tappable ? "is-tappable" : ""} ${active ? "is-active" : ""}" data-mid="${esc(m.id)}"><div class="match-head"${head}><span>${badge}${esc(matchTitle(m, gen))}</span><span>${esc(when)}${clearBtn}</span></div><div class="match-sides">${side(m.home, r.home, 0)}<span class="match-vs" aria-hidden="true">-</span>${side(m.away, r.away, 1)}</div>${refRow}${pkRow}${timeRow}${actions}</article>`;
+  return `<article class="match ${done ? "is-done" : ""} ${next ? "is-next" : ""} ${tappable ? "is-tappable" : ""} ${active ? "is-active" : ""}" data-mid="${esc(m.id)}"><div class="match-head"${head}><span>${badge}${esc(matchTitle(m, gen))}</span><span>${esc(when)}${clearBtn}</span></div><div class="match-sides">${side(m.home, r.home, 0)}<span class="match-vs" aria-hidden="true">-</span>${side(m.away, r.away, 1)}</div>${pkRow}${refRow}${timeRow}${actions}</article>`;
 }
 
-/**
- * 審判の行の HTML を返す：その試合に出ない・同じ時間に試合のないチームから選ぶ（いなければ「−」だけ）。
- * 入れたチームがあとで出ることになったとき（勝ち上がり・時間の重なり）は ⚠️ をつける。見るだけのときは文字だけ
- */
-// 審判の文字（チーム名。あとで出ることになったら ⚠️ つき）。入っていなければ ""
+// 審判の文字（チーム名。あとでその試合に出る・同じ時間に試合があることになったら ⚠️ つき）。入っていなければ ""
 function refereeLabel(c, m) {
   const { t, gen, plan, resolved } = c;
   const now = t.referees?.[m.id] || "";
   if (!now) return "";
   const options = refereeOptions(m, t.teams.map((x) => x.id), resolved, plan, gen.matches);
-  const r = resolved[m.id] || {};
   if (options.includes(now)) return teamName(t, now);
+  const r = resolved[m.id] || {};
   return `${teamName(t, now)}${r.home === now || r.away === now ? "（⚠️ この試合に出る）" : "（⚠️ 同じ時間に試合）"}`;
 }
 
-function refereeHtml(c, m, active = false) {
+/**
+ * 入力中のカードの審判の欄：その試合に出ない・同じ時間に試合のないチームから選ぶ（いなければ「−」だけ）。
+ * 入れたチームがあとで出ることになったら ⚠️ をつけて残す。終わった試合は文字だけ（入っていなければ出さない）
+ */
+function refereeHtml(c, m) {
   const { t, gen, plan, resolved } = c;
   const now = t.referees?.[m.id] || "";
+  const label = refereeLabel(c, m);
+  if (doneOf(t, m)) return now ? `<div class="referee-row"><span>🟨 審判</span><b>${esc(label)}</b></div>` : "";
   const options = refereeOptions(m, t.teams.map((x) => x.id), resolved, plan, gen.matches);
   const clash = now && !options.includes(now);
-  const r = resolved[m.id] || {};
-  const why = r.home === now || r.away === now ? "（⚠️ この試合に出る）" : "（⚠️ 同じ時間に試合）";
-  const label = now ? `${teamName(t, now)}${clash ? why : ""}` : "−";
-  const done = Boolean(outcome(t.results[m.id]));
-  if (done && !now) return "";
-  if (!active && !now) return ""; // 入力中でなければ、入れた審判だけ文字で
-  if (!active || done) return `<div class="referee-row"><span>🟨 審判</span><b>${esc(label)}</b></div>`;
   if (!options.length && !now) return `<div class="referee-row"><span>🟨 審判</span><b>−</b></div>`;
   const list = clash ? [now, ...options] : options;
-  const opts = list.map((id) => `<option value="${esc(id)}" ${esc(id === now ? "selected" : "")}>${esc(id === now && clash ? label : teamName(t, id))}</option>`).join("");
+  const opts = list.map((id) => `<option value="${esc(id)}" ${esc(id === now ? "selected" : "")}>${esc(id === now ? label : teamName(t, id))}</option>`).join("");
   return `<label class="referee-row ${clash ? "is-clash" : ""}"><span>🟨 審判</span><select data-referee="${esc(m.id)}" aria-label="${esc(matchTitle(m, gen))}の審判"><option value="">−</option>${opts}</select></label>`;
 }
 
@@ -955,7 +961,7 @@ function refereeDutyHtml(c, m) {
   const name = (side, id) => (id ? teamName(t, id) : sideLabel(side, gen));
   const res = t.results[m.id];
   const mid = res ? `${res.s[0]} - ${res.s[1]}` : "vs";
-  return `<p class="ref-duty ${outcome(res) ? "is-done" : ""}"><b>🟨 審判</b>　${esc(numberOf2(c, m))}　${esc(matchTitle(m, gen))}<br>${esc(name(m.home, r.home))} ${esc(mid)} ${esc(name(m.away, r.away))}</p>`;
+  return `<p class="ref-duty ${doneOf(t, m) ? "is-done" : ""}"><b>🟨 審判</b>　${esc(whenText(c, m))}　${esc(matchTitle(m, gen))}<br>${esc(name(m.home, r.home))} ${esc(mid)} ${esc(name(m.away, r.away))}</p>`;
 }
 
 function renderViewTools(c) {
@@ -1000,11 +1006,11 @@ function renderMatches(c) {
   $("refereeMeta").textContent = refs ? `${refs} / ${play.length}試合に入れた` : "まだ";
   $("refereeHint").hidden = Boolean(refs) || !play.length || readOnly();
   $("tapHint").hidden = !play.length || readOnly() || Boolean(activeMatch);
-  const done = play.filter((m) => outcome(t.results[m.id])).length;
+  const done = play.filter((m) => doneOf(t, m)).length;
   $("matchesMeta").textContent = play.length ? `${done} / ${play.length}試合` : "";
   // 次の試合：順番でいちばん早い、出るチームが決まっていて結果のまだの試合（同じ時刻のほかのコートも）
   const byIdAll = Object.fromEntries(gen.matches.map((m) => [m.id, m]));
-  const waiting = plan.filter((p) => !byIdAll[p.id].bye && resolved[p.id]?.home && resolved[p.id]?.away && !outcome(t.results[p.id]));
+  const waiting = plan.filter((p) => !byIdAll[p.id].bye && resolved[p.id]?.home && resolved[p.id]?.away && !doneOf(t, byIdAll[p.id]));
   c.next = new Set(waiting.length ? waiting.filter((p) => p.start === waiting[0].start).map((p) => p.id) : []);
   $("jumpNext").hidden = !c.next.size || view.mode === "team";
   renderDelay(c);
@@ -1019,7 +1025,7 @@ function renderMatches(c) {
     for (const x of path) {
       if (x.kind === "fixed") parts.push(matchHtml(c, x.m));
       else if (x.kind === "ref") parts.push(refereeDutyHtml(c, x.m));
-      else parts.push(`<p class="path-note">${esc(numberOf2(c, x.m))}　${esc(matchTitle(x.m, gen))}${esc(KIND_LABEL[x.kind])}　vs ${esc(opponentLabel(c, view.team, x))}</p>`);
+      else parts.push(`<p class="path-note">${esc(whenText(c, x.m))}　${esc(matchTitle(x.m, gen))}${esc(KIND_LABEL[x.kind])}　vs ${esc(opponentLabel(c, view.team, x))}</p>`);
     }
   } else if (view.mode === "court") {
     for (let court = 1; court <= t.sched.courts; court++) {
@@ -1037,7 +1043,7 @@ function renderMatches(c) {
     }
     for (const g of groups) {
       const play2 = g.list.filter((m) => !m.bye);
-      const doneCount = play2.filter((m) => outcome(t.results[m.id])).length;
+      const doneCount = play2.filter((m) => doneOf(t, m)).length;
       const allDone = play2.length > 0 && doneCount === play2.length;
       const hasActive = g.list.some((m) => m.id === activeMatch || c.next.has(m.id));
       const open = slotOpen.has(g.head) ? slotOpen.get(g.head) : !allDone || hasActive;
@@ -1055,7 +1061,6 @@ function renderMatches(c) {
 }
 
 // 試合の時刻か「第N試合」を返す（チーム別の勝ち進みの行に使う）
-const numberOf2 = (c, m) => (c.timeOf[m.id]?.time ? `${c.timeOf[m.id].time}${c.t.sched.courts > 1 ? ` コート${c.timeOf[m.id].court}` : ""}` : `第${c.numberOf[m.id]}試合`);
 
 // 試合のページの、見せる中身のタブを描きなおす（その形にあるものだけ。選んでいる1つだけ出す）
 function renderPlayTabs(c) {

@@ -4,9 +4,9 @@
 // 大会の形：{ id, name, createdAt, updatedAt, teams: [{ id, name, color }], format, opts: { thirdPlace, legs, groups, advance },
 //            rules（大会要項。長い文）, timeFix（手で直した時刻）, delays（遅れ）, points: { win, draw, loss, pk（総当たりも同点なら PK）, pkWin, pkLoss }, rank（順位の決め方：勝ち点のあとの並び。gd・gf・h2h）, sched: { on（時刻を入れる）, date, start, courts, minutes, place, avoid（連続試合を避ける）, rest（同じチームの空き時間・分） },
 //            results: { 試合の id: { s, pk? } }, referees: { 試合の id: 審判のチームの id } }
-import { DEFAULT_POINTS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./settings.js?v=202610282331";
-import { DEFAULT_RANK, rankIn } from "./stats.js?v=202610282331";
-import { liveIn } from "./live.js?v=202610282331"; // つないだ大会の印（関数の中でだけ使う）
+import { DEFAULT_POINTS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./settings.js?v=202610290019";
+import { DEFAULT_RANK, rankIn } from "./stats.js?v=202610290019";
+import { liveIn } from "./live.js?v=202610290019"; // つないだ大会の印（関数の中でだけ使う）
 
 export const STORE_KEY = `${TOOL.key}:tournaments`; // { list: [大会…], current: いま開いている大会の id }
 export const INBOX_KEY = `${TOOL.key}:inbox`; // さくせん盤から戻ってきた結果（同じ端末のとき）
@@ -23,7 +23,7 @@ function timeFixIn(v) {
   if (!isObj(v)) return out;
   for (const [id, f] of Object.entries(v).slice(0, 500)) {
     if (!/^[A-Za-z0-9-]{1,16}$/.test(id) || !isObj(f)) continue;
-    const time = typeof f.time === "string" && /^\d{2}:\d{2}$/.test(f.time) ? f.time : "";
+    const time = timeIn(f.time);
     if (time) out[id] = { time, court: intIn(f.court, 1, LIMITS.courts, 1) };
   }
   return out;
@@ -38,7 +38,8 @@ export const hexIn = (v) => (typeof v === "string" && /^#[0-9a-f]{6}$/i.test(v) 
 // "YYYY-MM-DD" ならそのまま、ちがえば ""
 const dateIn = (v) => (typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : "");
 // "HH:MM" ならそのまま、ちがえば ""
-const timeIn = (v) => (typeof v === "string" && /^\d{2}:\d{2}$/.test(v) ? v : "");
+// 時刻（"HH:MM"。00:00〜23:59）として読めればそのまま、だめなら ""
+const timeIn = (v) => (typeof v === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(v) ? v : "");
 
 // 見分けの ID（prefix つき）を返す
 export const newId = (prefix) => `${prefix}${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
