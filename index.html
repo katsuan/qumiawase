@@ -27,7 +27,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://katsuan.github.io/line-share/shared/ui.css?v=202610261000">
-<link rel="stylesheet" href="style.css?v=202610281357">
+<link rel="stylesheet" href="style.css?v=202610281359">
 </head>
 <body>
 <main class="ls-page ls-stack">
@@ -86,18 +86,13 @@
     </div>
   </details>
 
-  <!-- 試合の種類と形：種類（押すと、1試合の時間・空き時間・勝ち点などの初期設定が入る。目安であとで変えられる）と、
-       形（トーナメント・総当たり・グループ → 決勝トーナメント）とその設定。種類で変わる勝ち点・3位決定戦・見こみが、すぐ下で見える -->
+  <!-- 形と試合の種類：形（トーナメント・総当たり・グループ → 決勝トーナメント）とその設定、
+       種類（押すと、1試合の時間・空き時間・勝ち点などの初期設定が入る。目安であとで変えられる）、見こみ。種類は、すぐ下の時間と日程のとなり -->
   <details id="formatFold" class="ls-fold" open>
-    <summary>🏷️ 試合の種類と形 <span id="formatMeta" class="ls-fold-meta"></span></summary>
+    <summary>🏆 形と試合の種類 <span id="formatMeta" class="ls-fold-meta"></span></summary>
     <div class="ls-fold-body ls-stack">
-      <h3 class="sub-head">試合の種類</h3>
-      <div id="presetTabs" class="ls-chips preset-tabs" role="tablist" aria-label="試合の種類"></div>
-      <p id="presetNote" class="ls-hint"></p>
       <h3 class="sub-head">形</h3>
       <div id="formatChips" class="ls-chips format-chips" role="radiogroup" aria-label="形"></div>
-      <!-- 見こみ：試合の数・1チームの最多の試合の数・かかる時間（チーム数・形・時間と日程から） -->
-      <p id="estimate" class="estimate" aria-live="polite"></p>
       <div id="groupOptions" class="ls-stack" hidden>
         <div class="option-row"><span>グループの数</span><div class="stepper" data-opt="groups"></div></div>
         <div class="option-row"><span>決勝トーナメントへ上がる数（グループごと）</span><div class="stepper" data-opt="advance"></div></div>
@@ -119,6 +114,11 @@
           <p class="ls-hint">順位は 勝ち点 → 得失点差 → 総得点 → 直接対決 の順。PK は勝ち点に入れません。</p>
         </div>
       </details>
+      <h3 class="sub-head">試合の種類</h3>
+      <div id="presetTabs" class="ls-chips preset-tabs" role="tablist" aria-label="試合の種類"></div>
+      <p id="presetNote" class="ls-hint"></p>
+      <!-- 見こみ：試合の数・1チームの最多の試合の数・かかる時間（チーム数・形・時間と日程から） -->
+      <p id="estimate" class="estimate" aria-live="polite"></p>
     </div>
   </details>
 
@@ -218,7 +218,7 @@
 <section id="printArea" class="print-area" aria-hidden="true"></section>
 <script src="https://katsuan.github.io/line-share/shared/oqrn.js"></script>
 <script src="https://katsuan.github.io/line-share/shared/ui.js?v=202610260300" defer></script>
-<script type="module" src="app.js?v=202610281357"></script>
+<script type="module" src="app.js?v=202610281359"></script>
 <script src="https://katsuan.github.io/line-share/shared/tool-share.js" data-tool="qumiawase" defer></script>
 <script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(() => {});</script>
 </body>

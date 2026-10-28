@@ -1,13 +1,13 @@
 // くみあわせ（QumiAwase）：入口。画面（大会・チーム・形・日程・トーナメント表・順位表・試合と結果・送る）を作り、ボタン・入力を受け、部品（js/）をつなぐ。
 // index.html から読む（type="module"）。組み合わせは js/pairing.js、順位と勝ち上がりは js/stats.js、端末に残すのは js/store.js、
 // リンク（見る人用・さくせん盤・ろくが・結果を戻す）は js/link.js、カードは js/card.js、画像は js/image.js
-import { FORMATS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610281357";
-import { addMinutes, autoReferees, fitOptions, generate, refereeOptions, roundName, timeSchedule } from "./js/pairing.js?v=202610281357";
-import { durationLabel, estimate, outcome, podium, resolve, table } from "./js/stats.js?v=202610281357";
-import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610281357";
-import { LINK_MAX, qronosUrl, readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610281357";
-import { cardParams, dateLabel, formatLabel, matchLine, matchTitle, sideLabel, summaryText, teamName } from "./js/card.js?v=202610281357";
-import { drawTournament } from "./js/image.js?v=202610281357";
+import { FORMATS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610281359";
+import { addMinutes, autoReferees, fitOptions, generate, refereeOptions, roundName, timeSchedule } from "./js/pairing.js?v=202610281359";
+import { durationLabel, estimate, outcome, podium, resolve, table } from "./js/stats.js?v=202610281359";
+import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610281359";
+import { LINK_MAX, qronosUrl, readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610281359";
+import { cardParams, dateLabel, formatLabel, matchLine, matchTitle, sideLabel, summaryText, teamName } from "./js/card.js?v=202610281359";
+import { drawTournament } from "./js/image.js?v=202610281359";
 
 // id から画面の部品を返す
 const $ = (id) => document.getElementById(id);
@@ -119,7 +119,7 @@ function renderPresets() {
   if (sel && (sel.offsetLeft < box.scrollLeft || sel.offsetLeft + sel.offsetWidth > box.scrollLeft + box.clientWidth)) box.scrollLeft = sel.offsetLeft - 12;
   const p = PRESETS.find((x) => x.key === t.preset);
   $("presetNote").textContent = p
-    ? `${p.note} → 1試合${p.minutes}分・空き${p.rest}分・勝ち点 勝${p.points.win}・分${p.points.draw}・負${p.points.loss}（目安。下で変えられます）`
+    ? `${p.note} → 1試合${p.minutes}分・空き${p.rest}分・勝ち点 勝${p.points.win}・分${p.points.draw}・負${p.points.loss}（目安。勝ち点は上・時間は下で変えられます）`
     : "1試合の時間・空き時間・勝ち点は、下の「形」「時間と日程」で決めます。";
 }
 
@@ -321,7 +321,7 @@ function stepper(el, { get, set, min, max, step = 1, label, typed = false }) {
 function renderFormat() {
   const t = current();
   const opts = fitOptions(t.teams.length, t.opts);
-  $("formatMeta").textContent = [PRESETS.find((p) => p.key === t.preset)?.label.replace(/^\S+\s/, ""), FORMATS[t.format]].filter(Boolean).join("・");
+  $("formatMeta").textContent = [FORMATS[t.format], PRESETS.find((p) => p.key === t.preset)?.label.replace(/^\S+\s/, "")].filter(Boolean).join("・");
   $("formatChips").replaceChildren(
     ...Object.entries(FORMATS).map(([key, label]) => {
       const b = Object.assign(document.createElement("button"), { type: "button", className: "ls-chip", textContent: label });
@@ -1088,7 +1088,7 @@ function bindEvents() {
     })
   );
   // 試合の種類
-  // 試合の種類と形の枠を開いたら、選んでいる種類のタブが見えるように（閉じているあいだは送れない）
+  // 形と試合の種類の枠を開いたら、選んでいる種類のタブが見えるように（閉じているあいだは送れない）
   $("formatFold").addEventListener("toggle", () => $("formatFold").open && renderPresets());
   $("presetTabs").addEventListener("click", (e) => {
     const b = e.target.closest("[data-preset]");

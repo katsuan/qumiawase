@@ -713,7 +713,7 @@ body.is-view #schedFold {
   font-size: 13px;
 }
 
-/* 試合の種類と形の枠の中の小見出し */
+/* 形と試合の種類の枠の中の小見出し */
 .sub-head {
   margin: 0;
   color: var(--ls-subtext);
