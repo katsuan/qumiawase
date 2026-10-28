@@ -1,14 +1,14 @@
 // くみあわせ（QumiAwase）：入口。画面（大会・チーム・形・日程・トーナメント表・順位表・試合と結果・送る）を作り、ボタン・入力を受け、部品（js/）をつなぐ。
 // index.html から読む（type="module"）。組み合わせは js/pairing.js、順位と勝ち上がりは js/stats.js、端末に残すのは js/store.js、
 // リンク（見る人用・さくせん盤・ろくが・結果を戻す）は js/link.js、カードは js/card.js、画像は js/image.js、みんなで入れる（くらぶボット）は js/live.js
-import { FORMATS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610282312";
-import { addMinutes, autoReferees, fitOptions, generate, refereeOptions, roundName, timeSchedule } from "./js/pairing.js?v=202610282312";
-import { durationLabel, estimate, outcome, podium, RANK_LABELS, rankIn, resolve, table } from "./js/stats.js?v=202610282312";
-import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610282312";
-import { LINK_MAX, qronosUrl, readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610282312";
-import { cardParams, dateLabel, formatLabel, matchLine, matchTitle, pointsLabel, sideLabel, summaryText, teamName } from "./js/card.js?v=202610282312";
-import { drawTournament } from "./js/image.js?v=202610282312";
-import { adminKey, botUrlIn, fromServer, inputKey, liveCall, liveError, liveUrl, newLiveId, overlay, PASS_MAX, PASS_MIN, queue, readLive, sessionKey, setSessionKey, toServer } from "./js/live.js?v=202610282312";
+import { FORMATS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610282318";
+import { addMinutes, autoReferees, fitOptions, generate, refereeOptions, roundName, timeSchedule } from "./js/pairing.js?v=202610282318";
+import { durationLabel, estimate, outcome, podium, RANK_LABELS, rankIn, resolve, table } from "./js/stats.js?v=202610282318";
+import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610282318";
+import { LINK_MAX, qronosUrl, readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610282318";
+import { cardParams, dateLabel, formatLabel, matchLine, matchTitle, pointsLabel, sideLabel, summaryText, teamName } from "./js/card.js?v=202610282318";
+import { drawTournament } from "./js/image.js?v=202610282318";
+import { adminKey, botUrlIn, fromServer, inputKey, liveCall, liveError, liveUrl, newLiveId, overlay, PASS_MAX, PASS_MIN, queue, readLive, sessionKey, setSessionKey, toServer } from "./js/live.js?v=202610282318";
 
 // id から画面の部品を返す
 const $ = (id) => document.getElementById(id);
@@ -1096,12 +1096,17 @@ function applyIncoming(list) {
     const c = compute();
     const m = c.gen.matches.find((e) => e.id === x.mid);
     const line = m ? matchLine(t, c.gen, c.resolved, m) : "";
-    toast(seasonal(`さくせん盤から結果を入れました${line ? `：${line}` : ""}`), () => {
+    const undo = () => {
       if (before) t.results[x.mid] = before;
       else delete t.results[x.mid];
       persist();
       renderAll();
-    });
+    };
+    const role = liveRole(t);
+    if (role === "") {
+      // みんなで入れる大会で、このタブはまだ見るだけ：合言葉を入れたら送る（それまでは端末で待つ）
+      window.LineShareUI?.toast(`さくせん盤から結果を入れました${line ? `：${line}` : ""}。みんなに送るには合言葉を入れてね`, { actionLabel: "✏️ 合言葉を入れて送る", onAction: openUnlock });
+    } else toast(seasonal(`さくせん盤から結果を入れ${role ? "て、みんなに送り" : ""}ました${line ? `：${line}` : ""}`), undo);
   }
 }
 
@@ -1272,9 +1277,8 @@ function bindEvents() {
   $("liveRoleBtn").addEventListener("click", () => {
     if (liveRole()) return $("liveFold").scrollIntoView({ behavior: "smooth", block: "center" });
     // 見るだけのとき：帯の中に合言葉の欄を出す（もう一度押すとしまう）
-    const form = $("liveUnlock");
-    form.hidden = !form.hidden;
-    if (!form.hidden) form.elements.unlock.focus();
+    if ($("liveUnlock").hidden) openUnlock();
+    else $("liveUnlock").hidden = true;
   });
   // 合言葉の欄：送る（Enter でも）・見せる
   document.addEventListener("submit", (e) => {
@@ -1569,7 +1573,8 @@ function rememberKey(id, value) {
 function liveAfterSave() {
   const t = current();
   const role = liveRole(t);
-  if (!role) return;
+  // つないでいない・見る人用のリンク：何もしない。見るだけ（""）でも、さくせん盤から届いた点は待っているものに入れておく（合言葉を入れたら送る）
+  if (role === null) return;
   const id = t.live.id;
   if (livePlanSent[id] === undefined) livePlanSent[id] = planText(t);
   if (liveShadow[id] === undefined) liveShadow[id] = resultText(t);
@@ -1590,7 +1595,8 @@ function liveAfterSave() {
   t.live.pending = pending;
   liveShadow[id] = resultText(t);
   saveAll(data);
-  liveFlush();
+  if (role) liveFlush();
+  else renderLive();
 }
 
 // その大会を、ボットから読んだものに置きかえる（data.list の中で）
@@ -1711,6 +1717,16 @@ function passOf(form, name) {
   toast(`合言葉は${PASS_MIN}文字以上で入れてね`);
   form.elements[name]?.focus();
   return null;
+}
+
+// 上の帯に合言葉の欄を出して、そこへ動く（見るだけのとき）
+function openUnlock() {
+  page.now = "play";
+  renderPage();
+  const form = $("liveUnlock");
+  form.hidden = false;
+  $("liveBar").scrollIntoView({ behavior: "smooth", block: "start" });
+  form.elements.unlock.focus({ preventScroll: true });
 }
 
 // 合言葉を入れて、この大会で点を入れられるようにする（運営の合言葉でも、入力の合言葉でもよい）
