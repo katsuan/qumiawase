@@ -1,9 +1,9 @@
 // くみあわせ：おくるんのお知らせカード（OQRN.cardUrl）に渡す中身（組み合わせ表・順位表を文で）と、試合や順位の言い方。画面には触らない（テストで呼ぶ）
 // app.js・js/image.js から読む（import）
-import { FORMATS, TOOL } from "./settings.js?v=202610281302";
-import { roundName } from "./pairing.js?v=202610281302";
-import { podium, table } from "./stats.js?v=202610281302";
-import { LINK_MAX, viewUrl } from "./link.js?v=202610281302";
+import { FORMATS, TOOL } from "./settings.js?v=202610281310";
+import { roundName } from "./pairing.js?v=202610281310";
+import { podium, table } from "./stats.js?v=202610281310";
+import { LINK_MAX, viewUrl } from "./link.js?v=202610281310";
 
 export const CARD_COLOR = "#D9622B"; // くみあわせの色（ロゴのオレンジ）
 const DETAIL_MAX = 600;
@@ -138,7 +138,8 @@ export function summaryText(t, gen, resolved, order) {
   const byId = Object.fromEntries(gen.matches.map((m) => [m.id, m]));
   [...order].sort((a, b) => a.slot - b.slot || a.court - b.court).forEach((s, i) => {
     const when2 = s.time ? `${s.time}${t.sched.courts > 1 ? ` コート${s.court}` : ""}` : `第${i + 1}試合`;
-    lines.push(`${when2}　${matchLine(t, gen, resolved, byId[s.id])}`);
+    const ref = t.referees?.[s.id];
+    lines.push(`${when2}　${matchLine(t, gen, resolved, byId[s.id])}${ref ? `（審判 ${teamName(t, ref)}）` : ""}`);
   });
   const standings = standingLines(t, gen);
   if (standings.length) lines.push("", "【順位】", ...standings);

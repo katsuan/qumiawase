@@ -55,13 +55,13 @@ const QRONOS = new URL("../../q-qronos/", import.meta.url);
 test("くろのすで開く → くろのすの読み方で、試合ごとの日時と名前のボードになる", { skip: !has(QRONOS) }, async () => {
   const { qronosUrl } = await import("../js/link.js");
   const window = {};
-  const ctx = vm.createContext({ window, URLSearchParams, TextEncoder, TextDecoder, atob, btoa, Date, Intl });
+  const ctx = vm.createContext({ window, URL, URLSearchParams, TextEncoder, TextDecoder, atob, btoa, Date, Intl });
   for (const f of ["js/count.js", "js/link.js"]) vm.runInContext(fs.readFileSync(new URL(f, QRONOS), "utf8"), ctx);
   const url = new URL(qronosUrl("FC 青の試合", [
-    { at: "2026-11-03T09:30", title: "第1試合 vs レッズ", emoji: "⚽" },
+    { at: "2026-11-03T09:30", title: "第1試合 vs レッズ", emoji: "⚽", color: "#e53935" },
     { at: "2026-11-03T11:10", title: "準決勝 vs グリーン", emoji: "🏆" },
     { at: "bad", title: "x" }
-  ]));
+  ], { url: "https://katsuan.github.io/qumiawase/?view=abc", label: "🏆 大会を見る" }));
   assert.equal(url.origin + url.pathname, "https://katsuan.github.io/countdown/");
   const expanded = new URLSearchParams(window.Countdown.expandSearch(url.search));
   assert.equal(expanded.get("name"), "FC 青の試合");
@@ -69,5 +69,11 @@ test("くろのすで開く → くろのすの読み方で、試合ごとの日
   assert.equal(es.length, 2, "日時のないものは入れない");
   assert.match(decodeURIComponent(es[0]), /2026-11-03T09:30/);
   assert.match(decodeURIComponent(es[0]), /第1試合 vs レッズ/);
+  const board = window.Countdown.readBoard(url.search);
+  assert.equal(board.entries[0].p.color, "#e53935", "行の色は相手の色");
+  assert.equal(board.entries[1].p.color, "#6c47ff", "色がなければくろのすの色");
+  assert.equal(board.link, "https://katsuan.github.io/qumiawase/?view=abc", "見る人用のリンクはボード全体で1つ");
+  assert.equal(board.linkLabel, "🏆 大会を見る");
+  assert.equal(window.Countdown.readBoard(new URL(qronosUrl("x", [{ at: "2026-11-03T09:30", title: "a" }, { at: "2026-11-03T10:30", title: "b" }])).search).link, "", "リンクなしでも読める");
   assert.equal(qronosUrl("x", []), null);
 });

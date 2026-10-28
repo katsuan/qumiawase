@@ -106,3 +106,15 @@ test("試合の種類の初期設定：時間は5分きざみで上限まで、�
   assert.equal(cleanTournament({ preset: "futsal", teams: [{ name: "a" }, { name: "b" }] }).preset, "futsal");
   assert.equal(cleanTournament({ preset: "<x>", teams: [{ name: "a" }] }).preset, "");
 });
+
+test("くろのすの色：明るい色（白・黄）は読める濃さに。濃い色はそのまま", async () => {
+  const { readableHex } = await import("../js/link.js");
+  assert.equal(readableHex("#e53935"), "e53935");
+  assert.equal(readableHex("#1b2a59"), "1b2a59");
+  for (const light of ["#ffffff", "#ffd23f"]) {
+    const v = readableHex(light);
+    assert.match(v, /^[0-9a-f]{6}$/);
+    assert.ok(parseInt(v.slice(2, 4), 16) < 160, `${light} → ${v}（暗くなる）`);
+  }
+  assert.equal(readableHex("red"), "");
+});

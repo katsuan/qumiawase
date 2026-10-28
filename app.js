@@ -1,13 +1,13 @@
 // くみあわせ（QumiAwase）：入口。画面（大会・チーム・形・日程・トーナメント表・順位表・試合と結果・送る）を作り、ボタン・入力を受け、部品（js/）をつなぐ。
 // index.html から読む（type="module"）。組み合わせは js/pairing.js、順位と勝ち上がりは js/stats.js、端末に残すのは js/store.js、
 // リンク（見る人用・さくせん盤・ろくが・結果を戻す）は js/link.js、カードは js/card.js、画像は js/image.js
-import { FORMATS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610281302";
-import { addMinutes, fitOptions, generate, roundName, timeSchedule } from "./js/pairing.js?v=202610281302";
-import { durationLabel, estimate, outcome, podium, resolve, table } from "./js/stats.js?v=202610281302";
-import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610281302";
-import { qronosUrl, readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610281302";
-import { cardParams, dateLabel, formatLabel, matchLine, matchTitle, sideLabel, summaryText, teamName } from "./js/card.js?v=202610281302";
-import { drawTournament } from "./js/image.js?v=202610281302";
+import { FORMATS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610281310";
+import { addMinutes, autoReferees, fitOptions, generate, refereeOptions, roundName, timeSchedule } from "./js/pairing.js?v=202610281310";
+import { durationLabel, estimate, outcome, podium, resolve, table } from "./js/stats.js?v=202610281310";
+import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610281310";
+import { LINK_MAX, qronosUrl, readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610281310";
+import { cardParams, dateLabel, formatLabel, matchLine, matchTitle, sideLabel, summaryText, teamName } from "./js/card.js?v=202610281310";
+import { drawTournament } from "./js/image.js?v=202610281310";
 
 // id から画面の部品を返す
 const $ = (id) => document.getElementById(id);
@@ -57,8 +57,10 @@ function change(fn, message = "") {
   const before = clone(t);
   const key = structureKey(t);
   fn(t);
-  const lost = Object.keys(t.results).length > 0 && structureKey(t) !== key;
+  const changed = structureKey(t) !== key;
+  const lost = Object.keys(t.results).length > 0 && changed;
   if (lost) t.results = {};
+  if (changed) t.referees = {}; // 組み合わせが変わったら、審判も入れなおし
   persist();
   renderAll();
   // 元に戻す：変える前の大会にもどす
@@ -436,7 +438,8 @@ function scoreHtml(mid, kind, k, value, label) {
 }
 
 // 試合1つのカード（見出し・時刻・2チームと点・PK・さくせん盤やろくがで開く）の HTML を返す
-function matchHtml({ t, gen, timeOf, numberOf, resolved }, m) {
+function matchHtml(c, m) {
+  const { t, gen, timeOf, numberOf, resolved } = c;
   const r = resolved[m.id] || {};
   const res = t.results[m.id];
   const ready = Boolean(r.home && r.away);
@@ -466,7 +469,26 @@ function matchHtml({ t, gen, timeOf, numberOf, resolved }, m) {
       ${res && !viewing ? `<button class="ls-chip" type="button" data-clear="${esc(m.id)}">結果を消す</button>` : ""}
     </div>`;
   }
-  return `<article class="match ${res ? "is-done" : ""}" data-mid="${esc(m.id)}"><div class="match-head"><span>${esc(matchTitle(m, gen))}</span><span>${esc(when)}</span></div>${side(m.home, r.home, 0)}${side(m.away, r.away, 1)}${pkRow}${actions}</article>`;
+  return `<article class="match ${res ? "is-done" : ""}" data-mid="${esc(m.id)}"><div class="match-head"><span>${esc(matchTitle(m, gen))}</span><span>${esc(when)}</span></div>${side(m.home, r.home, 0)}${side(m.away, r.away, 1)}${pkRow}${refereeHtml(c, m)}${actions}</article>`;
+}
+
+/**
+ * 審判の行の HTML を返す：その試合に出ない・同じ時間に試合のないチームから選ぶ（いなければ「−」だけ）。
+ * 入れたチームがあとで出ることになったとき（勝ち上がり・時間の重なり）は ⚠️ をつける。見るだけのときは文字だけ
+ */
+function refereeHtml(c, m) {
+  const { t, gen, plan, resolved } = c;
+  const now = t.referees?.[m.id] || "";
+  const options = refereeOptions(m, t.teams.map((x) => x.id), resolved, plan, gen.matches);
+  const clash = now && !options.includes(now);
+  const r = resolved[m.id] || {};
+  const why = r.home === now || r.away === now ? "（⚠️ この試合に出る）" : "（⚠️ 同じ時間に試合）";
+  const label = now ? `${teamName(t, now)}${clash ? why : ""}` : "−";
+  if (viewing) return `<div class="referee-row"><span>🟨 審判</span><b>${esc(label)}</b></div>`;
+  if (!options.length && !now) return `<div class="referee-row"><span>🟨 審判</span><b>−</b></div>`;
+  const list = clash ? [now, ...options] : options;
+  const opts = list.map((id) => `<option value="${esc(id)}" ${esc(id === now ? "selected" : "")}>${esc(id === now && clash ? label : teamName(t, id))}</option>`).join("");
+  return `<label class="referee-row ${clash ? "is-clash" : ""}"><span>🟨 審判</span><select data-referee="${esc(m.id)}" aria-label="${esc(matchTitle(m, gen))}の審判"><option value="">−</option>${opts}</select></label>`;
 }
 
 // 試合表の見方（"order"＝順番・"court"＝コート別・"team"＝チーム別）と、チーム別で選んでいるチーム
@@ -519,6 +541,14 @@ function teamPath(c, id) {
 const KIND_LABEL = { fixed: "", win: "（勝てば）", lose: "（負けたら）", advance: "（上がれば）" };
 
 // teamPath の1つの試合の、相手の呼び名を返す（決まっていればチーム名、まだなら「準決勝 2の勝者」など）
+// チーム別の行の相手（決まっていればチームの id。未定なら null）
+function opponentId(c, id, { m, kind, mine }) {
+  const r = c.resolved[m.id] || {};
+  if (kind === "fixed") return r.home === id ? r.away : r.home;
+  if (!mine) return null;
+  return (m.away === mine ? r.home : r.away) || null;
+}
+
 function opponentLabel(c, id, { m, kind, mine }) {
   const r = c.resolved[m.id] || {};
   if (kind === "fixed") return teamName(c.t, r.home === id ? r.away : r.home);
@@ -533,9 +563,16 @@ function opponentLabel(c, id, { m, kind, mine }) {
 const atOf = (c, id) => (c.t.sched.on && c.t.sched.date && c.timeOf[id]?.time ? `${c.t.sched.date}T${c.timeOf[id].time}` : "");
 
 // くろのすで、そのチームの試合（勝ち進みもふくむ）のカウントダウンを開くリンクを返す。日時がなければ null
+// くろのすのボードに付けるリンク：大会の見る人用リンク（長すぎるときは、くみあわせを開くだけ）
+function qronosLink(c) {
+  const link = viewUrl(c.t);
+  return { url: link.length <= LINK_MAX ? link : TOOL.url, label: "🏆 大会を見る" };
+}
+
 function teamQronosUrl(c, id) {
-  const entries = teamPath(c, id).map((x) => ({ at: atOf(c, x.m.id), title: `${matchTitle(x.m, c.gen)}${KIND_LABEL[x.kind]} vs ${opponentLabel(c, id, x)}`, emoji: x.kind === "fixed" ? "⚽" : "🏆" }));
-  return qronosUrl(`${teamName(c.t, id)}の試合`, entries);
+  // 行の色は相手のチームの色（未定ならくろのすの色のまま）
+  const entries = teamPath(c, id).map((x) => ({ at: atOf(c, x.m.id), title: `${matchTitle(x.m, c.gen)}${KIND_LABEL[x.kind]} vs ${opponentLabel(c, id, x)}`, emoji: x.kind === "fixed" ? "⚽" : "🏆", color: teamById(opponentId(c, id, x))?.color || "" }));
+  return qronosUrl(`${teamName(c.t, id)}の試合`, entries, qronosLink(c));
 }
 
 // くろのすで、大会のカウントダウン（はじまり・3位決定戦・決勝。総当たりは最後の試合）を開くリンクを返す。日時がなければ null
@@ -545,7 +582,7 @@ function allQronosUrl(c) {
   const entries = [{ at: atOf(c, list[0].id), title: "はじまり（第1試合）", emoji: "🏁" }];
   for (const m of list) if (m.stage === "third" || (m.stage === "ko" && m === list.filter((x) => x.stage === "ko").at(-1))) entries.push({ at: atOf(c, m.id), title: matchTitle(m, c.gen), emoji: m.stage === "third" ? "🥉" : "🏆" });
   if (!list.some((m) => m.stage === "ko") && list.length > 1) entries.push({ at: atOf(c, list.at(-1).id), title: "最後の試合", emoji: "🏁" });
-  return qronosUrl(c.t.name || "組み合わせ", entries);
+  return qronosUrl(c.t.name || "組み合わせ", entries, qronosLink(c));
 }
 
 // 試合表の見方のボタン・チーム別のチームの選択・くろのすのボタンを描きなおす
@@ -577,6 +614,8 @@ function renderMatches(c) {
   const play = gen.matches.filter((m) => !m.bye);
   $("matchesEmpty").hidden = gen.matches.length > 0;
   $("matchViews").hidden = !play.length;
+  $("refereeTools").hidden = !play.length || Boolean(viewing);
+  $("clearReferees").hidden = !Object.keys(t.referees || {}).length;
   const done = play.filter((m) => outcome(t.results[m.id])).length;
   $("matchesMeta").textContent = play.length ? `${done} / ${play.length}試合` : "";
   renderViewTools(c);
@@ -794,7 +833,7 @@ function printSummary(c) {
       const res = t.results[m.id];
       const side = (sideDef, id) => esc(id ? teamName(t, id) : sideLabel(sideDef, gen));
       const score = res ? `${res.s[0]} - ${res.s[1]}${res.pk ? `（PK ${res.pk[0]}-${res.pk[1]}）` : ""}` : "";
-      return `<tr><td>${esc(i + 1)}</td><td>${esc(p.time || "")}</td><td>${esc(t.sched.courts > 1 ? p.court : "")}</td><td>${esc(matchTitle(m, gen))}</td><td>${side(m.home, r.home)}</td><td class="score">${esc(score)}</td><td>${side(m.away, r.away)}</td></tr>`;
+      return `<tr><td>${esc(i + 1)}</td><td>${esc(p.time || "")}</td><td>${esc(t.sched.courts > 1 ? p.court : "")}</td><td>${esc(matchTitle(m, gen))}</td><td>${side(m.home, r.home)}</td><td class="score">${esc(score)}</td><td>${side(m.away, r.away)}</td><td>${esc(t.referees?.[m.id] ? teamName(t, t.referees[m.id]) : "−")}</td></tr>`;
     })
     .join("");
   const teams = gen.groups?.length
@@ -808,7 +847,7 @@ function printSummary(c) {
     ${$("standings").innerHTML.trim() ? `<h2>順位表</h2>${$("standings").innerHTML}` : ""}
     ${gen.matches.some((m) => m.stage === "ko") ? `<h2>トーナメント表</h2><div class="bracket">${$("bracket").innerHTML}</div>` : ""}
     <h2>試合</h2>
-    <table class="print-table"><thead><tr><th>No</th><th>時刻</th><th>コート</th><th>試合</th><th>ホーム</th><th>結果</th><th>アウェイ</th></tr></thead><tbody>${rows}</tbody></table>
+    <table class="print-table"><thead><tr><th>No</th><th>時刻</th><th>コート</th><th>試合</th><th>ホーム</th><th>結果</th><th>アウェイ</th><th>審判</th></tr></thead><tbody>${rows}</tbody></table>
     <p class="print-foot">${esc(TOOL.name)}（${esc(TOOL.en)}）で作りました</p>`;
 }
 
@@ -1006,6 +1045,30 @@ function bindEvents() {
     const clear = e.target.closest("[data-clear]");
     if (clear) clearScore(clear.dataset.clear);
   });
+
+  // 審判を選ぶ（「−」はなし）
+  $("matches").addEventListener("change", (e) => {
+    const sel = e.target.closest("[data-referee]");
+    if (!sel || viewing) return;
+    const t = current();
+    t.referees = { ...(t.referees || {}) };
+    if (sel.value) t.referees[sel.dataset.referee] = sel.value;
+    else delete t.referees[sel.dataset.referee];
+    persist();
+    renderResults();
+  });
+
+  // 審判を自動で入れる（まだ入れていない試合だけ。審判の少ないチームから）・審判を全部消す。どちらも元に戻せる
+  $("autoReferees").addEventListener("click", () => {
+    const c = compute();
+    const next = autoReferees(c.gen.matches, c.t.teams.map((x) => x.id), c.resolved, c.plan, c.t.referees, c.t.sched.avoid ? c.t.sched.rest : 0);
+    const added = Object.keys(next).length - Object.keys(c.t.referees || {}).length;
+    const waiting = c.gen.matches.some((m) => !m.bye && !next[m.id] && !(c.resolved[m.id]?.home && c.resolved[m.id]?.away));
+    const later = waiting ? "。出るチームが決まっていない試合は、結果が入ってからもう一度押してね" : "";
+    if (!added) return toast(`入れられる審判がありませんでした${later || "（入れられるチームがいない試合は −）"}`);
+    change((x) => (x.referees = next), `審判を${added}試合に入れました${later}`);
+  });
+  $("clearReferees").addEventListener("click", () => change((x) => (x.referees = {}), "審判を全部消しました"));
 
   // ページのタブ（準備・試合）。切りかえたら上へ
   document.querySelectorAll("[data-page]").forEach((b) =>

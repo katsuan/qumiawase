@@ -3,8 +3,8 @@
 //
 // 大会の形：{ id, name, createdAt, updatedAt, teams: [{ id, name, color }], format, opts: { thirdPlace, legs, groups, advance },
 //            points: { win, draw, loss }, sched: { on（時刻を入れる）, date, start, courts, minutes, place, avoid（連続試合を避ける）, rest（同じチームの空き時間・分） },
-//            results: { 試合の id: { s, pk? } } }
-import { DEFAULT_POINTS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./settings.js?v=202610281302";
+//            results: { 試合の id: { s, pk? } }, referees: { 試合の id: 審判のチームの id } }
+import { DEFAULT_POINTS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./settings.js?v=202610281310";
 
 export const STORE_KEY = `${TOOL.key}:tournaments`; // { list: [大会…], current: いま開いている大会の id }
 export const INBOX_KEY = `${TOOL.key}:inbox`; // さくせん盤から戻ってきた結果（同じ端末のとき）
@@ -45,7 +45,8 @@ export function blankTournament(name = "") {
     opts: { thirdPlace: false, legs: 1, groups: 2, advance: 2 },
     points: { ...DEFAULT_POINTS },
     sched: { on: false, date: "", start: "09:00", courts: 1, minutes: 20, place: "", avoid: true, rest: 10 },
-    results: {}
+    results: {},
+    referees: {} // 審判（試合の id → チームの id）
   };
 }
 
@@ -82,6 +83,11 @@ export function cleanTournament(v) {
       if (ok && /^[A-Za-z0-9-]{1,16}$/.test(id)) results[id] = ok;
     }
   }
+  const teamIds = new Set((teams.length ? teams : base.teams).map((x) => x.id));
+  const referees = {};
+  if (isObj(v.referees)) {
+    for (const [id, team] of Object.entries(v.referees).slice(0, 2000)) if (/^[A-Za-z0-9-]{1,16}$/.test(id) && teamIds.has(team)) referees[id] = team;
+  }
   return {
     id: textIn(v.id, 40) || base.id,
     name: textIn(v.name, LIMITS.title),
@@ -107,7 +113,8 @@ export function cleanTournament(v) {
       avoid: sched.avoid !== false,
       rest: intIn(sched.rest, 0, LIMITS.minutes, 10)
     },
-    results
+    results,
+    referees
   };
 }
 

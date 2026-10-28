@@ -244,3 +244,75 @@ export function addMinutes(hhmm, minutes) {
   const t = ((total % day) + day) % day;
   return `${String(Math.floor(t / 60)).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}`;
 }
+
+// 試合 m に出るチーム（決まっているぶん）の id のならびを返す。resolved は js/stats.js の resolve の返り値
+const playersOf = (m, resolved) => [resolved?.[m.id]?.home || m.home?.team, resolved?.[m.id]?.away || m.away?.team].filter(Boolean);
+
+/**
+ * 審判に入れるチーム：その試合に出ないチームで、同じ時間にほかのコートで試合をしていないチーム（決まっているぶんで見る）。
+ * ids はチームの並び、plan は timeSchedule の返り値。チームの id のならびを返す（いなければ []）
+ */
+export function refereeOptions(m, ids, resolved, plan, matches) {
+  const at = plan.find((p) => p.id === m.id);
+  const byId = Object.fromEntries(matches.map((x) => [x.id, x]));
+  const busy = new Set(playersOf(m, resolved));
+  if (at) for (const p of plan) if (p.id !== m.id && p.start < at.end && at.start < p.end && byId[p.id]) playersOf(byId[p.id], resolved).forEach((id) => busy.add(id));
+  return ids.filter((id) => !busy.has(id));
+}
+
+/**
+ * 審判をまだ入れていない試合（出るチームが決まっているもの）に、審判を入れた新しい { 試合の id: チームの id } を返す（入っているものはそのまま）。
+ * 試合の順に、入れられるチームのうち、審判の数が少ないチーム → このあと入れられる試合が少ないチーム → 前後 rest 分に試合がないチーム → 並びの順。入れられるチームがなければ入れない（−）
+ */
+export function autoReferees(matches, ids, resolved, plan, current = {}, rest = 0) {
+  const out = { ...current };
+  const count = Object.fromEntries(ids.map((id) => [id, 0]));
+  for (const id of Object.values(out)) if (id in count) count[id] += 1;
+  const byId = Object.fromEntries(matches.map((x) => [x.id, x]));
+  // チームごとの、これから審判に入れる試合の数（少ないチームを先にしないと、あとで入れる所がなくなる）
+  // 出るチームがまだ決まらない試合（トーナメントの先）は入れない。結果が入ってから、もう一度押すと入る
+  const todo = plan.filter((p) => byId[p.id] && !byId[p.id].bye && !out[p.id] && playersOf(byId[p.id], resolved).length === 2);
+  const left = Object.fromEntries(ids.map((id) => [id, 0]));
+  const optionsOf = Object.fromEntries(todo.map((p) => [p.id, refereeOptions(byId[p.id], ids, resolved, plan, matches)]));
+  for (const p of todo) for (const id of optionsOf[p.id]) left[id] += 1;
+  for (const p of todo) {
+    const m = byId[p.id];
+    for (const id of optionsOf[p.id]) left[id] -= 1;
+    // 前後 rest 分に自分の試合があるチーム（入れられるが、できれば避ける）
+    const near = new Set();
+    for (const q of plan) if (q.id !== p.id && q.start < p.end + rest && p.start - rest < q.end && byId[q.id]) playersOf(byId[q.id], resolved).forEach((id) => near.add(id));
+    const options = optionsOf[p.id];
+    if (!options.length) continue;
+    const best = [...options].sort((a, b) => count[a] - count[b] || left[a] - left[b] || near.has(a) - near.has(b) || ids.indexOf(a) - ids.indexOf(b))[0];
+    out[m.id] = best;
+    count[best] += 1;
+  }
+  // ならす：いちばん多いチームから、審判を少ないチームへ順につけかえる（A の試合を B に、B の試合を C に…。入れたばかりの試合だけ）。
+  // かたよりが 1 以下になるか、つけかえられなくなるまで
+  const mine = new Set(todo.map((p) => p.id));
+  for (let guard = 0; guard < todo.length; guard++) {
+    const top = [...ids].sort((x, y) => count[y] - count[x])[0];
+    const prev = { [top]: null };
+    const queue = [top];
+    let goal = null;
+    while (queue.length && !goal) {
+      const from = queue.shift();
+      for (const [mid, id] of Object.entries(out)) {
+        if (id !== from || !mine.has(mid)) continue;
+        for (const to of optionsOf[mid]) {
+          if (to in prev) continue;
+          prev[to] = { from, mid };
+          if (count[to] <= count[top] - 2) goal = to;
+          else queue.push(to);
+          if (goal) break;
+        }
+        if (goal) break;
+      }
+    }
+    if (!goal) break;
+    for (let id = goal; prev[id]; id = prev[id].from) out[prev[id].mid] = id;
+    count[top] -= 1;
+    count[goal] += 1;
+  }
+  return out;
+}

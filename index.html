@@ -27,7 +27,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://katsuan.github.io/line-share/shared/ui.css?v=202610261000">
-<link rel="stylesheet" href="style.css?v=202610281302">
+<link rel="stylesheet" href="style.css?v=202610281310">
 </head>
 <body>
 <main class="ls-page ls-stack">
@@ -192,6 +192,11 @@
     </div>
     <div id="teamPick" class="ls-chips team-pick" role="radiogroup" aria-label="チーム" hidden></div>
     <div id="teamTools" class="team-tools-row" hidden></div>
+    <!-- 審判：試合ごとに、出ないチームから選ぶ。自動で入れる（審判の少ないチームから）・全部消す -->
+    <div id="refereeTools" class="team-tools-row" hidden>
+      <button id="autoReferees" class="ls-chip" type="button">🟨 審判を自動で入れる</button>
+      <button id="clearReferees" class="ls-chip" type="button" hidden>審判を消す</button>
+    </div>
     <div id="matches" class="ls-stack"></div>
   </section>
 
@@ -215,7 +220,7 @@
 <section id="printArea" class="print-area" aria-hidden="true"></section>
 <script src="https://katsuan.github.io/line-share/shared/oqrn.js"></script>
 <script src="https://katsuan.github.io/line-share/shared/ui.js?v=202610260300" defer></script>
-<script type="module" src="app.js?v=202610281302"></script>
+<script type="module" src="app.js?v=202610281310"></script>
 <script src="https://katsuan.github.io/line-share/shared/tool-share.js" data-tool="qumiawase" defer></script>
 <script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(() => {});</script>
 </body>
