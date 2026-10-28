@@ -27,7 +27,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://katsuan.github.io/line-share/shared/ui.css?v=202610261000">
-<link rel="stylesheet" href="style.css?v=202610281402">
+<link rel="stylesheet" href="style.css?v=202610281921">
 </head>
 <body>
 <main class="ls-page ls-stack">
@@ -69,7 +69,7 @@
 
   <!-- チーム：名前と色（入力枠の中の左に色の丸。さくせん盤・ろくがと同じ形）・並べかえ・シャッフル -->
   <details id="teamsFold" class="ls-fold" open>
-    <summary>👥 チーム <span id="teamsMeta" class="ls-fold-meta"></span></summary>
+    <summary><span class="fold-title">👥 チーム</span> <span id="teamsMeta" class="ls-fold-meta"></span></summary>
     <div class="ls-fold-body ls-stack">
       <p class="ls-hint">上から順にシード（トーナメント）・グループ分けの順。色は、さくせん盤・ろくがにも渡します。</p>
       <ol id="teamList" class="team-list"></ol>
@@ -89,13 +89,13 @@
   <!-- 形と試合の種類：形（トーナメント・総当たり・グループ → 決勝トーナメント）とその設定、
        種類（押すと、1試合の時間・空き時間・勝ち点などの初期設定が入る。目安であとで変えられる）、見こみ。種類は、すぐ下の時間と日程のとなり -->
   <details id="formatFold" class="ls-fold" open>
-    <summary>🏆 形と試合の種類 <span id="formatMeta" class="ls-fold-meta"></span></summary>
+    <summary><span class="fold-title">🏆 形と試合の種類</span> <span id="formatMeta" class="ls-fold-meta"></span></summary>
     <div class="ls-fold-body ls-stack">
       <h3 class="sub-head">形</h3>
       <div id="formatChips" class="ls-chips format-chips" role="radiogroup" aria-label="形"></div>
       <div id="groupOptions" class="ls-stack" hidden>
         <div class="option-row"><span>グループの数</span><div class="stepper" data-opt="groups"></div></div>
-        <div class="option-row"><span>決勝トーナメントへ上がる数（グループごと）</span><div class="stepper" data-opt="advance"></div></div>
+        <div class="option-row"><span>上がる数（各グループ）</span><div class="stepper" data-opt="advance"></div></div>
       </div>
       <div id="legOptions" class="option-row" hidden>
         <span>総当たりの回数</span>
@@ -125,7 +125,7 @@
   <!-- 時間と日程：コート数・1試合の時間・連続試合（避けるなら空き時間）。見こみの時間と、試合の順・コートの割りふりに使う。
        時刻を入れるときは、日にち・はじまり・会場も -->
   <details id="schedFold" class="ls-fold" open>
-    <summary>🕘 時間と日程 <span id="schedMeta" class="ls-fold-meta"></span></summary>
+    <summary><span class="fold-title">🕘 時間と日程</span> <span id="schedMeta" class="ls-fold-meta"></span></summary>
     <div class="ls-fold-body ls-stack">
       <div class="option-row"><span>コートの数</span><div class="stepper" data-sched="courts"></div></div>
       <div class="option-row"><span>1試合の時間（分）</span><div class="stepper" data-sched="minutes"></div></div>
@@ -149,13 +149,15 @@
     </div>
   </details>
 
+  <!-- 準備のおわり：試合のページへ（試合の数も） -->
+  <button id="goPlay" class="ls-button is-primary is-block go-play" type="button">📋 試合へ</button>
   </div>
 
   <div id="pagePlay" class="ls-stack" role="tabpanel" aria-labelledby="pageTabs" hidden>
     <!-- 大会の見出し：名前・形・見こみ（試合のタブのいちばん上） -->
     <section class="ls-panel play-head" aria-label="大会">
       <p id="playTitle" class="play-title"></p>
-      <p id="playEstimate" class="estimate"></p>
+      <p id="playSub" class="play-sub"></p>
     </section>
 
     <!-- 見せる中身のタブ：試合と結果・順位表・トーナメント表（ある形のものだけ出す） -->
@@ -176,6 +178,7 @@
     <h2 id="bracketTitle" class="ls-panel-title">🗺️ トーナメント表</h2>
     <div id="champion" class="champion" hidden></div>
     <div id="bracket" class="bracket" tabindex="0" aria-label="トーナメント表（横にスクロール）"></div>
+    <p id="bracketHint" class="ls-hint" hidden>👉 横にずらすと、次の回から決勝まで見えます。</p>
   </section>
 
   <!-- 試合と結果：点は − 数 ＋。同点のトーナメントは PK も。試合ごとに、さくせん盤・ろくがで開ける -->
@@ -183,10 +186,13 @@
     <h2 id="matchesTitle" class="ls-panel-title">📋 試合と結果 <span id="matchesMeta" class="ls-fold-meta"></span></h2>
     <p id="matchesEmpty" class="ls-hint" hidden>チームを2つ以上入れると、組み合わせができます。</p>
     <!-- 試合表の見方：順番（時刻・何試合目）・コート別・チーム別 -->
+    <div class="match-bar">
     <div id="matchViews" class="ls-chips match-views" role="tablist" aria-label="試合表の見方">
       <button class="ls-chip" type="button" role="tab" data-view="order">順番</button>
       <button class="ls-chip" type="button" role="tab" data-view="court">コート別</button>
       <button class="ls-chip" type="button" role="tab" data-view="team">チーム別</button>
+    </div>
+    <button id="jumpNext" class="ls-chip jump-next" type="button" hidden>⬇ 次の試合へ</button>
     </div>
     <div id="teamPick" class="ls-chips team-pick" role="radiogroup" aria-label="チーム" hidden></div>
     <div id="teamTools" class="team-tools-row" hidden></div>
@@ -205,7 +211,7 @@
       <button id="saveImage" class="ls-button" type="button">📷 画像で保存</button>
       <button id="shareView" class="ls-button" type="button">🔗 見る人用のリンク</button>
       <button id="openSummary" class="ls-button" type="button">📄 大会のまとめ</button>
-      <a id="qronosAll" class="ls-button" href="#" target="_blank" rel="noopener" hidden>⏳ くろのすで<br>カウントダウン</a>
+      <a id="qronosAll" class="ls-button" href="#" target="_blank" rel="noopener" hidden>⏳ カウントダウン</a>
     </div>
     <p class="ls-hint">見る人用のリンクには、大会の中身がそのまま入ります（サーバーには送りません）。開いた人は見るだけ。この端末に保存すると、結果を入れられます。</p>
   </section>
@@ -218,7 +224,7 @@
 <section id="printArea" class="print-area" aria-hidden="true"></section>
 <script src="https://katsuan.github.io/line-share/shared/oqrn.js"></script>
 <script src="https://katsuan.github.io/line-share/shared/ui.js?v=202610260300" defer></script>
-<script type="module" src="app.js?v=202610281402"></script>
+<script type="module" src="app.js?v=202610281921"></script>
 <script src="https://katsuan.github.io/line-share/shared/tool-share.js" data-tool="qumiawase" defer></script>
 <script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(() => {});</script>
 </body>

@@ -1,13 +1,13 @@
 // くみあわせ（QumiAwase）：入口。画面（大会・チーム・形・日程・トーナメント表・順位表・試合と結果・送る）を作り、ボタン・入力を受け、部品（js/）をつなぐ。
 // index.html から読む（type="module"）。組み合わせは js/pairing.js、順位と勝ち上がりは js/stats.js、端末に残すのは js/store.js、
 // リンク（見る人用・さくせん盤・ろくが・結果を戻す）は js/link.js、カードは js/card.js、画像は js/image.js
-import { FORMATS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610281402";
-import { addMinutes, autoReferees, fitOptions, generate, refereeOptions, roundName, timeSchedule } from "./js/pairing.js?v=202610281402";
-import { durationLabel, estimate, outcome, podium, resolve, table } from "./js/stats.js?v=202610281402";
-import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610281402";
-import { LINK_MAX, qronosUrl, readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610281402";
-import { cardParams, dateLabel, formatLabel, matchLine, matchTitle, sideLabel, summaryText, teamName } from "./js/card.js?v=202610281402";
-import { drawTournament } from "./js/image.js?v=202610281402";
+import { FORMATS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610281921";
+import { addMinutes, autoReferees, fitOptions, generate, refereeOptions, roundName, timeSchedule } from "./js/pairing.js?v=202610281921";
+import { durationLabel, estimate, outcome, podium, resolve, table } from "./js/stats.js?v=202610281921";
+import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610281921";
+import { LINK_MAX, qronosUrl, readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610281921";
+import { cardParams, dateLabel, formatLabel, matchLine, matchTitle, sideLabel, summaryText, teamName } from "./js/card.js?v=202610281921";
+import { drawTournament } from "./js/image.js?v=202610281921";
 
 // id から画面の部品を返す
 const $ = (id) => document.getElementById(id);
@@ -120,7 +120,7 @@ function renderPresets() {
   const p = PRESETS.find((x) => x.key === t.preset);
   $("presetNote").textContent = p
     ? `${p.note} → 1試合${p.minutes}分・空き${p.rest}分・勝ち点 勝${p.points.win}・分${p.points.draw}・負${p.points.loss}（目安。勝ち点は上・時間は下で変えられます）`
-    : "1試合の時間・空き時間・勝ち点は、下の「形」「時間と日程」で決めます。";
+    : "勝ち点は上の「勝ち点」、1試合の時間・空き時間は下の「時間と日程」で決めます。";
 }
 
 // 試合の種類を選ぶ：1試合の時間・空き時間・勝ち点・3位決定戦の初期設定を入れる（「元に戻す」で戻せる）
@@ -379,12 +379,19 @@ function renderEstimate({ t, est }) {
   const end = t.sched.on ? `・${t.sched.start}〜${addMinutes(t.sched.start, est.minutes)}` : "";
   const text = est.matches ? `📏 ${est.matches}試合・1チーム最多${est.most}試合・${durationLabel(est.minutes)}${end}（1試合${t.sched.minutes}分・コート${t.sched.courts}${t.sched.avoid ? `・空き${t.sched.rest}分` : ""}）` : "";
   $("estimate").textContent = text;
-  $("playEstimate").textContent = text;
   const when = [dateLabel(t.sched.on ? t.sched.date : ""), t.sched.on ? t.sched.place : ""].filter(Boolean).join(" ");
-  $("playTitle").textContent = `🏆 ${t.name || "組み合わせ"}　${[when, FORMATS[t.format], `${t.teams.length}チーム`].filter(Boolean).join("・")}`;
+  // 試合のページの見出し：名前（大きく）と、日にち・形・チーム・時間（1行に小さく）
+  $("playTitle").textContent = `🏆 ${t.name || "組み合わせ"}`;
+  $("playSub").textContent = [when, FORMATS[t.format], `${t.teams.length}チーム`, est.matches ? `${est.matches}試合` : "", est.matches ? (t.sched.on ? `${t.sched.start}〜${addMinutes(t.sched.start, est.minutes)}` : durationLabel(est.minutes)) : ""].filter(Boolean).join("・");
+  // 準備のおわりのボタン：試合の数も
+  $("goPlay").hidden = !est.matches;
+  $("goPlay").textContent = `📋 試合へ（${est.matches}試合）`;
 }
 
 // ---- 画面：結果（トーナメント表・順位表・試合） ----
+
+// チーム別で選んでいるチーム（順位表・トーナメント表でも目立たせる。チーム別でないときは ""）
+const mine = () => (view.mode === "team" ? view.team : "");
 
 // チームの色の丸の HTML を返す（チームが決まっていなければ空の丸）
 const dotHtml = (id) => `<i class="dot" style="background:${esc(teamById(id)?.color || "transparent")}"></i>`;
@@ -404,7 +411,7 @@ function renderBracket({ t, gen, resolved }) {
       const row = (side, id, k) => {
         const label = id ? teamName(t, id) : side.empty ? "シード" : sideLabel(side, gen);
         const score = res && !m.bye ? `${res.s[k]}${res.pk ? `(${res.pk[k]})` : ""}` : "";
-        const cls = id ? (r.winner === id && !m.bye ? "is-win" : "") : "is-tbd";
+        const cls = id ? `${r.winner === id && !m.bye ? "is-win" : ""} ${id === mine() ? "is-mine" : ""}` : "is-tbd";
         return `<div class="${cls}">${dotHtml(id)}<span class="name">${esc(label)}</span><b>${esc(score)}</b></div>`;
       };
       return `<div class="bracket-match">${row(m.home, r.home, 0)}${row(m.away, r.away, 1)}</div>`;
@@ -425,7 +432,7 @@ function renderStandings({ t, gen }) {
     .map((g) => {
       const ms = gen.matches.filter((m) => (g.key ? m.group === g.key : m.stage === "league"));
       const rows = table(g.ids, ms, t.results, t.points)
-        .map((r) => `<tr><td>${r.rank}</td><td class="team">${dotHtml(r.id)}${esc(teamName(t, r.id))}</td><td>${r.played}</td><td>${r.win}</td><td>${r.draw}</td><td>${r.loss}</td><td>${r.gf}</td><td>${r.ga}</td><td>${r.gd > 0 ? "+" : ""}${r.gd}</td><td class="pts">${r.pts}</td></tr>`)
+        .map((r) => `<tr class="${r.id === mine() ? "is-mine" : ""}"><td>${r.rank}</td><td class="team">${dotHtml(r.id)}${esc(teamName(t, r.id))}</td><td>${r.played}</td><td>${r.win}</td><td>${r.draw}</td><td>${r.loss}</td><td>${r.gf}</td><td>${r.ga}</td><td>${r.gd > 0 ? "+" : ""}${r.gd}</td><td class="pts">${r.pts}</td></tr>`)
         .join("");
       return `<div class="table-wrap"><table class="standing-table">${g.key ? `<caption>${esc(g.key)}組</caption>` : ""}<thead><tr><th></th><th class="team">チーム</th><th>試</th><th>勝</th><th>分</th><th>負</th><th>得</th><th>失</th><th>差</th><th>点</th></tr></thead><tbody>${rows}</tbody></table></div>`;
     })
@@ -435,7 +442,7 @@ function renderStandings({ t, gen }) {
 // 点の − 数 ＋（まだ入れていないときは「–」。押すと 0 から入る）の HTML を返す
 function scoreHtml(mid, kind, k, value, label) {
   const shown = value === null ? "–" : value;
-  return `<div class="score-stepper"><button type="button" data-score="${kind}" data-k="${k}" data-d="-1" data-mid="${esc(mid)}" aria-label="${esc(label)}をへらす">−</button><output><button type="button" class="score-now" data-score="${kind}" data-k="${k}" data-d="0" data-mid="${esc(mid)}" aria-label="${esc(label)}（いま ${shown}）">${shown}</button></output><button type="button" data-score="${kind}" data-k="${k}" data-d="1" data-mid="${esc(mid)}" aria-label="${esc(label)}をふやす">＋</button></div>`;
+  return `<div class="score-stepper ${value === null ? "is-empty" : ""}"><button type="button" data-score="${kind}" data-k="${k}" data-d="-1" data-mid="${esc(mid)}" aria-label="${esc(label)}をへらす">−</button><output><button type="button" class="score-now" data-score="${kind}" data-k="${k}" data-d="0" data-mid="${esc(mid)}" aria-label="${esc(label)}（いま ${shown}）">${shown}</button></output><button type="button" data-score="${kind}" data-k="${k}" data-d="1" data-mid="${esc(mid)}" aria-label="${esc(label)}をふやす">＋</button></div>`;
 }
 
 // 試合1つのカード（見出し・時刻・2チームと点・PK・さくせん盤やろくがで開く）の HTML を返す
@@ -445,7 +452,11 @@ function matchHtml(c, m) {
   const res = t.results[m.id];
   const ready = Boolean(r.home && r.away);
   const s = timeOf[m.id];
-  const when = s ? `${s.time}${t.sched.courts > 1 ? `・コート${s.court}` : ""}` : numberOf[m.id] ? `第${numberOf[m.id]}試合` : "";
+  // 時刻ごとの見出しの下（順番の見方）では、時刻をくり返さない（コートだけ）
+  const underTime = view.mode === "order" && s;
+  const when = underTime ? (t.sched.courts > 1 ? `コート${s.court}` : "") : s ? `${s.time}${t.sched.courts > 1 ? `・コート${s.court}` : ""}` : numberOf[m.id] ? `第${numberOf[m.id]}試合` : "";
+  const done = Boolean(outcome(res));
+  const next = c.next?.has(m.id);
   const isKo = m.stage === "ko" || m.stage === "third";
   const o = outcome(res);
   const side = (sideDef, id, k) => {
@@ -459,7 +470,9 @@ function matchHtml(c, m) {
       ? `<div class="pk-row"><span>PK（同点のとき）</span>${viewing ? `<b>${res.pk ? `${res.pk[0]} - ${res.pk[1]}` : "–"}</b>` : `<div class="pk-steppers">${scoreHtml(m.id, "pk", 0, res.pk ? res.pk[0] : null, "ホームの PK")}${scoreHtml(m.id, "pk", 1, res.pk ? res.pk[1] : null, "アウェイの PK")}</div>`}</div>`
       : "";
   let actions = "";
-  if (ready) {
+  // 終わった試合は「結果を消す」を見出しの右に小さく（さくせん盤・ろくがは出さない）
+  const clearBtn = ready && done && !viewing ? `<button class="ls-chip clear-chip" type="button" data-clear="${esc(m.id)}">結果を消す</button>` : "";
+  if (ready && !done) {
     const home = teamById(r.home);
     const away = teamById(r.away);
     const named = (x) => ({ name: teamName(t, x.id), color: x.color });
@@ -470,7 +483,8 @@ function matchHtml(c, m) {
       ${res && !viewing ? `<button class="ls-chip" type="button" data-clear="${esc(m.id)}">結果を消す</button>` : ""}
     </div>`;
   }
-  return `<article class="match ${res ? "is-done" : ""}" data-mid="${esc(m.id)}"><div class="match-head"><span>${esc(matchTitle(m, gen))}</span><span>${esc(when)}</span></div>${side(m.home, r.home, 0)}${side(m.away, r.away, 1)}${pkRow}${refereeHtml(c, m)}${actions}</article>`;
+  const badge = next ? `<span class="next-badge">▶ 次の試合</span>` : done ? `<span class="done-badge">✓ 終わり</span>` : "";
+  return `<article class="match ${done ? "is-done" : ""} ${next ? "is-next" : ""}" data-mid="${esc(m.id)}"><div class="match-head"><span>${badge}${esc(matchTitle(m, gen))}</span><span>${esc(when)}${clearBtn}</span></div>${side(m.home, r.home, 0)}${side(m.away, r.away, 1)}${pkRow}${refereeHtml(c, m)}${actions}</article>`;
 }
 
 /**
@@ -485,7 +499,9 @@ function refereeHtml(c, m) {
   const r = resolved[m.id] || {};
   const why = r.home === now || r.away === now ? "（⚠️ この試合に出る）" : "（⚠️ 同じ時間に試合）";
   const label = now ? `${teamName(t, now)}${clash ? why : ""}` : "−";
-  if (viewing) return `<div class="referee-row"><span>🟨 審判</span><b>${esc(label)}</b></div>`;
+  const done = Boolean(outcome(t.results[m.id]));
+  if (done && !now) return "";
+  if (viewing || done) return `<div class="referee-row"><span>🟨 審判</span><b>${esc(label)}</b></div>`;
   if (!options.length && !now) return `<div class="referee-row"><span>🟨 審判</span><b>−</b></div>`;
   const list = clash ? [now, ...options] : options;
   const opts = list.map((id) => `<option value="${esc(id)}" ${esc(id === now ? "selected" : "")}>${esc(id === now && clash ? label : teamName(t, id))}</option>`).join("");
@@ -625,6 +641,11 @@ function renderMatches(c) {
   $("clearReferees").hidden = !Object.keys(t.referees || {}).length;
   const done = play.filter((m) => outcome(t.results[m.id])).length;
   $("matchesMeta").textContent = play.length ? `${done} / ${play.length}試合` : "";
+  // 次の試合：順番でいちばん早い、出るチームが決まっていて結果のまだの試合（同じ時刻のほかのコートも）
+  const byIdAll = Object.fromEntries(gen.matches.map((m) => [m.id, m]));
+  const waiting = plan.filter((p) => !byIdAll[p.id].bye && resolved[p.id]?.home && resolved[p.id]?.away && !outcome(t.results[p.id]));
+  c.next = new Set(waiting.length ? waiting.filter((p) => p.start === waiting[0].start).map((p) => p.id) : []);
+  $("jumpNext").hidden = !c.next.size || view.mode === "team";
   renderViewTools(c);
   const byId = Object.fromEntries(gen.matches.map((m) => [m.id, m]));
   const parts = [];
@@ -687,6 +708,8 @@ function renderResults() {
   renderStandings(c);
   renderMatches(c);
   renderPlayTabs(c);
+  // トーナメント表が横にはみ出すときだけ「横にずらす」の案内（出してから測る）
+  $("bracketHint").hidden = $("bracket").scrollWidth <= $("bracket").clientWidth + 2;
 }
 
 // 画面をまるごと描きなおす
@@ -1103,6 +1126,19 @@ function bindEvents() {
 
   // 試合表の見方・チーム別のチーム
   document.querySelectorAll("[data-view]").forEach((b) => b.addEventListener("click", () => ((view.mode = b.dataset.view), renderResults())));
+  // 次の試合へ：そのカードまで動かす（上に貼りついたタブの下に来るように）
+  $("jumpNext").addEventListener("click", () => {
+    const el = document.querySelector("#matches .match.is-next");
+    if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 90, behavior: "smooth" });
+  });
+  // 準備のおわり：試合のページへ（いちばん上から）
+  $("goPlay").addEventListener("click", () => {
+    page.now = "play";
+    page.play = "matches";
+    renderPage();
+    renderResults();
+    window.scrollTo({ top: 0 });
+  });
   $("teamPick").addEventListener("click", (e) => {
     const b = e.target.closest("[data-team]");
     if (!b) return;

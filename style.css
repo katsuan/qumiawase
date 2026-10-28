@@ -233,13 +233,72 @@ body {
   background: var(--ls-surface);
 }
 
+/* 終わった試合は控えめに（点は読めるまま） */
 .match.is-done {
-  border-color: color-mix(in srgb, var(--ls-accent) 35%, var(--ls-line));
+  gap: 4px;
+  padding: 6px 12px;
+  border-width: 1px;
+  background: var(--ls-surface-2, color-mix(in srgb, var(--ls-surface) 92%, var(--ls-subtext)));
+}
+
+.match.is-done .match-side {
+  min-height: 36px;
+}
+
+/* 次の試合：太いふちと色で目立たせる */
+.match.is-next {
+  border-color: var(--ls-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ls-accent) 22%, transparent);
+}
+
+.next-badge,
+.done-badge {
+  margin-right: 6px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.next-badge {
+  background: var(--ls-accent);
+  color: #fff;
+}
+
+.done-badge {
+  background: color-mix(in srgb, var(--qa-win) 16%, transparent);
+  color: var(--qa-win);
+}
+
+.match-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.match-bar .match-views {
+  margin-bottom: 0;
+}
+
+.match-head .clear-chip {
+  min-height: 32px;
+  margin-left: 8px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+.jump-next {
+  justify-self: start;
+  border-color: var(--ls-accent);
+  color: var(--ls-accent-ink);
 }
 
 .match-head {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   justify-content: space-between;
   gap: 4px 8px;
   color: var(--ls-subtext);
@@ -310,6 +369,12 @@ body {
   place-items: center;
   font-size: 18px;
   font-weight: 800;
+}
+
+/* まだ点を入れていないときの「–」は薄く（− ボタンと見分けやすく） */
+.score-stepper.is-empty output {
+  color: var(--ls-faint);
+  font-weight: 600;
 }
 
 .pk-row {
@@ -451,6 +516,46 @@ body {
 
 .bracket-match .is-tbd {
   color: var(--ls-faint);
+}
+
+/* 勝ち上がりの線：試合の右に短い線、次の回の試合の左に短い線 */
+.bracket-col + .bracket-col .bracket-match,
+.bracket-col:not(:last-child) .bracket-match {
+  position: relative;
+  overflow: visible;
+}
+
+.bracket-col:not(:last-child) .bracket-match::after,
+.bracket-col + .bracket-col .bracket-match::before {
+  position: absolute;
+  top: 50%;
+  width: 8px;
+  border-top: 2px solid var(--ls-line-strong);
+  content: "";
+}
+
+.bracket-col:not(:last-child) .bracket-match::after {
+  right: -10px;
+}
+
+.bracket-col + .bracket-col .bracket-match::before {
+  left: -10px;
+}
+
+.bracket-match > div:first-child {
+  border-radius: 8px 8px 0 0;
+}
+
+.bracket-match > div:last-child {
+  border-radius: 0 0 8px 8px;
+}
+
+/* チーム別で選んでいるチーム（トーナメント表・順位表） */
+.bracket-match .is-mine,
+.standing-table tr.is-mine td {
+  background: var(--ls-accent-soft);
+  color: var(--ls-accent-ink);
+  font-weight: 800;
 }
 
 .champion {
@@ -696,8 +801,54 @@ body.is-view #schedFold {
 }
 
 .play-title {
-  margin: 0 0 6px;
+  margin: 0;
+  font-size: 17px;
   font-weight: 800;
+}
+
+.play-sub {
+  margin: 2px 0 0;
+  color: var(--ls-subtext);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.play-head {
+  gap: 2px;
+  padding-block: 10px;
+}
+
+/* たたみ欄の見出し：名前は折らない。右の中身は1行で、入りきらなければ「…」 */
+.fold-title {
+  flex: none;
+  white-space: nowrap;
+}
+
+.ls-fold {
+  min-width: 0;
+}
+
+.ls-fold > summary .ls-fold-meta {
+  flex: 1 1 0;
+  width: 0;
+  min-width: 0;
+  text-align: right;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* 準備のおわりの「試合へ」 */
+.go-play {
+  min-height: 52px;
+  font-size: 17px;
+}
+
+/* 送る・保存のボタンは1行に（折れて「見る／人用のリンク」にならないように） */
+.share-row .ls-button {
+  padding-inline: 8px;
+  font-size: 14px;
+  white-space: nowrap;
 }
 
 /* 試合のページの、見せる中身のタブ（ページのタブの下に、貼りつけない） */
