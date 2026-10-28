@@ -1,13 +1,13 @@
 // くみあわせ（QumiAwase）：入口。画面（大会・チーム・形・日程・トーナメント表・順位表・試合と結果・送る）を作り、ボタン・入力を受け、部品（js/）をつなぐ。
 // index.html から読む（type="module"）。組み合わせは js/pairing.js、順位と勝ち上がりは js/stats.js、端末に残すのは js/store.js、
 // リンク（見る人用・さくせん盤・ろくが・結果を戻す）は js/link.js、カードは js/card.js、画像は js/image.js
-import { FORMATS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610282127";
-import { addMinutes, autoReferees, fitOptions, generate, refereeOptions, roundName, timeSchedule } from "./js/pairing.js?v=202610282127";
-import { durationLabel, estimate, outcome, podium, resolve, table } from "./js/stats.js?v=202610282127";
-import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610282127";
-import { LINK_MAX, qronosUrl, readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610282127";
-import { cardParams, dateLabel, formatLabel, matchLine, matchTitle, sideLabel, summaryText, teamName } from "./js/card.js?v=202610282127";
-import { drawTournament } from "./js/image.js?v=202610282127";
+import { FORMATS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610282129";
+import { addMinutes, autoReferees, fitOptions, generate, refereeOptions, roundName, timeSchedule } from "./js/pairing.js?v=202610282129";
+import { durationLabel, estimate, outcome, podium, resolve, table } from "./js/stats.js?v=202610282129";
+import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610282129";
+import { LINK_MAX, qronosUrl, readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610282129";
+import { cardParams, dateLabel, formatLabel, matchLine, matchTitle, sideLabel, summaryText, teamName } from "./js/card.js?v=202610282129";
+import { drawTournament } from "./js/image.js?v=202610282129";
 
 // id から画面の部品を返す
 const $ = (id) => document.getElementById(id);
@@ -724,6 +724,19 @@ function allQronosUrl(c) {
 }
 
 // 試合表の見方のボタン・チーム別のチームの選択・くろのすのボタンを描きなおす
+// そのチームが審判をする試合のならび
+const refereeDuty = (c, id) => c.gen.matches.filter((m) => !m.bye && id && c.t.referees?.[m.id] === id);
+
+// チーム別の、審判をする試合の1行（いつ・どの試合・出るチーム・結果）の HTML を返す
+function refereeDutyHtml(c, m) {
+  const { t, gen, resolved } = c;
+  const r = resolved[m.id] || {};
+  const name = (side, id) => (id ? teamName(t, id) : sideLabel(side, gen));
+  const res = t.results[m.id];
+  const mid = res ? `${res.s[0]} - ${res.s[1]}` : "vs";
+  return `<p class="ref-duty ${outcome(res) ? "is-done" : ""}"><b>🟨 審判</b>　${esc(numberOf2(c, m))}　${esc(matchTitle(m, gen))}<br>${esc(name(m.home, r.home))} ${esc(mid)} ${esc(name(m.away, r.away))}</p>`;
+}
+
 function renderViewTools(c) {
   const { t } = c;
   if (view.mode === "court" && t.sched.courts < 2) view.mode = "order";
@@ -742,7 +755,9 @@ function renderViewTools(c) {
     const fixed = path.filter((x) => x.kind === "fixed").length;
     const more = path.filter((x) => x.kind === "win" || x.kind === "advance").length;
     const most = more ? `<p class="path-note">📏 最多 ${esc(fixed + more)}試合（決まっている ${esc(fixed)}試合 ＋ 勝ち進めば ${esc(more)}試合）</p>` : "";
-    $("teamTools").innerHTML = most + (url
+    const duty = refereeDuty(c, view.team).length;
+    const refNote = duty ? `<p class="path-note">🟨 審判 ${esc(duty)}試合（試合のあいだに入れています）</p>` : "";
+    $("teamTools").innerHTML = most + refNote + (url
       ? `<a class="ls-chip" href="${esc(url)}" target="_blank" rel="noopener">⏳ この試合をくろのすでカウントダウン</a>`
       : `<p class="ls-hint">⏳ 「時刻を入れる」で日にちとはじまりを入れると、このチームの試合をくろのすでカウントダウンできます。</p>`);
   }
@@ -774,10 +789,13 @@ function renderMatches(c) {
   const byId = Object.fromEntries(gen.matches.map((m) => [m.id, m]));
   const parts = [];
   if (view.mode === "team" && view.team) {
-    const path = teamPath(c, view.team);
+    // このチームの試合に、審判をする試合もはさむ（試合の順に）
+    const duty = refereeDuty(c, view.team).map((m) => ({ m, kind: "ref" }));
+    const path = [...teamPath(c, view.team), ...duty].sort((a, b) => (c.numberOf[a.m.id] ?? 0) - (c.numberOf[b.m.id] ?? 0));
     if (!path.length) parts.push(`<p class="ls-hint">このチームの試合はまだ決まっていません。</p>`);
     for (const x of path) {
       if (x.kind === "fixed") parts.push(matchHtml(c, x.m));
+      else if (x.kind === "ref") parts.push(refereeDutyHtml(c, x.m));
       else parts.push(`<p class="path-note">${esc(numberOf2(c, x.m))}　${esc(matchTitle(x.m, gen))}${esc(KIND_LABEL[x.kind])}　vs ${esc(opponentLabel(c, view.team, x))}</p>`);
     }
   } else if (view.mode === "court") {

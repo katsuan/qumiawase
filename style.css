@@ -825,6 +825,22 @@ body.is-view #schedFold {
   font-size: 14px;
 }
 
+/* チーム別：審判をする試合（自分の試合よりひかえめに。左に黄色の線） */
+.ref-duty {
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--ls-line);
+  border-left: 5px solid #f2c200;
+  border-radius: var(--ls-radius-md);
+  background: var(--ls-surface-sub);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.ref-duty.is-done {
+  opacity: 0.6;
+}
+
 .share-row a.ls-button {
   text-align: center;
   text-decoration: none;
