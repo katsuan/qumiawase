@@ -148,6 +148,46 @@ export function fitOptions(teamCount, opts = {}) {
   return { legs, thirdPlace, groups, advance };
 }
 
+// トーナメント表の2つの場所（0 から）が当たる回（1＝1回戦）を返す
+const meetRound = (p, q) => {
+  let k = 1;
+  while (p >> k !== q >> k) k++;
+  return k;
+};
+
+/**
+ * グループのあとの決勝トーナメントに上がる側を、シードの順（knockout にそのまま渡す並び）にして返す。
+ * 1位はグループの順にシード1・2・3…。2位からは、そのシードの帯の場所のうち、同じグループのチームと当たる回がいちばん遅くなる場所に置く
+ * （4グループ×2チームなら A1-C2・D1-B2・B1-D2・C1-A2 で、同じグループどうしは決勝まで当たらない。2グループなら A1-B2・B1-A2）
+ */
+export function groupEntrants(groups, advance) {
+  const tiers = [];
+  for (let rank = 1; rank <= advance; rank++) tiers.push(groups.filter((g) => g.ids.length >= rank).map((g) => ({ groupRank: [g.key, rank] })));
+  const count = tiers.reduce((n, t) => n + t.length, 0);
+  if (count < 2) return tiers.flat();
+  const order = seedOrder(nextPow2(count));
+  const posOf = (seed) => order.indexOf(seed);
+  const placed = []; // { pos, group }
+  const bySeed = [];
+  let seed = 1;
+  tiers.forEach((tier, ti) => {
+    const free = tier.map((_, i) => seed + i).filter((sd) => sd <= count);
+    for (const side of tier) {
+      let pick = free[0];
+      if (ti > 0) {
+        // 同じグループのチームと当たる回がいちばん遅い場所（同じなら、シードの若いほう）
+        const score = (sd) => Math.min(...placed.filter((x) => x.group === side.groupRank[0]).map((x) => meetRound(posOf(sd), x.pos)), 99);
+        pick = free.reduce((best, sd) => (score(sd) > score(best) ? sd : best), free[0]);
+      }
+      free.splice(free.indexOf(pick), 1);
+      placed.push({ pos: posOf(pick), group: side.groupRank[0] });
+      bySeed[pick - 1] = side;
+    }
+    seed += tier.length;
+  });
+  return bySeed;
+}
+
 /**
  * 大会の組み合わせを作る。teams は [{ id, … }]（並びの順がシード・グループ分けの順）、format は knockout・league・groups。
  * { matches, groups } を返す（groups はグループのときだけ。[{ key, ids }]）。チームが2つより少ないときは試合なし
@@ -160,9 +200,7 @@ export function generate(teams, format, options = {}) {
   if (format === "groups") {
     const groups = splitGroups(ids, opts.groups);
     const groupMatches = groups.flatMap((g) => league(g.ids, { legs: opts.legs, group: g.key }));
-    // 上がるチーム：1位どうし・2位どうし…の順にシードを付ける（はじめの試合で、同じグループのチームが当たらない）
-    const entrants = [];
-    for (let rank = 1; rank <= opts.advance; rank++) groups.forEach((g) => g.ids.length >= rank && entrants.push({ groupRank: [g.key, rank] }));
+    const entrants = groupEntrants(groups, opts.advance);
     const finals = entrants.length >= 2 ? knockout(entrants, { thirdPlace: opts.thirdPlace, prefix: "K" }) : [];
     return { matches: [...groupMatches, ...finals], groups };
   }

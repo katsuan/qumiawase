@@ -8,7 +8,7 @@
 //   入力の合言葉 → PBKDF2（SHA-256・塩 "qumiawase:" + 大会の番号・10万回・32バイト）。ジェンダーリビールと同じ考え
 //   運営の合言葉 → SHA-256("qumiawase:admin:" + 合言葉)（ボットのスクリプト プロパティにあるものとくらべる）
 //   できた key は、そのタブの sessionStorage にだけ置く（タブを閉じれば消える。読みこみなおしでは聞きなおさない）
-import { cleanTournament, isObj, resultIn } from "./store.js?v=202610282233";
+import { cleanTournament, isObj, resultIn } from "./store.js?v=202610282234";
 
 // くらぶボットの URL（GAS のウェブアプリ …/exec だけ。Q キットの shared/qlove-bot.js と同じ形）
 const BOT_URL = /^https:\/\/script\.google\.com\/(?:a\/[A-Za-z0-9.-]+\/)?macros\/s\/[A-Za-z0-9_-]{20,120}\/exec$/;

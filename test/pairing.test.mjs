@@ -193,3 +193,25 @@ test("続けてもよい：回の順のまま、すきまなく詰める", () =>
   const plan = timeSchedule(ms, { courts: 1, minutes: 20, rest: 30, avoid: false });
   assert.deepEqual(plan.map((o) => o.id), ms.map((m) => m.id));
 });
+
+// グループ → 決勝トーナメント：同じグループのチームは、なるべく遅い回まで当たらない（1位と2位は決勝まで）
+test("決勝トーナメントで同じグループが早く当たらない", () => {
+  const teams = (n) => Array.from({ length: n }, (_, i) => ({ id: `t${i + 1}` }));
+  for (const [n, groups, advance] of [[16, 4, 2], [8, 2, 2], [12, 3, 2], [16, 8, 2], [24, 4, 2]]) {
+    const gen = generate(teams(n), "groups", { groups, advance });
+    const first = gen.matches.filter((m) => m.stage === "ko" && m.round === 1);
+    const total = Math.max(...gen.matches.filter((m) => m.stage === "ko").map((m) => m.round));
+    // 1回戦の場所の並び（不戦勝もふくむ）
+    const slots = first.flatMap((m) => [m.home, m.away]);
+    const where = (key, rank) => slots.findIndex((sd) => sd.groupRank && sd.groupRank[0] === key && sd.groupRank[1] === rank);
+    for (const g of gen.groups) {
+      const p1 = where(g.key, 1);
+      const p2 = where(g.key, 2);
+      let k = 1;
+      while (p1 >> k !== p2 >> k) k++;
+      assert.equal(k, total, `${n}チーム ${groups}組：${g.key}組の1位と2位は決勝まで当たらない（${k}回戦で当たる）`);
+    }
+    // 1回戦で1位どうしは当たらない
+    for (const m of first) if (!m.bye) assert.ok(!(m.home.groupRank?.[1] === 1 && m.away.groupRank?.[1] === 1), `${n}チーム：1位どうし`);
+  }
+});
