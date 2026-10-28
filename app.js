@@ -1,13 +1,13 @@
 // くみあわせ（QumiAwase）：入口。画面（大会・チーム・形・日程・トーナメント表・順位表・試合と結果・送る）を作り、ボタン・入力を受け、部品（js/）をつなぐ。
 // index.html から読む（type="module"）。組み合わせは js/pairing.js、順位と勝ち上がりは js/stats.js、端末に残すのは js/store.js、
 // リンク（見る人用・さくせん盤・ろくが・結果を戻す）は js/link.js、カードは js/card.js、画像は js/image.js
-import { FORMATS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610282112";
-import { addMinutes, autoReferees, fitOptions, generate, refereeOptions, roundName, timeSchedule } from "./js/pairing.js?v=202610282112";
-import { durationLabel, estimate, outcome, podium, resolve, table } from "./js/stats.js?v=202610282112";
-import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610282112";
-import { LINK_MAX, qronosUrl, readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610282112";
-import { cardParams, dateLabel, formatLabel, matchLine, matchTitle, sideLabel, summaryText, teamName } from "./js/card.js?v=202610282112";
-import { drawTournament } from "./js/image.js?v=202610282112";
+import { FORMATS, LIMITS, PRESETS, TEAM_COLORS, TOOL } from "./js/settings.js?v=202610282116";
+import { addMinutes, autoReferees, fitOptions, generate, refereeOptions, roundName, timeSchedule } from "./js/pairing.js?v=202610282116";
+import { durationLabel, estimate, outcome, podium, resolve, table } from "./js/stats.js?v=202610282116";
+import { blankTournament, cleanTournament, colorAt, loadAll, newId, saveAll, takeInbox } from "./js/store.js?v=202610282116";
+import { LINK_MAX, qronosUrl, readResult, readView, roqgaUrl, saqsenUrl, viewUrl } from "./js/link.js?v=202610282116";
+import { cardParams, dateLabel, formatLabel, matchLine, matchTitle, sideLabel, summaryText, teamName } from "./js/card.js?v=202610282116";
+import { drawTournament } from "./js/image.js?v=202610282116";
 
 // id から画面の部品を返す
 const $ = (id) => document.getElementById(id);
@@ -512,9 +512,13 @@ function renderBracket({ t, gen, resolved }) {
         const cls = id ? `${r.winner === id && !m.bye ? "is-win" : ""} ${id === mine() ? "is-mine" : ""}` : "is-tbd";
         return `<div class="${cls}">${dotHtml(id)}<span class="name">${esc(label)}</span><b>${esc(score)}</b></div>`;
       };
-      return `<div class="bracket-match">${row(m.home, r.home, 0)}${row(m.away, r.away, 1)}</div>`;
+      return `<div class="bracket-slot"><div class="bracket-match">${row(m.home, r.home, 0)}${row(m.away, r.away, 1)}</div></div>`;
     });
-    cols.push(`<div class="bracket-col"><h3>${esc(roundName(round, total))}</h3><div class="bracket-col-body">${boxes.join("")}</div></div>`);
+    // 決勝の前の回は2試合ずつ組にする（組の右に縦の線を引いて、次の回の試合につなぐ。次の回の i 試合目は、この回の 2i・2i+1 試合目の勝者）
+    const body = [];
+    if (round < total) for (let i = 0; i < boxes.length; i += 2) body.push(boxes[i + 1] ? `<div class="bracket-pair">${boxes[i]}${boxes[i + 1]}</div>` : boxes[i]);
+    else body.push(...boxes);
+    cols.push(`<div class="bracket-col"><h3>${esc(roundName(round, total))}</h3><div class="bracket-col-body">${body.join("")}</div></div>`);
   }
   $("bracket").innerHTML = cols.join("");
   const p = podium(gen, resolved);

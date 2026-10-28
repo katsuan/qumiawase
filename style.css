@@ -575,11 +575,33 @@ body {
 }
 
 /* 列の中の試合は、上下に同じだけあけて並べる（次の回の試合が、前の2試合のまん中に来る） */
-.bracket-col-body {
+.bracket-col-body,
+.bracket-pair {
   display: flex;
+  flex: 1;
   flex-direction: column;
-  justify-content: space-around;
-  gap: 8px;
+}
+
+.bracket-slot {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  padding: 4px 0;
+}
+
+/* 2試合の組：右に縦の線（上の試合のまん中から下の試合のまん中まで） */
+.bracket-pair {
+  position: relative;
+}
+
+.bracket-pair::after {
+  position: absolute;
+  top: 25%;
+  right: -8px;
+  bottom: 25%;
+  border-right: 2px solid var(--ls-line-strong);
+  content: "";
 }
 
 .bracket-col h3 {
@@ -631,7 +653,7 @@ body {
   color: var(--ls-faint);
 }
 
-/* 勝ち上がりの線：試合の右に短い線、次の回の試合の左に短い線 */
+/* 勝ち上がりの線：試合の右から縦の線まで、縦の線から次の回の試合の左まで */
 .bracket-col + .bracket-col .bracket-match,
 .bracket-col:not(:last-child) .bracket-match {
   position: relative;
@@ -642,17 +664,18 @@ body {
 .bracket-col + .bracket-col .bracket-match::before {
   position: absolute;
   top: 50%;
-  width: 8px;
   border-top: 2px solid var(--ls-line-strong);
   content: "";
 }
 
 .bracket-col:not(:last-child) .bracket-match::after {
-  right: -10px;
+  right: -9px;
+  width: 7px;
 }
 
 .bracket-col + .bracket-col .bracket-match::before {
-  left: -10px;
+  left: -8px;
+  width: 6px;
 }
 
 .bracket-match > div:first-child {
