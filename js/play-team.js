@@ -1,11 +1,11 @@
 // くみあわせ：試合の表の「チーム別」（そのチームの試合と勝ち進み・審判をする試合・最多の試合の数）と、くろのすのカウントダウンのリンク
 // js/play-matches.js から読む（import。描きなおしは renderViewTools、チームを選ぶボタンは bindTeamView）
-import { TOOL } from "./settings.js?v=202610290639";
-import { LINK_MAX, qronosUrl, viewUrl } from "./link.js?v=202610290639";
-import { matchTitle, sideLabel, teamName } from "./card.js?v=202610290639";
-import { $, esc } from "./dom.js?v=202610290639";
-import { teamById, ui, view } from "./state.js?v=202610290639";
-import { doneOf, dotHtml, mine, whenText } from "./play-score.js?v=202610290639";
+import { TOOL } from "./settings.js?v=202610291801";
+import { LINK_MAX, qronosUrl, viewUrl } from "./link.js?v=202610291801";
+import { matchTitle, sideLabel, teamName } from "./card.js?v=202610291801";
+import { $, esc } from "./dom.js?v=202610291801";
+import { teamById, ui, view } from "./state.js?v=202610291801";
+import { doneOf, dotHtml, mine, whenText } from "./play-score.js?v=202610291801";
 
 /**
  * そのチームの試合を返す：決まっている試合と、トーナメントの勝ち進み（勝てば決勝まで・負けたら3位決定戦）。グループのときは、1位で上がったときの決勝トーナメントから決勝まで。

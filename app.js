@@ -4,21 +4,21 @@
 // 送る・保存は js/share-ui.js、みんなで入れるは js/live-ui.js。いまの大会と計算は js/state.js、画面の小さな道具は js/dom.js
 // 計算だけの部品（画面に触らない・テストで呼ぶ）：組み合わせは js/pairing.js、順位と勝ち上がりは js/stats.js、端末に残すのは js/store.js、
 // リンクは js/link.js、カードは js/card.js、画像は js/image.js、くらぶボットとのやりとりは js/live.js
-import { TOOL } from "./js/settings.js?v=202610290639";
-import { takeInbox } from "./js/store.js?v=202610290639";
-import { readResult } from "./js/link.js?v=202610290639";
-import { matchLine } from "./js/card.js?v=202610290639";
-import { readLive } from "./js/live.js?v=202610290639";
-import { $, seasonal, toast } from "./js/dom.js?v=202610290639";
-import { compute, current, data, liveRole, page, persist, planLocked, setViewing, ui, viewing } from "./js/state.js?v=202610290639";
-import { bindTeamView } from "./js/play-team.js?v=202610290639";
-import { bindMatches, renderMatches } from "./js/play-matches.js?v=202610290639";
-import { bindTables, renderBracket, renderStandings } from "./js/play-tables.js?v=202610290639";
-import { bindEvent, renderEvents } from "./js/prep-event.js?v=202610290639";
-import { bindTeams, renderTeams } from "./js/prep-teams.js?v=202610290639";
-import { bindFormat, renderEstimate, renderFormat, renderPresets, renderRules, renderSched } from "./js/prep-format.js?v=202610290639";
-import { bindShare } from "./js/share-ui.js?v=202610290639";
-import { bindLive, liveAfterSave, openLiveLink, openUnlock, renderLive, startLivePolling } from "./js/live-ui.js?v=202610290639";
+import { TOOL } from "./js/settings.js?v=202610291801";
+import { takeInbox } from "./js/store.js?v=202610291801";
+import { readResult } from "./js/link.js?v=202610291801";
+import { matchLine } from "./js/card.js?v=202610291801";
+import { readLive } from "./js/live.js?v=202610291801";
+import { $, seasonal, toast } from "./js/dom.js?v=202610291801";
+import { compute, current, data, liveRole, page, persist, planLocked, setViewing, ui, viewing } from "./js/state.js?v=202610291801";
+import { bindTeamView } from "./js/play-team.js?v=202610291801";
+import { bindMatches, renderMatches } from "./js/play-matches.js?v=202610291801";
+import { bindTables, renderBracket, renderStandings } from "./js/play-tables.js?v=202610291801";
+import { bindEvent, renderEvents } from "./js/prep-event.js?v=202610291801";
+import { bindTeams, renderTeams } from "./js/prep-teams.js?v=202610291801";
+import { bindFormat, renderEstimate, renderFormat, renderPresets, renderRules, renderSched } from "./js/prep-format.js?v=202610291801";
+import { bindShare } from "./js/share-ui.js?v=202610291801";
+import { bindLive, liveAfterSave, openLiveLink, openUnlock, renderLive, startLivePolling } from "./js/live-ui.js?v=202610291801";
 
 // ---- 画面：ページのタブ（準備・試合）と、描きなおしの順番 ----
 

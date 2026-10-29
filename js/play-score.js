@@ -1,9 +1,9 @@
 // くみあわせ：試合の小さな部品（チームの色の丸・点の − 数 ＋・終わったか・PK を入れるか・いつ）と、点を入れる・消す・試合の表のその試合へ動く
 // js/play-matches.js・js/play-tables.js・js/play-team.js から読む（import）
-import { LIMITS } from "./settings.js?v=202610290639";
-import { isDone } from "./stats.js?v=202610290639";
-import { clone, esc, toast } from "./dom.js?v=202610290639";
-import { current, page, persist, teamById, ui, view } from "./state.js?v=202610290639";
+import { LIMITS } from "./settings.js?v=202610291801";
+import { isDone } from "./stats.js?v=202610291801";
+import { clone, esc, toast } from "./dom.js?v=202610291801";
+import { current, page, persist, teamById, ui, view } from "./state.js?v=202610291801";
 
 // チーム別で選んでいるチーム（順位表・トーナメント表でも目立たせる。チーム別でないときは ""）
 export const mine = () => (view.mode === "team" ? view.team : "");

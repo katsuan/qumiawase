@@ -2,11 +2,11 @@
 // app.js から読む（import）。合言葉から key を作る・ボットを呼ぶ・形を確かめるのは js/live.js（画面には触らない）
 //
 // つないでいない大会は、これまでどおり端末の中だけ。つないだ大会だけ、点を1試合ずつ送り、ほかの端末の点は「🔄 更新」で読みなおす
-import { TOOL } from "./settings.js?v=202610290639";
-import { blankTournament, newId, saveAll } from "./store.js?v=202610290639";
-import { adminKey, botUrlIn, fromServer, inputKey, liveCall, liveError, liveUrl, newLiveId, overlay, PASS_MAX, PASS_MIN, queue, sessionKey, setSessionKey, toServer } from "./live.js?v=202610290639";
-import { $, esc, seasonal, toast } from "./dom.js?v=202610290639";
-import { change, current, data, liveKeys, liveRole, page, ui, viewing } from "./state.js?v=202610290639";
+import { TOOL } from "./settings.js?v=202610291801";
+import { blankTournament, newId, saveAll } from "./store.js?v=202610291801";
+import { adminKey, botUrlIn, fromServer, inputKey, liveCall, liveError, liveUrl, newLiveId, overlay, PASS_MAX, PASS_MIN, queue, sessionKey, setSessionKey, toServer } from "./live.js?v=202610291801";
+import { $, copy, esc, seasonal, toast } from "./dom.js?v=202610291801";
+import { change, current, data, liveKeys, liveRole, page, ui, viewing } from "./state.js?v=202610291801";
 
 const livePlanSent = {}; // 大会の id → ボットにある組み合わせ（チーム・形・時間）の文字。運営が変えたら送る
 const liveShadow = {}; // 大会の id → ボットの結果・審判に、送るのを待っているものをのせたもの（どこが変わったかを見る）
@@ -341,12 +341,7 @@ async function onLiveAction(kind) {
   }
   if (kind === "copy") {
     const url = liveUrl(t.live, TOOL.url);
-    try {
-      await navigator.clipboard.writeText(url);
-      toast("共有リンクをコピーしました");
-    } catch {
-      window.LineShareUI?.ask({ title: "共有リンク", text: "長押しでコピーしてね", input: url, readonly: true, ok: "閉じる", cancel: null });
-    }
+    copy(url, "共有リンクをコピーしました", "共有リンク");
     return;
   }
   if (kind === "lock") {

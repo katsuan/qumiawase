@@ -1,12 +1,12 @@
 // くみあわせ：送る・保存（おくるんのカード・📷 画像・🔗 見る人用のリンク・📄 大会のまとめ（印刷・PDF・文でコピー））
 // app.js から読む（import。ボタンは bindShare）。カードの中身は js/card.js、画像は js/image.js
-import { TOOL } from "./settings.js?v=202610290639";
-import { table } from "./stats.js?v=202610290639";
-import { viewUrl } from "./link.js?v=202610290639";
-import { cardParams, dateLabel, formatLabel, matchTitle, sideLabel, summaryText, teamName } from "./card.js?v=202610290639";
-import { drawTournament } from "./image.js?v=202610290639";
-import { $, esc, toast } from "./dom.js?v=202610290639";
-import { compute, current } from "./state.js?v=202610290639";
+import { TOOL } from "./settings.js?v=202610291801";
+import { table } from "./stats.js?v=202610291801";
+import { viewUrl } from "./link.js?v=202610291801";
+import { cardParams, dateLabel, formatLabel, matchTitle, sideLabel, summaryText, teamName } from "./card.js?v=202610291801";
+import { drawTournament } from "./image.js?v=202610291801";
+import { $, copy, esc, toast } from "./dom.js?v=202610291801";
+import { compute, current } from "./state.js?v=202610291801";
 
 // 画像の保存の画面（長押しで保存・共有・ダウンロード）を出す
 function showImageSheet(blob) {
@@ -58,12 +58,7 @@ async function shareView() {
   } catch (e) {
     if (e?.name === "AbortError") return;
   }
-  try {
-    await navigator.clipboard.writeText(url);
-    toast("見る人用のリンクをコピーしました");
-  } catch {
-    window.LineShareUI?.ask({ title: "見る人用のリンク", text: "長押しでコピーしてね", input: url, readonly: true, ok: "閉じる", cancel: null });
-  }
+  copy(url, "見る人用のリンクをコピーしました", "見る人用のリンク");
 }
 
 // 印刷・PDF 用の「大会のまとめ」を作る：名前・日にちと会場・形・チーム・順位表・トーナメント表・試合の表（何試合目・時刻・コート・結果）
@@ -121,14 +116,8 @@ function openSummary() {
       else toast("このブラウザでは印刷できません。Safari・Chrome で開いてね");
     }
     if (e.target.closest("[data-copy]")) {
-      try {
-        await navigator.clipboard.writeText(summaryText(c.t, c.gen, c.resolved, c.plan));
-        close();
-        toast("大会のまとめをコピーしました");
-      } catch {
-        close();
-        window.LineShareUI?.ask({ title: "大会のまとめ", text: "長押しでコピーしてね", input: summaryText(c.t, c.gen, c.resolved, c.plan), readonly: true, ok: "閉じる", cancel: null });
-      }
+      close();
+      copy(summaryText(c.t, c.gen, c.resolved, c.plan), "大会のまとめをコピーしました", "大会のまとめ");
     }
   });
   document.body.append(sheet);

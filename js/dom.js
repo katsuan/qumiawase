@@ -1,4 +1,4 @@
-// くみあわせ：画面の小さな道具（id で部品を探す・HTML に入れる文字・写し・トースト・季節の絵文字・− 数 ＋ の欄）
+// くみあわせ：画面の小さな道具（id で部品を探す・HTML に入れる文字・写し・トースト・コピー・季節の絵文字・− 数 ＋ の欄）
 // app.js と js/ の画面の部品（state・prep-*・play-*・share-ui・live-ui）から読む（import）
 
 // id から画面の部品を返す
@@ -9,6 +9,11 @@ export const esc = (t) => String(t ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&a
 export const clone = (v) => JSON.parse(JSON.stringify(v));
 // Q キットのトーストで知らせる（undo を渡すと「元に戻す」つき）。Q キットがないときは何もしない
 export const toast = (message, undo) => window.LineShareUI?.toast(message, undo ? { actionLabel: "元に戻す", onAction: undo } : {});
+// 文字をコピーして done を知らせる。できないときは、長押しで選べる窓（見出し title）に出す（Q キットの copy）。Q キットがないときはコピーだけ
+export const copy = (text, done, title) =>
+  window.LineShareUI?.copy
+    ? window.LineShareUI.copy(text, { done, title, hint: "長押しでコピーしてね" })
+    : navigator.clipboard?.writeText(text).catch(() => {});
 // 季節の絵文字（Q キットの season.js）を、うれしい瞬間の短い文にときどき足す。なくても・止まっても文はそのまま
 export const seasonal = (text) => {
   try {

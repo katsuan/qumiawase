@@ -1,9 +1,9 @@
 // くみあわせ：「📷 画像で保存」の画像を描く（見出し・トーナメント表・順位表・試合の一覧）。canvas を返すだけで、保存の画面は js/share-ui.js
 // js/share-ui.js から読む（import）
-import { TOOL } from "./settings.js?v=202610290639";
-import { roundName } from "./pairing.js?v=202610290639";
-import { table } from "./stats.js?v=202610290639";
-import { CARD_COLOR, dateLabel, matchLine, sideLabel, teamName } from "./card.js?v=202610290639";
+import { TOOL } from "./settings.js?v=202610291801";
+import { roundName } from "./pairing.js?v=202610291801";
+import { table } from "./stats.js?v=202610291801";
+import { CARD_COLOR, dateLabel, matchLine, sideLabel, teamName } from "./card.js?v=202610291801";
 
 const W = 1080;
 const PAD = 48;

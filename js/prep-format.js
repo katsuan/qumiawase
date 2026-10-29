@@ -1,11 +1,11 @@
 // くみあわせ：準備の「形と決まり」「時間と日程」「大会要項」（試合の種類・形・勝ち点・順位の決め方・コートと時刻）と、見こみ（試合の数・かかる時間）
 // app.js から読む（import。描きなおしは renderPresets・renderFormat・renderSched・renderEstimate・renderRules、ボタンと入力は bindFormat）
-import { FORMATS, LIMITS, PRESETS } from "./settings.js?v=202610290639";
-import { addMinutes, fitOptions } from "./pairing.js?v=202610290639";
-import { durationLabel, estimate, RANK_LABELS, rankIn } from "./stats.js?v=202610290639";
-import { dateLabel, pointsLabel } from "./card.js?v=202610290639";
-import { $, esc, stepper } from "./dom.js?v=202610290639";
-import { change, current, persist, ui } from "./state.js?v=202610290639";
+import { FORMATS, LIMITS, PRESETS } from "./settings.js?v=202610291801";
+import { addMinutes, fitOptions } from "./pairing.js?v=202610291801";
+import { durationLabel, estimate, RANK_LABELS, rankIn } from "./stats.js?v=202610291801";
+import { dateLabel, pointsLabel } from "./card.js?v=202610291801";
+import { $, esc, stepper } from "./dom.js?v=202610291801";
+import { change, current, persist, ui } from "./state.js?v=202610291801";
 
 // 試合の種類のタブと、選んでいる種類の説明を描きなおす
 export function renderPresets() {

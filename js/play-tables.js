@@ -1,11 +1,11 @@
 // くみあわせ：試合のページのトーナメント表・順位表・総当たり表と、そこから開く「点を入れる」窓
 // app.js から読む（import。描きなおしは renderBracket・renderStandings、マスを押すのは bindTables）
-import { roundName } from "./pairing.js?v=202610290639";
-import { outcome, podium, table } from "./stats.js?v=202610290639";
-import { matchTitle, sideLabel, teamName } from "./card.js?v=202610290639";
-import { $, esc } from "./dom.js?v=202610290639";
-import { compute, readOnly } from "./state.js?v=202610290639";
-import { clearScore, dotHtml, gotoMatch, mine, pkAllowed, pkStepsHtml, scoreHtml, setScore, whenText } from "./play-score.js?v=202610290639";
+import { roundName } from "./pairing.js?v=202610291801";
+import { outcome, podium, table } from "./stats.js?v=202610291801";
+import { matchTitle, sideLabel, teamName } from "./card.js?v=202610291801";
+import { $, esc } from "./dom.js?v=202610291801";
+import { compute, readOnly } from "./state.js?v=202610291801";
+import { clearScore, dotHtml, gotoMatch, mine, pkAllowed, pkStepsHtml, scoreHtml, setScore, whenText } from "./play-score.js?v=202610291801";
 
 // トーナメント表（回ごとの列）と、優勝・準優勝・3位を描きなおす
 export function renderBracket(c) {
