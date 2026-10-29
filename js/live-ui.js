@@ -2,11 +2,11 @@
 // app.js から読む（import）。合言葉から key を作る・ボットを呼ぶ・形を確かめるのは js/live.js（画面には触らない）
 //
 // つないでいない大会は、これまでどおり端末の中だけ。つないだ大会だけ、点を1試合ずつ送り、ほかの端末の点は「🔄 更新」で読みなおす
-import { TOOL } from "./settings.js?v=202610291801";
-import { blankTournament, newId, saveAll } from "./store.js?v=202610291801";
-import { adminKey, botUrlIn, fromServer, inputKey, liveCall, liveError, liveUrl, newLiveId, overlay, PASS_MAX, PASS_MIN, queue, sessionKey, setSessionKey, toServer } from "./live.js?v=202610291801";
-import { $, copy, esc, seasonal, toast } from "./dom.js?v=202610291801";
-import { change, current, data, liveKeys, liveRole, page, ui, viewing } from "./state.js?v=202610291801";
+import { TOOL } from "./settings.js?v=202610291808";
+import { blankTournament, newId, saveAll } from "./store.js?v=202610291808";
+import { adminKey, botUrlIn, fromServer, inputKey, liveCall, liveError, liveUrl, newLiveId, overlay, PASS_MAX, PASS_MIN, queue, sessionKey, setSessionKey, toServer } from "./live.js?v=202610291808";
+import { $, copy, esc, seasonal, toast } from "./dom.js?v=202610291808";
+import { change, current, data, liveKeys, liveRole, page, ui, viewing } from "./state.js?v=202610291808";
 
 const livePlanSent = {}; // 大会の id → ボットにある組み合わせ（チーム・形・時間）の文字。運営が変えたら送る
 const liveShadow = {}; // 大会の id → ボットの結果・審判に、送るのを待っているものをのせたもの（どこが変わったかを見る）

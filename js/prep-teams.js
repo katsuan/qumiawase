@@ -1,10 +1,10 @@
 // くみあわせ：準備の「チーム」（名前と色・並べかえ・消す・足す・シャッフル・まとめて入れる）
 // app.js から読む（import。描きなおしは renderTeams、ボタンと入力は bindTeams）
-import { LIMITS, TEAM_COLORS } from "./settings.js?v=202610291801";
-import { colorAt } from "./store.js?v=202610291801";
-import { teamName } from "./card.js?v=202610291801";
-import { $, esc, toast } from "./dom.js?v=202610291801";
-import { change, current, persist, teamById, ui } from "./state.js?v=202610291801";
+import { LIMITS, TEAM_COLORS } from "./settings.js?v=202610291808";
+import { colorAt } from "./store.js?v=202610291808";
+import { teamName } from "./card.js?v=202610291808";
+import { $, esc, toast } from "./dom.js?v=202610291808";
+import { change, current, persist, teamById, ui } from "./state.js?v=202610291808";
 
 // チームの行（番号・色と名前の入力枠・↑↓✕・色の選択肢）を描きなおす。名前を入れているあいだは描きなおさない
 export function renderTeams() {

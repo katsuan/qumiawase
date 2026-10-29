@@ -1,11 +1,11 @@
 // くみあわせ：いまの大会と、画面のあいだで分けあうもの（端末の大会・見る人用のリンクの大会・役割・ページと見方）、残す・変える（元に戻す）・計算（組み合わせ・日程・勝ち上がり）
 // app.js と js/ の画面の部品から読む（import）。描きなおし・送るのは ui（app.js が起動のときに入れる）を通して呼ぶ（部品どうしが読み合わないように）
-import { addMinutes, adjustTimes, fitOptions, generate, timeSchedule } from "./pairing.js?v=202610291801";
-import { estimate, resolve } from "./stats.js?v=202610291801";
-import { loadAll, saveAll } from "./store.js?v=202610291801";
-import { readView } from "./link.js?v=202610291801";
-import { sessionKey } from "./live.js?v=202610291801";
-import { clone, toast } from "./dom.js?v=202610291801";
+import { addMinutes, adjustTimes, fitOptions, generate, timeSchedule } from "./pairing.js?v=202610291808";
+import { estimate, resolve } from "./stats.js?v=202610291808";
+import { loadAll, saveAll } from "./store.js?v=202610291808";
+import { readView } from "./link.js?v=202610291808";
+import { sessionKey } from "./live.js?v=202610291808";
+import { clone, toast } from "./dom.js?v=202610291808";
 
 // 上の段の描きなおしと、残したあとのこと（app.js が init の前に入れる）
 export const ui = { renderAll() {}, renderResults() {}, renderPage() {}, afterSave() {} };

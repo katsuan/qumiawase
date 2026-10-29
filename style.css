@@ -514,6 +514,11 @@ body {
   font-weight: 800;
 }
 
+/* まん中の数（押すと 0 から入る）は、字の幅だけでなく欄いっぱいを押せるように */
+.score-stepper .score-now {
+  width: 100%;
+}
+
 /* まだ点を入れていないときの「–」は薄く（− ボタンと見分けやすく） */
 .score-stepper.is-empty output {
   color: var(--ls-faint);

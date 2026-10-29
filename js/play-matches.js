@@ -1,13 +1,13 @@
 // くみあわせ：試合の表（試合のカード・入力中の試合・審判・時刻を手で直す・⏱ 遅れ・時刻ごとのまとまり・コート別・チーム別）
 // app.js から読む（import。描きなおしは renderMatches、ボタンと入力は bindMatches）
-import { addMinutes, autoReferees, refereeOptions, roundName } from "./pairing.js?v=202610291801";
-import { outcome } from "./stats.js?v=202610291801";
-import { roqgaUrl, saqsenUrl } from "./link.js?v=202610291801";
-import { matchTitle, sideLabel, teamName } from "./card.js?v=202610291801";
-import { $, esc, toast } from "./dom.js?v=202610291801";
-import { change, compute, current, liveRole, persist, planLocked, readOnly, teamById, ui, view, viewing } from "./state.js?v=202610291801";
-import { clearScore, doneOf, dotHtml, pkAllowed, pkStepsHtml, scoreHtml, setScore, whenText } from "./play-score.js?v=202610291801";
-import { KIND_LABEL, opponentLabel, refereeDuty, refereeDutyHtml, renderViewTools, teamPath } from "./play-team.js?v=202610291801";
+import { addMinutes, autoReferees, refereeOptions, roundName } from "./pairing.js?v=202610291808";
+import { outcome } from "./stats.js?v=202610291808";
+import { roqgaUrl, saqsenUrl } from "./link.js?v=202610291808";
+import { matchTitle, sideLabel, teamName } from "./card.js?v=202610291808";
+import { $, esc, toast } from "./dom.js?v=202610291808";
+import { change, compute, current, liveRole, persist, planLocked, readOnly, teamById, ui, view, viewing } from "./state.js?v=202610291808";
+import { clearScore, doneOf, dotHtml, pkAllowed, pkStepsHtml, scoreHtml, setScore, whenText } from "./play-score.js?v=202610291808";
+import { KIND_LABEL, opponentLabel, refereeDuty, refereeDutyHtml, renderViewTools, teamPath } from "./play-team.js?v=202610291808";
 
 // 時刻ごとのまとまりの開け閉め（見出し → 開いているか）。描きなおしても戻らないように
 const slotOpen = new Map();

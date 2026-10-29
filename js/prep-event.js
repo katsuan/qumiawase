@@ -1,9 +1,9 @@
 // くみあわせ：準備の「大会」（いまの大会の名前・切りかえ・新しく作る・複製・消す・見る人用のリンクの大会を保存）
 // app.js から読む（import。描きなおしは renderEvents、ボタンは bindEvent）
-import { LIMITS } from "./settings.js?v=202610291801";
-import { blankTournament, cleanTournament, newId } from "./store.js?v=202610291801";
-import { $, clone, seasonal, toast } from "./dom.js?v=202610291801";
-import { current, data, page, persist, setViewing, ui, viewing } from "./state.js?v=202610291801";
+import { LIMITS } from "./settings.js?v=202610291808";
+import { blankTournament, cleanTournament, newId } from "./store.js?v=202610291808";
+import { $, clone, seasonal, toast } from "./dom.js?v=202610291808";
+import { current, data, page, persist, setViewing, ui, viewing } from "./state.js?v=202610291808";
 
 // 大会の呼び名（名前がなければ「無題の大会（10/28）」）を返す
 function eventLabel(t) {

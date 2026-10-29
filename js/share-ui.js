@@ -1,12 +1,12 @@
 // くみあわせ：送る・保存（おくるんのカード・📷 画像・🔗 見る人用のリンク・📄 大会のまとめ（印刷・PDF・文でコピー））
 // app.js から読む（import。ボタンは bindShare）。カードの中身は js/card.js、画像は js/image.js
-import { TOOL } from "./settings.js?v=202610291801";
-import { table } from "./stats.js?v=202610291801";
-import { viewUrl } from "./link.js?v=202610291801";
-import { cardParams, dateLabel, formatLabel, matchTitle, sideLabel, summaryText, teamName } from "./card.js?v=202610291801";
-import { drawTournament } from "./image.js?v=202610291801";
-import { $, copy, esc, toast } from "./dom.js?v=202610291801";
-import { compute, current } from "./state.js?v=202610291801";
+import { TOOL } from "./settings.js?v=202610291808";
+import { table } from "./stats.js?v=202610291808";
+import { viewUrl } from "./link.js?v=202610291808";
+import { cardParams, dateLabel, formatLabel, matchTitle, sideLabel, summaryText, teamName } from "./card.js?v=202610291808";
+import { drawTournament } from "./image.js?v=202610291808";
+import { $, copy, esc, toast } from "./dom.js?v=202610291808";
+import { compute, current } from "./state.js?v=202610291808";
 
 // 画像の保存の画面（長押しで保存・共有・ダウンロード）を出す
 function showImageSheet(blob) {
