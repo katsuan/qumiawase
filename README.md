@@ -63,7 +63,7 @@ https://katsuan.github.io/qumiawase/ （確認中のため、検索には出し�
 | `test/` | テスト（`node --test test/`。みんなで入れるの中身は `test/live.test.mjs`。さくせん盤・ろくがとの受けわたしは、となりの q-saqsen・q-roqga があるときだけ） |
 | `tools/icon.py` | アイコン・ロゴ・OGP を作る（おくるんの tools/brandkit.py を使う） |
 
-公開前に `python3 ../q-oqrn/tools/qstamp.py index.html`（読み込む CSS・JS に版の番号）と `node ../q-oqrn/tools/qtest/check-code.mjs .`。
+公開は GitHub Actions（`.github/workflows/pages.yml`。中身は Q 共通の line-share の `q-pages.yml`）。push すると、テストと check-code が通ったときだけ Pages に出す。読みこむ JS・CSS の `?v=` は公開のときに付くので、手で付けなくてよい。
 
 ## ローカルでの確認
 
