@@ -3,7 +3,7 @@
 import { roundName } from "./pairing.js?v=202611012034";
 import { outcome, podium, table } from "./stats.js?v=202611012034";
 import { matchTitle, sideLabel, teamName } from "./card.js?v=202611012034";
-import { $, esc } from "./dom.js?v=202611012034";
+import { $, esc, icon } from "./dom.js?v=202611012034";
 import { compute, readOnly } from "./state.js?v=202611012034";
 import { clearScore, dotHtml, gotoMatch, mine, pkAllowed, pkStepsHtml, scoreHtml, setScore, whenText } from "./play-score.js?v=202611012034";
 
@@ -113,12 +113,12 @@ function openScoreSheet(mid) {
     // PK で決める試合で同点のときは PK も（試合の表と同じ）
     const pkHtml = pkAllowed(t, m) && res && res.s[0] === res.s[1] ? `<div class="pk-row"><span>PK（同点のとき）</span>${pkStepsHtml(m, res)}</div>` : "";
     card.innerHTML = `<p id="scoreSheetTitle" class="ls-sheet-title">${esc(matchTitle(m, gen))}</p>
-      <p class="score-sheet-sub">${esc([when, ref ? `🟨 審判 ${teamName(t, ref)}` : ""].filter(Boolean).join("　"))}</p>
+      <p class="score-sheet-sub">${esc(when)}${ref ? `${when ? "　" : ""}${icon("whistle", true)}審判 ${esc(teamName(t, ref))}` : ""}</p>
       <div class="match-sides score-sheet-sides">${side(r.home, 0)}<span class="match-vs" aria-hidden="true">-</span>${side(r.away, 1)}</div>
       ${pkHtml}
       <div class="score-sheet-actions">
         ${res ? `<button class="ls-chip" type="button" data-sheet-clear>結果を消す</button>` : ""}
-        <button class="ls-chip" type="button" data-sheet-goto>📋 試合の表で見る</button>
+        <button class="ls-chip" type="button" data-sheet-goto>${icon("list")}試合の表で見る</button>
       </div>
       <button class="ls-sheet-cancel" type="button" data-sheet-close>${res ? "決める" : "閉じる"}</button>`;
   };

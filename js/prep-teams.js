@@ -23,7 +23,7 @@ export function renderTeams() {
           <input class="team-name" maxlength="${LIMITS.name}" placeholder="チーム${i + 1}" autocomplete="off" enterkeyhint="next" aria-label="${i + 1}番目のチーム名">
         </div>
         <button class="ls-icon-button drag-handle" type="button" aria-label="${i + 1}番目。押したまま上下に動かすと並べかえ（↑↓ キーでも）">⠿</button>
-        <button class="ls-icon-button" type="button" data-remove aria-label="このチームを消す" ${t.teams.length <= 2 ? "disabled" : ""}>✕</button>
+        <button class="ls-icon-button" type="button" data-remove aria-label="このチームを消す" ${t.teams.length <= 2 ? "disabled" : ""}><span class="ls-icon" data-icon="close" aria-hidden="true"></span></button>
         <div class="ls-picker" style="--cols: 9" hidden></div>`;
       li.querySelector(".team-name").value = team.name;
       bindTeamColor(li, team);

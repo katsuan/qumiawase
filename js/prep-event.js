@@ -77,8 +77,10 @@ function openEventMenu() {
   document.querySelector(".ls-sheet.event-sheet")?.remove();
   const before = document.activeElement;
   const t = current();
-  const button = (text, onClick, extra = "") => {
+  // 文字の前に Q キットの線アイコン（iconName）をつけたボタン
+  const button = (text, onClick, extra = "", iconName = "") => {
     const b = Object.assign(document.createElement("button"), { type: "button", className: `ls-button ${extra}`, textContent: text });
+    if (iconName && window.LineShareUI?.icon) b.prepend(window.LineShareUI.icon(iconName));
     b.addEventListener("click", () => {
       close();
       onClick();
@@ -90,20 +92,20 @@ function openEventMenu() {
   card.setAttribute("role", "dialog");
   card.setAttribute("aria-modal", "true");
   card.setAttribute("aria-label", "大会");
-  card.append(Object.assign(document.createElement("p"), { className: "ls-sheet-title", textContent: "🏆 大会" }));
+  card.append(Object.assign(document.createElement("p"), { className: "ls-sheet-title", textContent: "大会" }));
   const others = [...data.list].sort((a, b) => b.updatedAt - a.updatedAt);
   if (others.length > 1) {
     card.append(Object.assign(document.createElement("p"), { className: "event-sheet-sub", textContent: `切りかえる（${others.length}件）` }));
     const list = Object.assign(document.createElement("div"), { className: "event-sheet-list" });
     for (const x of others) {
-      const b = button(`${x.id === t.id ? "✓ " : ""}${eventLabel(x)}・${x.teams.length}チーム`, () => x.id !== t.id && switchEvent(x.id));
+      const b = button(`${eventLabel(x)}・${x.teams.length}チーム`, () => x.id !== t.id && switchEvent(x.id), "", x.id === t.id ? "check" : "");
       b.setAttribute("aria-current", String(x.id === t.id));
       list.append(b);
     }
     card.append(list);
   }
   const actions = Object.assign(document.createElement("div"), { className: "event-sheet-actions" });
-  actions.append(button("＋ 新しく作る", newEvent, "is-primary"), button("✏️ 名前を変える", renameEvent), button("⧉ 複製する", copyEvent), button("🗑 消す", deleteEvent));
+  actions.append(button("新しく作る", newEvent, "is-primary", "add"), button("名前を変える", renameEvent, "", "edit"), button("複製する", copyEvent, "", "copy"), button("消す", deleteEvent, "", "delete"));
   card.append(actions);
   const cancel = Object.assign(document.createElement("button"), { type: "button", className: "ls-sheet-cancel", textContent: "閉じる" });
   cancel.addEventListener("click", () => close());

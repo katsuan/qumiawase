@@ -4,14 +4,14 @@ import { FORMATS, LIMITS, PRESETS } from "./settings.js?v=202611012034";
 import { addMinutes, fitOptions } from "./pairing.js?v=202611012034";
 import { durationLabel, estimate, RANK_LABELS, rankIn } from "./stats.js?v=202611012034";
 import { dateLabel, pointsLabel } from "./card.js?v=202611012034";
-import { $, esc, stepper } from "./dom.js?v=202611012034";
+import { $, esc, icon, stepper } from "./dom.js?v=202611012034";
 import { change, current, persist, ui } from "./state.js?v=202611012034";
 
 // 試合の種類のタブと、選んでいる種類の説明を描きなおす
 export function renderPresets() {
   const t = current();
-  const tabs = [...PRESETS, { key: "", label: "✏️ 自分で決める" }];
-  $("presetTabs").innerHTML = tabs.map((p) => `<button class="ls-chip" type="button" role="tab" data-preset="${esc(p.key)}" aria-selected="${esc(t.preset === p.key)}">${esc(p.label)}</button>`).join("");
+  const tabs = [...PRESETS, { key: "", label: "自分で決める", icon: "edit" }];
+  $("presetTabs").innerHTML = tabs.map((p) => `<button class="ls-chip" type="button" role="tab" data-preset="${esc(p.key)}" aria-selected="${esc(t.preset === p.key)}">${p.icon ? icon(p.icon) : ""}${esc(p.label)}</button>`).join("");
   // 選んでいるタブが見えるよう、横に送る（ページは動かさない）
   const box = $("presetTabs");
   const sel = box.querySelector('[aria-selected="true"]');
@@ -52,7 +52,8 @@ export function renderFormat() {
   // 総当たりの決まり・トーナメントの決まり：その形にあるほうだけ。グループのときは両方（名前で見分ける）
   $("leagueRules").hidden = t.format === "knockout";
   $("koRules").hidden = t.format === "league";
-  $("leagueRulesTitle").textContent = t.format === "groups" ? "📊 グループの総当たりの決まり" : "📊 総当たりの決まり";
+  // qcheck-ok: W1 決まった文字だけ（線アイコンと esc した文字）
+  $("leagueRulesTitle").innerHTML = `${icon("chart", true)}${t.format === "groups" ? "グループの総当たりの決まり" : "総当たりの決まり"}`;
   // トーナメントの決まりは中身が1つ（3位決定戦）なので見出しを置かず、読み上げの名前だけ
   $("koRules").setAttribute("aria-label", t.format === "groups" ? "決勝トーナメントの決まり" : "トーナメントの決まり");
   $("thirdPlace").checked = opts.thirdPlace;
@@ -108,15 +109,17 @@ export function renderSched() {
 // 見こみ（試合の数・1チームの最多の試合の数・かかる時間）を、形の下と試合のタブの見出しに出す
 export function renderEstimate({ t, est }) {
   const end = t.sched.on ? `・${t.sched.start}〜${addMinutes(t.sched.start, est.minutes)}` : "";
-  const text = est.matches ? `📏 ${est.matches}試合・1チーム最多${est.most}試合・${durationLabel(est.minutes)}${end}（1試合${t.sched.minutes}分・コート${t.sched.courts}${t.sched.avoid ? `・空き${t.sched.rest}分` : ""}）` : "";
+  const text = est.matches ? `${est.matches}試合・1チーム最多${est.most}試合・${durationLabel(est.minutes)}${end}（1試合${t.sched.minutes}分・コート${t.sched.courts}${t.sched.avoid ? `・空き${t.sched.rest}分` : ""}）` : "";
   $("estimate").textContent = text;
   const when = [dateLabel(t.sched.on ? t.sched.date : ""), t.sched.on ? t.sched.place : ""].filter(Boolean).join(" ");
   // 試合のページの見出し：名前（大きく）と、日にち・形・チーム・時間（1行に小さく）
-  $("playTitle").textContent = `🏆 ${t.name || "組み合わせ"}`;
+  // qcheck-ok: W1 決まった文字だけ（線アイコンと esc した文字）
+  $("playTitle").innerHTML = `${icon("trophy", true)}${esc(t.name || "組み合わせ")}`;
   $("playSub").textContent = [when, FORMATS[t.format], `${t.teams.length}チーム`, est.matches ? `${est.matches}試合` : "", est.matches ? (t.sched.on ? `${t.sched.start}〜${addMinutes(t.sched.start, est.minutes)}` : durationLabel(est.minutes)) : ""].filter(Boolean).join("・");
   // 準備のおわりのボタン：試合の数も
   $("goPlay").hidden = !est.matches;
-  $("goPlay").textContent = `📋 試合へ（${est.matches}試合）`;
+  // qcheck-ok: W1 決まった文字だけ（線アイコンと esc した文字）
+  $("goPlay").innerHTML = `${icon("list")}試合へ（${esc(est.matches)}試合）`;
 }
 
 // 大会要項の文を HTML にする（文字はぜんぶ esc。https:// ではじまるところだけリンクに）

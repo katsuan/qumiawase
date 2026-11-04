@@ -4,7 +4,7 @@ import { addMinutes, autoReferees, refereeOptions, roundName } from "./pairing.j
 import { outcome } from "./stats.js?v=202611012034";
 import { roqgaUrl, saqsenUrl } from "./link.js?v=202611012034";
 import { matchTitle, sideLabel, teamName } from "./card.js?v=202611012034";
-import { $, esc, toast } from "./dom.js?v=202611012034";
+import { $, esc, icon, toast } from "./dom.js?v=202611012034";
 import { change, compute, current, liveRole, persist, planLocked, readOnly, teamById, ui, view, viewing } from "./state.js?v=202611012034";
 import { clearScore, doneOf, dotHtml, pkAllowed, pkStepsHtml, scoreHtml, setScore, whenText } from "./play-score.js?v=202611012034";
 import { KIND_LABEL, opponentLabel, refereeDuty, refereeDutyHtml, renderViewTools, teamPath } from "./play-team.js?v=202611012034";
@@ -31,7 +31,8 @@ function renderDelay(c) {
   if (!show) return;
   const total = (t.delays || []).reduce((n, d) => n + d.min, 0);
   const from = (t.delays || []).length ? addMinutes(t.sched.start, Math.min(...t.delays.map((d) => d.at))) : "";
-  $("delayText").textContent = total ? `⏱ 遅れ ${total > 0 ? "+" : ""}${total}分（${from} の試合から）` : "⏱ 遅れ なし";
+  // qcheck-ok: W1 決まった文字だけ（線アイコンと esc した文字）
+  $("delayText").innerHTML = `${icon("clock", true)}${esc(total ? `遅れ ${total > 0 ? "+" : ""}${total}分（${from} の試合から）` : "遅れ なし")}`;
   $("delayClear").hidden = !total;
 }
 
@@ -63,9 +64,9 @@ function matchHtml(c, m) {
   const s = timeOf[m.id];
   // 時刻ごとの見出しの下（順番の見方）では、時刻をくり返さない（コートだけ）
   const underTime = view.mode === "order" && s;
-  // 手で直した（✏️）・遅れでずらした（⏱+分）・同じコートで重なる（⚠️）の印
-  const marks = s ? `${s.fixed ? " ✏️" : ""}${s.late ? ` ⏱${s.late > 0 ? "+" : ""}${s.late}分` : ""}${s.clash ? " ⚠️重なり" : ""}` : "";
-  const when = (underTime ? (t.sched.courts > 1 ? `コート${s.court}` : "") : whenText(c, m)) + marks;
+  // 手で直した（えんぴつ）・遅れでずらした（時計 +分）・同じコートで重なる（注意）の印。線アイコンなので HTML で
+  const marks = s ? `${s.fixed ? ` ${icon("edit")}` : ""}${s.late ? ` ${icon("clock")}${esc(`${s.late > 0 ? "+" : ""}${s.late}分`)}` : ""}${s.clash ? ` ${icon("warn")}重なり` : ""}` : "";
+  const when = esc(underTime ? (t.sched.courts > 1 ? `コート${s.court}` : "") : whenText(c, m)) + marks;
   const done = doneOf(t, m);
   const next = c.next?.has(m.id);
   // 入力中のカードだけ、点を変えるボタンなどを出す
@@ -88,26 +89,26 @@ function matchHtml(c, m) {
     const named = (x) => ({ name: teamName(t, x.id), color: x.color });
     const saqsen = saqsenUrl({ home: named(home), away: named(away), place: t.sched.on ? t.sched.place : "", date: t.sched.on ? t.sched.date : "", time: s?.time || "", tid: t.id, mid: m.id });
     actions = `<div class="match-actions">
-      <a class="ls-chip" href="${esc(saqsen)}" target="_blank" rel="noopener">⚽ さくせん盤で開く</a>
-      <a class="ls-chip" href="${esc(roqgaUrl({ home: named(home), away: named(away) }))}" target="_blank" rel="noopener">📹 ろくがで撮る</a>
+      <a class="ls-chip" href="${esc(saqsen)}" target="_blank" rel="noopener">${icon("external")}さくせん盤で開く</a>
+      <a class="ls-chip" href="${esc(roqgaUrl({ home: named(home), away: named(away) }))}" target="_blank" rel="noopener">${icon("video")}ろくがで撮る</a>
       ${res ? `<button class="ls-chip" type="button" data-clear="${esc(m.id)}">結果を消す</button>` : ""}
     </div>`;
   }
-  const badge = next ? `<span class="next-badge">▶ 次の試合</span>` : done ? `<span class="done-badge">✓ 終わり</span>` : "";
+  const badge = next ? `<span class="next-badge">${icon("play")}次の試合</span>` : done ? `<span class="done-badge">${icon("check")}終わり</span>` : "";
   // 点の行の下の審判：入力中は選ぶ欄、ほかは入っていればラベルとチーム名（どちらもまん中そろえ）
   const refLabel = active ? "" : refereeLabel(c, m);
-  const refRow = active ? refereeHtml(c, m) : refLabel ? `<div class="referee-row"><span>🟨 審判</span><b>${esc(refLabel)}</b></div>` : "";
+  const refRow = active ? refereeHtml(c, m) : refLabel ? `<div class="referee-row"><span>${icon("whistle", true)}審判</span><b>${esc(refLabel)}</b></div>` : "";
   // 入力中のカード：時刻とコートを手で直す（時刻を入れている大会で、準備を変えられる人だけ）
   const timeRow =
     active && s && t.sched.on && !planLocked()
-      ? `<div class="time-row"><span>🕘</span><input type="time" class="ls-input" value="${esc(s.time)}" data-fix-time="${esc(m.id)}" aria-label="${esc(matchTitle(m, gen))}の時刻">${
+      ? `<div class="time-row">${icon("clock")}<input type="time" class="ls-input" value="${esc(s.time)}" data-fix-time="${esc(m.id)}" aria-label="${esc(matchTitle(m, gen))}の時刻">${
           t.sched.courts > 1 ? `<select data-fix-court="${esc(m.id)}" aria-label="コート">${Array.from({ length: t.sched.courts }, (_, i) => `<option value="${i + 1}" ${s.court === i + 1 ? "selected" : ""}>コート${i + 1}</option>`).join("")}</select>` : ""
         }${s.fixed ? `<button class="ls-chip" type="button" data-fix-clear="${esc(m.id)}">自動にもどす</button>` : ""}</div>`
       : "";
   // 押せるカード（出るチームが決まっていて、入れられるとき）：見出しをボタンにする（キーボードでも）
   const tappable = ready && !readOnly();
   const head = tappable ? ` data-tap="${esc(m.id)}" role="button" tabindex="0" aria-expanded="${active}" aria-label="${esc(matchTitle(m, gen))}：${active ? "入れるのをやめる" : "点を入れる"}"` : "";
-  return `<article class="match ${done ? "is-done" : ""} ${next ? "is-next" : ""} ${tappable ? "is-tappable" : ""} ${active ? "is-active" : ""}" data-mid="${esc(m.id)}"><div class="match-head"${head}><span>${badge}${esc(matchTitle(m, gen))}</span><span>${esc(when)}${clearBtn}</span></div><div class="match-sides">${side(m.home, r.home, 0)}<span class="match-vs" aria-hidden="true">-</span>${side(m.away, r.away, 1)}</div>${pkRow}${refRow}${timeRow}${actions}</article>`;
+  return `<article class="match ${done ? "is-done" : ""} ${next ? "is-next" : ""} ${tappable ? "is-tappable" : ""} ${active ? "is-active" : ""}" data-mid="${esc(m.id)}"><div class="match-head"${head}><span>${badge}${esc(matchTitle(m, gen))}</span><span>${when}${clearBtn}</span></div><div class="match-sides">${side(m.home, r.home, 0)}<span class="match-vs" aria-hidden="true">-</span>${side(m.away, r.away, 1)}</div>${pkRow}${refRow}${timeRow}${actions}</article>`;
 }
 
 // 審判の文字（チーム名。あとでその試合に出る・同じ時間に試合があることになったら ⚠️ つき）。入っていなければ ""
@@ -118,7 +119,7 @@ function refereeLabel(c, m) {
   const options = refereeOptions(m, t.teams.map((x) => x.id), resolved, plan, gen.matches);
   if (options.includes(now)) return teamName(t, now);
   const r = resolved[m.id] || {};
-  return `${teamName(t, now)}${r.home === now || r.away === now ? "（⚠️ この試合に出る）" : "（⚠️ 同じ時間に試合）"}`;
+  return `${teamName(t, now)}${r.home === now || r.away === now ? "（この試合に出る）" : "（同じ時間に試合）"}`;
 }
 
 /**
@@ -129,13 +130,13 @@ function refereeHtml(c, m) {
   const { t, gen, plan, resolved } = c;
   const now = t.referees?.[m.id] || "";
   const label = refereeLabel(c, m);
-  if (doneOf(t, m)) return now ? `<div class="referee-row"><span>🟨 審判</span><b>${esc(label)}</b></div>` : "";
+  if (doneOf(t, m)) return now ? `<div class="referee-row"><span>${icon("whistle", true)}審判</span><b>${esc(label)}</b></div>` : "";
   const options = refereeOptions(m, t.teams.map((x) => x.id), resolved, plan, gen.matches);
   const clash = now && !options.includes(now);
-  if (!options.length && !now) return `<div class="referee-row"><span>🟨 審判</span><b>−</b></div>`;
+  if (!options.length && !now) return `<div class="referee-row"><span>${icon("whistle", true)}審判</span><b>−</b></div>`;
   const list = clash ? [now, ...options] : options;
   const opts = list.map((id) => `<option value="${esc(id)}" ${esc(id === now ? "selected" : "")}>${esc(id === now ? label : teamName(t, id))}</option>`).join("");
-  return `<label class="referee-row ${clash ? "is-clash" : ""}"><span>🟨 審判</span><select data-referee="${esc(m.id)}" aria-label="${esc(matchTitle(m, gen))}の審判"><option value="">−</option>${opts}</select></label>`;
+  return `<label class="referee-row ${clash ? "is-clash" : ""}"><span>${icon("whistle", true)}審判</span><select data-referee="${esc(m.id)}" aria-label="${esc(matchTitle(m, gen))}の審判"><option value="">−</option>${opts}</select></label>`;
 }
 
 // 試合のまとまりの見出し（総当たり・グループ・トーナメントの回・3位決定戦）を返す
@@ -180,7 +181,7 @@ export function renderMatches(c) {
     }
   } else if (view.mode === "court") {
     for (let court = 1; court <= t.sched.courts; court++) {
-      parts.push(`<h3 class="round-head">🏟️ コート${court}</h3>`);
+      parts.push(`<h3 class="round-head">${icon("place", true)}コート${court}</h3>`);
       for (const p of plan.filter((x) => x.court === court)) parts.push(matchHtml(c, byId[p.id]));
     }
   } else {
@@ -188,7 +189,7 @@ export function renderMatches(c) {
     const groups = [];
     for (const p of plan) {
       const m = byId[p.id];
-      const head = c.sched ? `🕘 ${p.time}` : sectionTitle(m, gen);
+      const head = c.sched ? p.time : sectionTitle(m, gen);
       if (!groups.length || groups.at(-1).head !== head) groups.push({ head, list: [] });
       groups.at(-1).list.push(m);
     }
@@ -198,14 +199,14 @@ export function renderMatches(c) {
       const allDone = play2.length > 0 && doneCount === play2.length;
       const hasActive = g.list.some((m) => m.id === activeMatch || c.next.has(m.id));
       const open = slotOpen.has(g.head) ? slotOpen.get(g.head) : !allDone || hasActive;
-      const meta = allDone ? "✓ ぜんぶ終わり" : doneCount ? `${doneCount} / ${play2.length}試合` : `${play2.length}試合`;
+      const meta = allDone ? "ぜんぶ終わり" : doneCount ? `${doneCount} / ${play2.length}試合` : `${play2.length}試合`;
       let inner = "";
       // トーナメントの1回戦の前に：不戦勝で次の回から出るチーム
       const m0 = g.list[0];
       const byes = !c.sched && m0.stage === "ko" && m0.round === 1 ? gen.matches.filter((x) => x.bye) : [];
       if (byes.length) inner += `<p class="bye-note">シード（次の回から）：${byes.map((x) => esc(resolved[x.id]?.winner ? teamName(t, resolved[x.id].winner) : sideLabel(x.home.empty ? x.away : x.home, gen))).join("・")}</p>`;
       inner += g.list.map((m) => matchHtml(c, m)).join("");
-      parts.push(`<details class="slot-fold" data-slot="${esc(g.head)}" ${open ? "open" : ""}><summary class="round-head"><span>${esc(g.head)}</span><span class="slot-meta">${esc(meta)}</span></summary><div class="ls-stack">${inner}</div></details>`);
+      parts.push(`<details class="slot-fold" data-slot="${esc(g.head)}" ${open ? "open" : ""}><summary class="round-head"><span>${c.sched ? icon("clock", true) : ""}${esc(g.head)}</span><span class="slot-meta">${allDone ? icon("check", true) : ""}${esc(meta)}</span></summary><div class="ls-stack">${inner}</div></details>`);
     }
   }
   $("matches").innerHTML = parts.join("");
@@ -273,7 +274,7 @@ export function bindMatches() {
     t.timeFix = { ...(t.timeFix || {}), [mid]: { time, court } };
     persist();
     ui.renderResults();
-    toast(`時刻を ${time} にしました（✏️。「自動にもどす」で戻せます）`);
+    toast(`時刻を ${time} にしました（えんぴつの印。「自動にもどす」で戻せます）`);
   });
   $("matches").addEventListener("change", (e) => {
     const sel = e.target.closest("[data-referee]");

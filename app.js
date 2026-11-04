@@ -108,7 +108,7 @@ function applyIncoming(list) {
     const role = liveRole(t);
     if (role === "") {
       // みんなで入れる大会で、このタブはまだ見るだけ：合言葉を入れたら送る（それまでは端末で待つ）
-      window.LineShareUI?.toast(`さくせん盤から結果を入れました${line ? `：${line}` : ""}。みんなに送るには合言葉を入れてね`, { actionLabel: "✏️ 合言葉を入れて送る", onAction: openUnlock });
+      window.LineShareUI?.toast(`さくせん盤から結果を入れました${line ? `：${line}` : ""}。みんなに送るには合言葉を入れてね`, { actionLabel: "合言葉を入れて送る", onAction: openUnlock });
     } else toast(seasonal(`さくせん盤から結果を入れ${role ? "て、みんなに送り" : ""}ました${line ? `：${line}` : ""}`), undo);
   }
 }
@@ -188,7 +188,7 @@ function init() {
   if (viewing) return; // 見るだけのときは、使い方を出さない
   window.LineShareUI?.firstTip(
     TOOL.key,
-    ["チームの名前と色を入れる（上から順にシード）", "🏆 形を選ぶと、組み合わせがすぐできる", "点を入れると、勝ち上がりと順位表が出る"],
+    ["チームの名前と色を入れる（上から順にシード）", "形を選ぶと、組み合わせがすぐできる", "点を入れると、勝ち上がりと順位表が出る"],
     $("eventPanel")
   );
 }

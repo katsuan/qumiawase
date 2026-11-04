@@ -5,7 +5,7 @@
 import { TOOL } from "./settings.js?v=202611012034";
 import { blankTournament, newId, saveAll } from "./store.js?v=202611012034";
 import { adminKey, botUrlIn, fromServer, inputKey, liveCall, liveError, liveUrl, newLiveId, overlay, PASS_MAX, PASS_MIN, queue, sessionKey, setSessionKey, toServer } from "./live.js?v=202611012034";
-import { $, copy, esc, seasonal, toast } from "./dom.js?v=202611012034";
+import { $, copy, esc, icon, seasonal, toast } from "./dom.js?v=202611012034";
 import { change, current, data, liveKeys, liveRole, page, ui, viewing } from "./state.js?v=202611012034";
 
 const livePlanSent = {}; // 大会の id → ボットにある組み合わせ（チーム・形・時間）の文字。運営が変えたら送る
@@ -233,7 +233,7 @@ async function liveStart(form) {
   liveShadow[id] = resultText(t);
   saveAll(data);
   ui.renderAll();
-  toast(seasonal("みんなで入れられるようにしました。「🔗 共有リンク」を送ってね"));
+  toast(seasonal("みんなで入れられるようにしました。「共有リンク」を送ってね"));
 }
 
 // 運営：入力の合言葉を変える（前の合言葉の人は、入れられなくなる）
@@ -256,7 +256,7 @@ async function liveChangeInput(form) {
 async function liveLeave() {
   const t = current();
   if (!t.live) return;
-  const yes = await window.LineShareUI?.ask({ title: "📴 つなぐのをやめる", text: "この端末の大会は、ふつうの大会（端末の中だけ）にもどります。くらぶボットの大会と、ほかの人の端末はそのままです。", ok: "やめる", cancel: "もどる" });
+  const yes = await window.LineShareUI?.ask({ title: "つなぐのをやめる", text: "この端末の大会は、ふつうの大会（端末の中だけ）にもどります。くらぶボットの大会と、ほかの人の端末はそのままです。", ok: "やめる", cancel: "もどる" });
   if (!yes) return;
   if (t.live.pending.length) toast(`送れていない点が ${t.live.pending.length} 件ありました（この端末には入っています）`);
   rememberKey(t.live.id, null);
@@ -289,8 +289,8 @@ export function renderLive() {
     const at = t.live.at ? new Date(t.live.at) : null;
     const time = at ? `${at.getHours()}:${String(at.getMinutes()).padStart(2, "0")}` : "";
     const wait = t.live.pending.length;
-    $("liveStatus").textContent = [liveMessage ? "⚠️ つながっていません" : time ? `${time} に読んだ点` : "まだ読んでいません", wait ? `送るのを待っている ${wait} 件` : ""].filter(Boolean).join("・");
-    $("liveRoleBtn").textContent = role === "admin" ? "🔓 運営" : role === "input" ? "🔓 入力できる" : "✏️ 点を入れる";
+    $("liveStatus").textContent = [liveMessage ? "つながっていません" : time ? `${time} に読んだ点` : "まだ読んでいません", wait ? `送るのを待っている ${wait} 件` : ""].filter(Boolean).join("・");
+    $("liveRoleBtn").innerHTML = role === "admin" ? `${icon("done")}運営` : role === "input" ? `${icon("done")}入力できる` : `${icon("edit")}点を入れる`;
     $("liveRoleBtn").classList.toggle("is-primary", !role);
     if (role) $("liveUnlock").hidden = true;
   }
@@ -298,15 +298,15 @@ export function renderLive() {
   const bot = window.QloveBotLink?.get() || "";
   let html = "";
   if (t.live) {
-    html = `<p class="ls-hint">この大会は、くらぶボットで共有しています。点は1試合ずつ送り、ほかの人の点は「🔄 更新」を押したときに読みます（GAS をあまり呼ばないため）。電波がないときは、この端末にためて、つながったら送ります。</p>
+    html = `<p class="ls-hint">この大会は、くらぶボットで共有しています。点は1試合ずつ送り、ほかの人の点は「更新」を押したときに読みます（GAS をあまり呼ばないため）。電波がないときは、この端末にためて、つながったら送ります。</p>
       <div class="live-actions">
-        <button class="ls-button is-primary" type="button" data-live="copy">🔗 共有リンクをコピー</button>
+        <button class="ls-button is-primary" type="button" data-live="copy">${icon("link")}共有リンクをコピー</button>
 
-        ${role ? `<button class="ls-chip" type="button" data-live="lock">🔒 この端末で入れるのをやめる</button>` : ""}
-        <button class="ls-chip" type="button" data-live="leave">📴 つなぐのをやめる</button>
+        ${role ? `<button class="ls-chip" type="button" data-live="lock">${icon("lock")}この端末で入れるのをやめる</button>` : ""}
+        <button class="ls-chip" type="button" data-live="leave">${icon("offline")}つなぐのをやめる</button>
       </div>
       <p class="ls-hint">共有リンクには合言葉は入りません。点を入れる人には、入力の合言葉を口で伝えてね。見る人は、リンクを開くだけ。</p>
-      ${role === "admin" ? `<form class="ls-stack live-form" data-live-form="input">${passField("newinput", "🔑 入力の合言葉を変える", "前の合言葉では入れられなくなります")}${passShow}<button class="ls-button" type="submit">変える</button></form>` : ""}`;
+      ${role === "admin" ? `<form class="ls-stack live-form" data-live-form="input">${passField("newinput", "入力の合言葉を変える", "前の合言葉では入れられなくなります")}${passShow}<button class="ls-button" type="submit">変える</button></form>` : ""}`;
   } else if (!window.QloveBotLink) {
     html = `<p class="ls-hint">くらぶボットの部品を読めませんでした（電波を確かめてね）。</p>`;
   } else if (!bot) {
@@ -317,10 +317,10 @@ export function renderLive() {
   } else {
     html = `<p class="ls-hint">くらぶボットにつないであります。この大会をのせると、運営・コートの入力の人・見る人で同じ結果を見られます（入れた点はすぐ送り、ほかの人の点を読みなおします）。</p>
       <form class="ls-stack live-form" data-live-form="start">
-        ${passField("admin", "📡 運営の合言葉", "くらぶボットを作った人（システム管理者）が決めたもの")}
-        ${passField("input", "🔑 入力の合言葉（新しく決める）", "コートで点を入れる人に、口で伝える合言葉（4文字以上）。リンクには入りません")}
+        ${passField("admin", "運営の合言葉", "くらぶボットを作った人（システム管理者）が決めたもの")}
+        ${passField("input", "入力の合言葉（新しく決める）", "コートで点を入れる人に、口で伝える合言葉（4文字以上）。リンクには入りません")}
         ${passShow}
-        <button class="ls-button is-primary is-block" type="submit">📡 この大会をみんなで入れる</button>
+        <button class="ls-button is-primary is-block" type="submit">${icon("share")}この大会をみんなで入れる</button>
       </form>
       <button class="ls-chip" type="button" data-live="forget">くらぶボットの URL を変える</button>`;
   }
@@ -370,7 +370,7 @@ export async function openLiveLink(link) {
   page.now = "play";
   saveAll(data);
   ui.renderAll();
-  if (!liveRole(t)) toast("見るだけで開きました。最新の点は「🔄 更新」で読みます。点を入れる人は「✏️ 点を入れる」から合言葉を入れてね");
+  if (!liveRole(t)) toast("見るだけで開きました。最新の点は「更新」で読みます。点を入れる人は「点を入れる」から合言葉を入れてね");
 }
 
 // つないだ大会の準備（はじめの印）と、電波がもどったときに送れていない点を送る

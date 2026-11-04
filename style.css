@@ -1081,19 +1081,14 @@ body {
   white-space: nowrap;
 }
 
+/* 文の頭・見出しの中の線アイコン：字との間（ボタン・チップの中は Q キットの gap） */
+.in-text {
+  margin-right: 4px;
+}
+
 /* ---- Q キットの部品の上書き（Q キットがそろえたら消す） ----
- * 見出しの下の一言はうすい字。何もないときの知らせは左にそろえる。選んでいるチップは、色の面ではなく濃いふちと字で（色は「試合へ」などのボタンだけ）
+ * 選んでいるチップは、色の面ではなく濃いふちと字で（Q キットはまだツールの色。ユーザーが選んだ形。Q キットがそろえたら消す）
  */
-.ls-brand-copy {
-  color: var(--ls-subtext);
-  font-weight: 600;
-}
-
-.ls-empty {
-  justify-items: start;
-  text-align: left;
-}
-
 .ls-chip[aria-pressed="true"]:not(.color),
 .ls-chip[aria-checked="true"]:not(.color),
 .ls-chip.is-active:not(.color),

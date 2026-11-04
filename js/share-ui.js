@@ -5,7 +5,7 @@ import { table } from "./stats.js?v=202611012034";
 import { viewUrl } from "./link.js?v=202611012034";
 import { cardParams, dateLabel, formatLabel, matchTitle, sideLabel, summaryText, teamName } from "./card.js?v=202611012034";
 import { drawTournament } from "./image.js?v=202611012034";
-import { $, copy, esc, toast } from "./dom.js?v=202611012034";
+import { $, copy, esc, icon, toast } from "./dom.js?v=202611012034";
 import { compute, current } from "./state.js?v=202611012034";
 
 // 画像の保存の画面（長押しで保存・共有・ダウンロード）を出す
@@ -18,11 +18,14 @@ function showImageSheet(blob) {
   sheet.querySelector("img").src = url;
   const actions = sheet.querySelector(".actions");
   if (navigator.canShare?.({ files: [file] })) {
-    const share = Object.assign(document.createElement("button"), { type: "button", className: "ls-button is-primary is-block", textContent: "📤 共有・保存" });
+    const share = Object.assign(document.createElement("button"), { type: "button", className: "ls-button is-primary is-block", textContent: "共有・保存" });
+    window.LineShareUI?.icon && share.prepend(window.LineShareUI.icon("share"));
     share.addEventListener("click", () => navigator.share({ files: [file] }).catch(() => {}));
     actions.append(share);
   }
-  actions.append(Object.assign(document.createElement("a"), { className: "ls-button is-block", href: url, download: file.name, textContent: "⬇️ ダウンロード" }));
+  const download = Object.assign(document.createElement("a"), { className: "ls-button is-block", href: url, download: file.name, textContent: "ダウンロード" });
+  window.LineShareUI?.icon && download.prepend(window.LineShareUI.icon("save"));
+  actions.append(download);
   // 画面を閉じる（画像の中身も手放す）
   const close = () => {
     sheet.remove();
@@ -99,10 +102,10 @@ function openSummary() {
   const sheet = document.createElement("div");
   sheet.className = "ls-sheet";
   sheet.innerHTML = `<div class="ls-sheet-card" role="dialog" aria-modal="true" aria-labelledby="summaryTitle">
-    <p id="summaryTitle" class="ls-sheet-title">📄 大会のまとめ</p>
+    <p id="summaryTitle" class="ls-sheet-title">大会のまとめ</p>
     <p class="ls-hint">名前・日程・チーム・順位表・トーナメント表・試合の表を1つに。印刷の画面で「PDF に保存」を選ぶと PDF になります（iPhone は印刷の画面で共有 → ファイルに保存）。</p>
-    <button class="ls-button is-primary is-block" type="button" data-print>🖨️ 印刷・PDF に保存</button>
-    <button class="ls-button is-block" type="button" data-copy>📋 文でコピー（LINE・メモに貼る）</button>
+    <button class="ls-button is-primary is-block" type="button" data-print>${icon("save")}印刷・PDF に保存</button>
+    <button class="ls-button is-block" type="button" data-copy>${icon("copy")}文でコピー（LINE・メモに貼る）</button>
     <button class="ls-button is-block" type="button" data-close>閉じる</button>
   </div>`;
   // 窓を閉じる

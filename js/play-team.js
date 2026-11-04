@@ -3,7 +3,7 @@
 import { TOOL } from "./settings.js?v=202611012034";
 import { LINK_MAX, qronosUrl, viewUrl } from "./link.js?v=202611012034";
 import { matchTitle, sideLabel, teamName } from "./card.js?v=202611012034";
-import { $, esc } from "./dom.js?v=202611012034";
+import { $, esc, icon } from "./dom.js?v=202611012034";
 import { teamById, ui, view } from "./state.js?v=202611012034";
 import { doneOf, dotHtml, mine, whenText } from "./play-score.js?v=202611012034";
 
@@ -104,7 +104,7 @@ export function refereeDutyHtml(c, m) {
   const name = (side, id) => (id ? teamName(t, id) : sideLabel(side, gen));
   const res = t.results[m.id];
   const mid = res ? `${res.s[0]} - ${res.s[1]}` : "vs";
-  return `<p class="ref-duty ${doneOf(t, m) ? "is-done" : ""}"><b>🟨 審判</b>　${esc(whenText(c, m))}　${esc(matchTitle(m, gen))}<br>${esc(name(m.home, r.home))} ${esc(mid)} ${esc(name(m.away, r.away))}</p>`;
+  return `<p class="ref-duty ${doneOf(t, m) ? "is-done" : ""}"><b>${icon("whistle", true)}審判</b>　${esc(whenText(c, m))}　${esc(matchTitle(m, gen))}<br>${esc(name(m.home, r.home))} ${esc(mid)} ${esc(name(m.away, r.away))}</p>`;
 }
 
 // 試合表の見方のボタン・チーム別のチームの選択・くろのすのボタンを描きなおす
@@ -125,12 +125,12 @@ export function renderViewTools(c) {
     const path = teamPath(c, view.team);
     const fixed = path.filter((x) => x.kind === "fixed").length;
     const more = path.filter((x) => x.kind === "win" || x.kind === "advance").length;
-    const most = more ? `<p class="path-note">📏 最多 ${esc(fixed + more)}試合（決まっている ${esc(fixed)}試合 ＋ 勝ち進めば ${esc(more)}試合）</p>` : "";
+    const most = more ? `<p class="path-note">最多 ${esc(fixed + more)}試合（決まっている ${esc(fixed)}試合 ＋ 勝ち進めば ${esc(more)}試合）</p>` : "";
     const duty = refereeDuty(c, view.team).length;
-    const refNote = duty ? `<p class="path-note">🟨 審判 ${esc(duty)}試合（試合のあいだに入れています）</p>` : "";
+    const refNote = duty ? `<p class="path-note">${icon("whistle", true)}審判 ${esc(duty)}試合（試合のあいだに入れています）</p>` : "";
     $("teamTools").innerHTML = most + refNote + (url
-      ? `<a class="ls-chip" href="${esc(url)}" target="_blank" rel="noopener">⏳ この試合をくろのすでカウントダウン</a>`
-      : `<p class="ls-hint">⏳ 「時刻を入れる」で日にちとはじまりを入れると、このチームの試合をくろのすでカウントダウンできます。</p>`);
+      ? `<a class="ls-chip" href="${esc(url)}" target="_blank" rel="noopener">${icon("wait")}この試合をくろのすでカウントダウン</a>`
+      : `<p class="ls-hint">${icon("wait", true)}「時刻を入れる」で日にちとはじまりを入れると、このチームの試合をくろのすでカウントダウンできます。</p>`);
   }
   const all = allQronosUrl(c);
   $("qronosAll").hidden = !all;
