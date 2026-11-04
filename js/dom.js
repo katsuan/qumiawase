@@ -5,8 +5,9 @@
 export const $ = (id) => document.getElementById(id);
 // 文字を HTML に入れられる形にする（& < > " ' を置きかえる）
 export const esc = (t) => String(t ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
-// Q キットの線アイコンの HTML（name は shared/icons/ の名前。ボタン・チップの中はそのまま、文の頭は inText で字との間をあける）
-export const icon = (name, inText = false) => `<span class="ls-icon${inText ? " in-text" : ""}" data-icon="${name}" aria-hidden="true"></span>`;
+// Q キットの線アイコンの HTML（Q キットの LineShareUI.iconHtml。name は shared/icons/ の名前。ボタン・チップの中はそのまま、文の頭は inText で字との間（is-text））。
+// app.js（type="module"）は Q キットの ui.js（defer）のあとに動く。Q キットが読めないときは何も出さない
+export const icon = (name, inText = false) => (globalThis.LineShareUI ? globalThis.LineShareUI.iconHtml(name, inText ? "is-text" : "") : "");
 // 中身の写しを返す
 export const clone = (v) => JSON.parse(JSON.stringify(v));
 // Q キットのトーストで知らせる（undo を渡すと「元に戻す」つき）。Q キットがないときは何もしない

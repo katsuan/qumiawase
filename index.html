@@ -39,14 +39,14 @@
 
   <!-- 見る人用のリンクで開いたとき：見るだけ。この端末に保存すると、結果を入れられる -->
   <section id="viewBanner" class="ls-panel view-banner" hidden>
-    <p class="ls-hint"><span class="ls-icon in-text" data-icon="view" aria-hidden="true"></span>見るだけのページです。結果を入れるときは、この端末に保存してね。</p>
+    <p class="ls-hint"><span class="ls-icon is-text" data-icon="view" aria-hidden="true"></span>見るだけのページです。結果を入れるときは、この端末に保存してね。</p>
     <button id="saveView" class="ls-button is-primary is-block" type="button">＋ この端末に保存する</button>
   </section>
 
   <!-- ページのタブ：準備（大会・試合の種類・チーム・形・時間）と、試合（順位表・トーナメント表・試合と結果・送る） -->
   <nav id="pageTabs" class="ls-tabs page-tabs" role="tablist" aria-label="ページ">
-    <button class="ls-tab" type="button" role="tab" data-page="prep" aria-controls="pagePrep"><span class="ls-icon in-text" data-icon="settings" aria-hidden="true"></span>準備</button>
-    <button class="ls-tab" type="button" role="tab" data-page="play" aria-controls="pagePlay"><span class="ls-icon in-text" data-icon="list" aria-hidden="true"></span>試合</button>
+    <button class="ls-tab" type="button" role="tab" data-page="prep" aria-controls="pagePrep"><span class="ls-icon is-text" data-icon="settings" aria-hidden="true"></span>準備</button>
+    <button class="ls-tab" type="button" role="tab" data-page="play" aria-controls="pagePlay"><span class="ls-icon is-text" data-icon="list" aria-hidden="true"></span>試合</button>
   </nav>
 
   <div id="pagePrep" class="ls-stack" role="tabpanel" aria-labelledby="pageTabs">
@@ -93,7 +93,7 @@
       </div>
       <!-- 総当たりの決まり（総当たり・グループ）と、トーナメントの決まり（トーナメント・決勝トーナメント）は、箱を分ける -->
       <section id="leagueRules" class="rule-box" aria-labelledby="leagueRulesTitle" hidden>
-        <h4 id="leagueRulesTitle" class="rule-title"><span class="ls-icon in-text" data-icon="chart" aria-hidden="true"></span>総当たりの決まり</h4>
+        <h4 id="leagueRulesTitle" class="rule-title"><span class="ls-icon is-text" data-icon="chart" aria-hidden="true"></span>総当たりの決まり</h4>
         <div id="legOptions" class="option-row">
           <span>総当たりの回数</span>
           <div class="ls-chips" role="radiogroup" aria-label="総当たりの回数">
@@ -192,7 +192,7 @@
   <div id="pagePlay" class="ls-stack" role="tabpanel" aria-labelledby="pageTabs" hidden>
   <!-- みんなで入れる（くらぶボット）につないだ大会：いつ読みなおしたか・・点を入れる（合言葉） -->
   <section id="liveBar" class="ls-panel live-bar" aria-label="みんなで共有" hidden>
-    <p class="live-bar-text"><b><span class="ls-icon in-text" data-icon="share" aria-hidden="true"></span>みんなで共有中</b><span id="liveStatus"></span></p>
+    <p class="live-bar-text"><b><span class="ls-icon is-text" data-icon="share" aria-hidden="true"></span>みんなで共有中</b><span id="liveStatus"></span></p>
     <div class="live-bar-actions">
       <button id="liveRefresh" class="ls-chip" type="button"><span class="ls-icon" data-icon="refresh" aria-hidden="true"></span>更新</button>
       <button id="liveRoleBtn" class="ls-chip" type="button"><span class="ls-icon" data-icon="edit" aria-hidden="true"></span>点を入れる</button>
@@ -209,35 +209,35 @@
       <p id="playTitle" class="play-title"></p>
       <p id="playSub" class="play-sub"></p>
       <details id="rulesView" class="rules-view" hidden>
-        <summary><span class="ls-icon in-text" data-icon="notebook" aria-hidden="true"></span>大会要項</summary>
+        <summary><span class="ls-icon is-text" data-icon="notebook" aria-hidden="true"></span>大会要項</summary>
         <div id="rulesBody" class="rules-body"></div>
       </details>
     </section>
 
     <!-- 見せる中身のタブ：試合と結果・順位表・トーナメント表（ある形のものだけ出す） -->
     <nav id="playTabs" class="ls-tabs play-tabs" role="tablist" aria-label="見せる中身">
-      <button class="ls-tab" type="button" role="tab" data-play="matches" aria-controls="matchesPanel"><span class="ls-icon in-text" data-icon="list" aria-hidden="true"></span>試合と結果</button>
-      <button class="ls-tab" type="button" role="tab" data-play="standings" aria-controls="standingsPanel"><span class="ls-icon in-text" data-icon="chart" aria-hidden="true"></span>順位表</button>
-      <button class="ls-tab" type="button" role="tab" data-play="bracket" aria-controls="bracketPanel"><span class="ls-icon in-text" data-icon="git-fork" aria-hidden="true"></span>トーナメント</button>
+      <button class="ls-tab" type="button" role="tab" data-play="matches" aria-controls="matchesPanel"><span class="ls-icon is-text" data-icon="list" aria-hidden="true"></span>試合と結果</button>
+      <button class="ls-tab" type="button" role="tab" data-play="standings" aria-controls="standingsPanel"><span class="ls-icon is-text" data-icon="chart" aria-hidden="true"></span>順位表</button>
+      <button class="ls-tab" type="button" role="tab" data-play="bracket" aria-controls="bracketPanel"><span class="ls-icon is-text" data-icon="git-fork" aria-hidden="true"></span>トーナメント</button>
     </nav>
 
   <!-- 順位表（総当たり・グループのとき） -->
   <section id="standingsPanel" class="ls-panel" aria-labelledby="standingsTitle" hidden>
-    <h2 id="standingsTitle" class="ls-panel-title tab-same"><span class="ls-icon in-text" data-icon="chart" aria-hidden="true"></span>順位表</h2>
+    <h2 id="standingsTitle" class="ls-panel-title tab-same"><span class="ls-icon is-text" data-icon="chart" aria-hidden="true"></span>順位表</h2>
     <div id="standings" class="ls-stack"></div>
   </section>
 
   <!-- トーナメント表（トーナメントがあるときだけ。横にスクロール） -->
   <section id="bracketPanel" class="ls-panel" aria-labelledby="bracketTitle" hidden>
-    <h2 id="bracketTitle" class="ls-panel-title tab-same"><span class="ls-icon in-text" data-icon="git-fork" aria-hidden="true"></span>トーナメント表</h2>
+    <h2 id="bracketTitle" class="ls-panel-title tab-same"><span class="ls-icon is-text" data-icon="git-fork" aria-hidden="true"></span>トーナメント表</h2>
     <div id="champion" class="champion" hidden></div>
     <div id="bracket" class="bracket" tabindex="0" aria-label="トーナメント表（横にスクロール）"></div>
-    <p id="bracketHint" class="ls-hint" hidden><span class="ls-icon in-text" data-icon="next" aria-hidden="true"></span>横にずらすと、次の回から決勝まで見えます。</p>
+    <p id="bracketHint" class="ls-hint" hidden><span class="ls-icon is-text" data-icon="next" aria-hidden="true"></span>横にずらすと、次の回から決勝まで見えます。</p>
   </section>
 
   <!-- 試合と結果：点は − 数 ＋。同点のトーナメントは PK も。試合ごとに、さくせん盤・ろくがで開ける -->
   <section id="matchesPanel" class="ls-panel" aria-labelledby="matchesTitle">
-    <h2 id="matchesTitle" class="ls-panel-title"><span class="tab-same"><span class="ls-icon in-text" data-icon="list" aria-hidden="true"></span>試合と結果</span> <span id="matchesMeta" class="ls-fold-meta"></span></h2>
+    <h2 id="matchesTitle" class="ls-panel-title"><span class="tab-same"><span class="ls-icon is-text" data-icon="list" aria-hidden="true"></span>試合と結果</span> <span id="matchesMeta" class="ls-fold-meta"></span></h2>
     <p id="matchesEmpty" class="ls-hint" hidden>チームを2つ以上入れると、組み合わせができます。</p>
     <!-- 試合表の見方：順番（時刻・何試合目）・コート別・チーム別 -->
     <div class="match-bar">
@@ -258,8 +258,8 @@
     <div id="teamPick" class="ls-chips team-pick" role="radiogroup" aria-label="チーム" hidden></div>
     <div id="teamTools" class="team-tools-row" hidden></div>
     <!-- 審判がまだ1つも入っていないときだけ：準備で自動で入れられる案内 -->
-    <p id="refereeHint" class="ls-hint referee-hint" hidden><span class="ls-icon in-text" data-icon="whistle" aria-hidden="true"></span>審判は「準備」で自動で入れられます。</p>
-    <p id="tapHint" class="ls-hint" hidden><span class="ls-icon in-text" data-icon="edit" aria-hidden="true"></span>試合を押すと、点を入れられます（もう一度押すと閉じる）。</p>
+    <p id="refereeHint" class="ls-hint referee-hint" hidden><span class="ls-icon is-text" data-icon="whistle" aria-hidden="true"></span>審判は「準備」で自動で入れられます。</p>
+    <p id="tapHint" class="ls-hint" hidden><span class="ls-icon is-text" data-icon="edit" aria-hidden="true"></span>試合を押すと、点を入れられます（もう一度押すと閉じる）。</p>
     <div id="matches" class="ls-stack"></div>
   </section>
 
