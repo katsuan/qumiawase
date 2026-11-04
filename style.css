@@ -7,6 +7,7 @@
   --ls-accent-soft: #fbe6d9;
   --ls-accent-ink: #8a3a14;
   --qa-win: #1f8a4c;
+  --ls-tabs-bg: #eeeae6; /* 切りかえタブの帯：色をつけない（色は「試合へ」などのボタンだけ） */
   background: var(--ls-bg, #fff8f1);
 }
 
@@ -23,7 +24,7 @@ body {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 52px;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
 /* 大会の名前：押すと名前を変える */
@@ -33,7 +34,7 @@ body {
   align-items: center;
   gap: 8px;
   min-height: 48px;
-  padding: 0 10px;
+  padding: 0 8px;
   border: 0;
   border-radius: 12px;
   background: transparent;
@@ -48,10 +49,7 @@ body {
 }
 
 .event-name-label {
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: var(--ls-accent-soft);
-  color: var(--ls-accent-ink);
+  color: var(--ls-subtext);
   font-size: 12px;
   font-weight: 800;
   white-space: nowrap;
@@ -85,7 +83,7 @@ body {
 /* 「…」のシートの中の大会の一覧と、することのボタン */
 .event-sheet-list {
   display: grid;
-  gap: 6px;
+  gap: 8px;
   max-height: 40vh;
   overflow: auto;
 }
@@ -118,7 +116,7 @@ body {
 }
 
 .view-banner {
-  border: 2px dashed var(--ls-accent);
+  border: 1px solid var(--ls-line-strong);
 }
 
 /* ---- チーム ---- */
@@ -134,7 +132,7 @@ body {
   display: grid;
   grid-template-columns: 20px minmax(0, 1fr) 44px 44px;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
 /* つまみ：押したまま上下に動かすと並べかえ（スクロールにしない） */
@@ -166,7 +164,7 @@ body {
 
 .team-row .ls-picker {
   grid-column: 2 / -1;
-  margin-top: 2px;
+  margin-top: 4px;
 }
 
 /* 色の丸（ls-pickfield のボタンの中・選択肢）。白でも見えるよう、うすい灰色のふち */
@@ -314,7 +312,7 @@ body {
 .match {
   display: grid;
   gap: 8px;
-  padding: 10px 12px;
+  padding: 8px 16px;
   border: 2px solid var(--ls-line);
   border-radius: var(--ls-radius-md);
   background: var(--ls-surface);
@@ -323,7 +321,7 @@ body {
 /* 終わった試合は控えめに（点は読めるまま） */
 .match.is-done {
   gap: 4px;
-  padding: 6px 12px;
+  padding: 8px 16px;
   border-width: 1px;
   background: var(--ls-surface-2, color-mix(in srgb, var(--ls-surface) 92%, var(--ls-subtext)));
 }
@@ -332,24 +330,23 @@ body {
   min-height: 34px;
 }
 
-/* 次の試合：太いふちと色で目立たせる */
+/* 次の試合：濃いふちで目立たせる（色の面や光はつけない） */
 .match.is-next {
-  border-color: var(--ls-accent);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ls-accent) 22%, transparent);
+  border-color: var(--ls-text);
 }
 
 .next-badge,
 .done-badge {
-  margin-right: 6px;
-  padding: 1px 8px;
+  margin-right: 8px;
+  padding: 0 8px;
   border-radius: 999px;
   font-size: 12px;
   white-space: nowrap;
 }
 
 .next-badge {
-  background: var(--ls-accent);
-  color: #fff;
+  background: var(--ls-text);
+  color: var(--ls-surface);
 }
 
 .done-badge {
@@ -372,14 +369,14 @@ body {
 .match-head .clear-chip {
   min-height: 32px;
   margin-left: 8px;
-  padding: 0 10px;
+  padding: 0 8px;
   font-size: 12px;
 }
 
 .jump-next {
   justify-self: start;
-  border-color: var(--ls-accent);
-  color: var(--ls-accent-ink);
+  border-color: var(--ls-line-strong);
+  color: var(--ls-text);
 }
 
 .match-head {
@@ -399,12 +396,12 @@ body {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: end;
-  gap: 6px;
+  gap: 8px;
 }
 
 .match-vs {
   align-self: end;
-  padding-bottom: 10px;
+  padding-bottom: 8px;
   color: var(--ls-subtext);
   font-weight: 800;
 }
@@ -413,7 +410,7 @@ body {
   display: grid;
   grid-template-columns: 18px minmax(0, 1fr);
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   min-width: 0;
 }
 
@@ -530,7 +527,7 @@ body {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 8px;
-  padding-top: 6px;
+  padding-top: 8px;
   border-top: 1px dashed var(--ls-line);
   font-size: 13px;
   font-weight: 800;
@@ -556,7 +553,7 @@ body {
 /* 試合のカードの審判（点の行の下）：ラベルとチーム名・選ぶ欄をまん中そろえ */
 .match .referee-row {
   grid-template-columns: auto minmax(0, 14em);
-  justify-content: center;
+  justify-content: start;
 }
 
 /* 文字だけ（ふだんのカード）は、ラベルと名前の幅だけにして、まん中に */
@@ -576,7 +573,7 @@ body {
   width: 100%;
   min-width: 0;
   min-height: 36px;
-  padding: 4px 28px 4px 10px;
+  padding: 4px 32px 4px 8px;
   border: 2px solid var(--ls-line-strong);
   border-radius: 10px;
   background: var(--ls-surface);
@@ -615,7 +612,7 @@ body {
 .match-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
 }
 
 .match-actions .ls-chip {
@@ -634,9 +631,9 @@ body {
   display: grid;
   grid-auto-columns: minmax(150px, 1fr);
   grid-auto-flow: column;
-  gap: 14px;
+  gap: 16px;
   overflow-x: auto;
-  padding-bottom: 6px;
+  padding-bottom: 8px;
   -webkit-overflow-scrolling: touch;
 }
 
@@ -695,7 +692,7 @@ body {
   display: grid;
   grid-template-columns: 10px minmax(0, 1fr) auto;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   min-height: 30px;
   padding: 0 8px;
 }
@@ -761,15 +758,15 @@ body {
 /* チーム別で選んでいるチーム（トーナメント表・順位表） */
 .bracket-match .is-mine,
 .standing-table tr.is-mine td {
-  background: var(--ls-accent-soft);
-  color: var(--ls-accent-ink);
+  background: var(--ls-surface-sub);
+  color: var(--ls-text);
   font-weight: 800;
 }
 
 .champion {
   display: grid;
-  gap: 2px;
-  padding: 10px 12px;
+  gap: 4px;
+  padding: 8px 16px;
   border-radius: var(--ls-radius-md);
   background: var(--ls-accent-soft);
   color: var(--ls-accent-ink);
@@ -787,7 +784,7 @@ body {
 /* トーナメント表の試合の箱：上に時刻とコート */
 .bracket-match .bracket-when {
   margin: 0;
-  padding: 2px 8px 0;
+  padding: 4px 8px 0;
   color: var(--ls-subtext);
   font-size: 11px;
   font-weight: 700;
@@ -802,9 +799,9 @@ body {
 .bracket-foot {
   display: grid;
   align-content: start;
-  gap: 2px;
+  gap: 4px;
   height: 124px;
-  padding-top: 10px;
+  padding-top: 8px;
 }
 
 .bracket-third-title {
@@ -840,7 +837,7 @@ body {
 
 .standing-table th,
 .standing-table td {
-  padding: 6px 4px;
+  padding: 8px 4px;
   border-bottom: 1px solid var(--ls-line);
   text-align: right;
   white-space: nowrap;
@@ -862,7 +859,7 @@ body {
   display: inline-block;
   width: 10px;
   height: 10px;
-  margin-right: 6px;
+  margin-right: 8px;
   border-radius: 999px;
   box-shadow: inset 0 0 0 1px #c9c4bd;
   vertical-align: middle;
@@ -893,7 +890,7 @@ body {
 .cross-table th,
 .cross-table td {
   min-width: 52px;
-  padding: 2px;
+  padding: 4px;
   border-bottom: 1px solid var(--ls-line);
   border-left: 1px solid var(--ls-line);
   text-align: center;
@@ -910,7 +907,7 @@ body {
   display: inline-block;
   width: 9px;
   height: 9px;
-  margin-right: 3px;
+  margin-right: 4px;
   border-radius: 999px;
   box-shadow: inset 0 0 0 1px #c9c4bd;
   vertical-align: middle;
@@ -922,7 +919,7 @@ body {
   z-index: 1;
   max-width: 8.5em;
   overflow: hidden;
-  padding-right: 6px;
+  padding-right: 8px;
   border-left: 0;
   background: var(--ls-surface);
   font-weight: 700;
@@ -939,7 +936,7 @@ body {
 }
 
 .cross-self {
-  background: repeating-linear-gradient(135deg, transparent 0 5px, var(--ls-line) 5px 6px);
+  background: var(--ls-surface-sub);
 }
 
 .cross-item {
@@ -961,13 +958,13 @@ body {
 }
 
 .cross-item i {
-  margin-right: 2px;
+  margin-right: 4px;
   font-style: normal;
 }
 
 .cross-item small {
   display: block;
-  margin-top: -2px;
+  margin-top: -4px;
   font-size: 10px;
   font-weight: 700;
 }
@@ -991,8 +988,9 @@ body {
 
 .cross-table tr.is-mine .team,
 .cross-table tr.is-mine td {
-  background: var(--ls-accent-soft);
-  color: var(--ls-accent-ink);
+  background: var(--ls-surface-sub);
+  color: var(--ls-text);
+  font-weight: 800;
 }
 
 /* トーナメント表：押せる試合（2チームが決まったもの） */
@@ -1029,7 +1027,7 @@ body {
   flex-wrap: wrap;
   justify-content: space-between;
   gap: 8px;
-  margin-top: 12px;
+  margin-top: 16px;
 }
 
 /* 総当たり表から動いてきた試合を少し光らせる */
@@ -1073,6 +1071,38 @@ body {
 }
 
 /* ---- 暗い表示（index.html の data-ls-dark="auto"。Q キットの色は ui.css が暗くする） ---- */
+/* 試合のページ：上のタブが出ているときは、欄の見出し（タブと同じ言葉）を見せない（読み上げには残す。試合の数は残す） */
+.play-tabs:not([hidden]) ~ .ls-panel .tab-same {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ---- Q キットの部品の上書き（Q キットがそろえたら消す） ----
+ * 見出しの下の一言はうすい字。何もないときの知らせは左にそろえる。選んでいるチップは、色の面ではなく濃いふちと字で（色は「試合へ」などのボタンだけ）
+ */
+.ls-brand-copy {
+  color: var(--ls-subtext);
+  font-weight: 500;
+}
+
+.ls-empty {
+  justify-items: start;
+  text-align: left;
+}
+
+.ls-chip[aria-pressed="true"]:not(.color),
+.ls-chip[aria-checked="true"]:not(.color),
+.ls-chip.is-active:not(.color),
+.ls-chip:has(input:checked):not(.color) {
+  border-color: var(--ls-text);
+  background: var(--ls-surface);
+  color: var(--ls-text);
+}
+
 @media (prefers-color-scheme: dark) {
   :root[data-ls-dark="auto"] {
     --ls-accent: #f08a55;
@@ -1098,10 +1128,10 @@ body.is-view #schedFold {
 /* ---- 見こみ・試合表の見方・チーム別 ---- */
 .estimate {
   margin: 0;
-  padding: 8px 10px;
+  padding: 8px 8px;
   border-radius: var(--ls-radius-md);
-  background: var(--ls-accent-soft);
-  color: var(--ls-accent-ink);
+  background: var(--ls-surface-sub);
+  color: var(--ls-text);
   font-size: 14px;
   font-weight: 700;
 }
@@ -1116,7 +1146,7 @@ body.is-view #schedFold {
 }
 
 .team-pick .ls-chip {
-  gap: 6px;
+  gap: 8px;
 }
 
 .team-pick .dot {
@@ -1133,7 +1163,7 @@ body.is-view #schedFold {
 
 .path-note {
   margin: 0;
-  padding: 8px 10px;
+  padding: 8px 8px;
   border: 2px dashed var(--ls-line);
   border-radius: var(--ls-radius-md);
   color: var(--ls-subtext);
@@ -1143,7 +1173,7 @@ body.is-view #schedFold {
 /* チーム別：審判をする試合（自分の試合よりひかえめに。左に黄色の線） */
 .ref-duty {
   margin: 0;
-  padding: 8px 10px;
+  padding: 8px 8px;
   border: 1px solid var(--ls-line);
   border-left: 5px solid #f2c200;
   border-radius: var(--ls-radius-md);
@@ -1210,12 +1240,12 @@ body.is-view #schedFold {
 
   /* トーナメント表は1ページに入る大きさに（32チームでも） */
   .print-area .bracket {
-    gap: 12px;
+    gap: 16px;
     font-size: 8.5pt;
   }
 
   .print-area .bracket-slot {
-    padding: 2px 0;
+    padding: 4px 0;
   }
 
   .print-area .bracket-match {
@@ -1226,7 +1256,7 @@ body.is-view #schedFold {
 
   .print-area .bracket-match > div {
     min-height: 16pt;
-    padding: 0 5px;
+    padding: 0 4px;
   }
 
   .print-area .bracket-pair::after {
@@ -1307,9 +1337,9 @@ body.is-view #schedFold {
 }
 
 .preset-tabs .ls-chip[aria-selected="true"] {
-  border-color: var(--ls-accent);
-  background: var(--ls-accent-soft);
-  color: var(--ls-accent-ink);
+  border-color: var(--ls-text);
+  background: var(--ls-surface);
+  color: var(--ls-text);
 }
 
 .play-title {
@@ -1319,15 +1349,15 @@ body.is-view #schedFold {
 }
 
 .play-sub {
-  margin: 2px 0 0;
+  margin: 4px 0 0;
   color: var(--ls-subtext);
   font-size: 13px;
   font-weight: 700;
 }
 
 .play-head {
-  gap: 2px;
-  padding-block: 10px;
+  gap: 4px;
+  padding-block: 8px;
 }
 
 /* たたみ欄の見出し：名前は折らない。右の中身は1行で、入りきらなければ「…」 */
@@ -1379,8 +1409,8 @@ body.is-view #schedFold {
 /* 総当たりの決まり・トーナメントの決まりの箱 */
 .rule-box {
   display: grid;
-  gap: 10px;
-  padding: 10px 12px 12px;
+  gap: 8px;
+  padding: 8px 16px 16px;
   border: 1px solid var(--ls-line-strong);
   border-radius: var(--ls-radius-md);
   background: var(--ls-surface-sub);
@@ -1405,7 +1435,7 @@ body.is-view #schedFold {
   display: grid;
   grid-template-columns: 24px minmax(0, 1fr) auto auto;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   min-height: 44px;
   padding: 0 4px 0 8px;
   border: 1px solid var(--ls-line);
@@ -1474,12 +1504,12 @@ body.is-view #schedFold {
   justify-content: space-between;
   gap: 8px;
   padding-block: 8px;
-  border-color: var(--ls-accent);
+  
 }
 
 .live-bar-text {
   display: grid;
-  gap: 2px;
+  gap: 4px;
   margin: 0;
   font-size: 14px;
 }
@@ -1492,7 +1522,7 @@ body.is-view #schedFold {
 
 .live-bar-actions {
   display: flex;
-  gap: 6px;
+  gap: 8px;
 }
 
 .live-bar-actions .ls-chip.is-primary {
@@ -1559,7 +1589,7 @@ body.is-view #schedFold {
 }
 
 .slot-fold > .ls-stack {
-  padding-bottom: 6px;
+  padding-bottom: 8px;
 }
 
 /* 大会要項 */
@@ -1571,7 +1601,7 @@ body.is-view #schedFold {
 
 .rules-view > summary {
   min-height: 36px;
-  color: var(--ls-accent-ink);
+  color: var(--ls-text);
   font-size: 14px;
   font-weight: 800;
   cursor: pointer;
@@ -1580,7 +1610,7 @@ body.is-view #schedFold {
 .rules-body {
   max-height: 50vh;
   overflow-y: auto;
-  padding: 8px 10px;
+  padding: 8px 8px;
   border-radius: 10px;
   background: var(--ls-surface-sub);
   font-size: 14px;
@@ -1597,24 +1627,24 @@ body.is-view #schedFold {
 /* 順位表：グループごとの箱（境目がわかるように） */
 .group-box {
   display: grid;
-  gap: 10px;
-  padding: 10px 10px 12px;
+  gap: 8px;
+  padding: 8px 8px 16px;
   border: 2px solid var(--ls-line-strong);
   border-radius: var(--ls-radius-md);
   background: var(--ls-surface-sub);
 }
 
 .group-box + .group-box {
-  margin-top: 6px;
+  margin-top: 8px;
 }
 
 .group-title {
   margin: 0;
-  padding: 2px 10px;
+  
   justify-self: start;
-  border-radius: 999px;
-  background: var(--ls-accent);
-  color: #fff;
+  
+  
+  color: var(--ls-text);
   font-size: 15px;
   font-weight: 800;
 }
@@ -1629,7 +1659,7 @@ body.is-view #schedFold {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
 .delay-text {
@@ -1644,7 +1674,7 @@ body.is-view #schedFold {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto auto;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
 .time-row input[type="time"] {

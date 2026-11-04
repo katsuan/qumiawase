@@ -86,7 +86,6 @@
   <details id="formatFold" class="ls-fold" open>
     <summary><span class="fold-title">🏆 形と試合の種類</span> <span id="formatMeta" class="ls-fold-meta"></span></summary>
     <div class="ls-fold-body ls-stack">
-      <h3 class="sub-head">形</h3>
       <div id="formatChips" class="ls-chips format-chips" role="radiogroup" aria-label="形"></div>
       <div id="groupOptions" class="ls-stack" hidden>
         <div class="option-row"><span>グループの数</span><div class="stepper" data-opt="groups"></div></div>
@@ -125,8 +124,7 @@
           </div>
         </details>
       </section>
-      <section id="koRules" class="rule-box" aria-labelledby="koRulesTitle" hidden>
-        <h4 id="koRulesTitle" class="rule-title">🗺️ トーナメントの決まり</h4>
+      <section id="koRules" class="rule-box" aria-label="トーナメントの決まり" hidden>
         <label id="thirdOption" class="check-row"><input id="thirdPlace" type="checkbox"> 3位決定戦をする</label>
         <p class="ls-hint">同点のときは PK で勝ち上がりを決めます（試合の表・トーナメント表で入れられます）。</p>
       </section>
@@ -225,13 +223,13 @@
 
   <!-- 順位表（総当たり・グループのとき） -->
   <section id="standingsPanel" class="ls-panel" aria-labelledby="standingsTitle" hidden>
-    <h2 id="standingsTitle" class="ls-panel-title">📊 順位表</h2>
+    <h2 id="standingsTitle" class="ls-panel-title tab-same">📊 順位表</h2>
     <div id="standings" class="ls-stack"></div>
   </section>
 
   <!-- トーナメント表（トーナメントがあるときだけ。横にスクロール） -->
   <section id="bracketPanel" class="ls-panel" aria-labelledby="bracketTitle" hidden>
-    <h2 id="bracketTitle" class="ls-panel-title">🗺️ トーナメント表</h2>
+    <h2 id="bracketTitle" class="ls-panel-title tab-same">🗺️ トーナメント表</h2>
     <div id="champion" class="champion" hidden></div>
     <div id="bracket" class="bracket" tabindex="0" aria-label="トーナメント表（横にスクロール）"></div>
     <p id="bracketHint" class="ls-hint" hidden>👉 横にずらすと、次の回から決勝まで見えます。</p>
@@ -239,7 +237,7 @@
 
   <!-- 試合と結果：点は − 数 ＋。同点のトーナメントは PK も。試合ごとに、さくせん盤・ろくがで開ける -->
   <section id="matchesPanel" class="ls-panel" aria-labelledby="matchesTitle">
-    <h2 id="matchesTitle" class="ls-panel-title">📋 試合と結果 <span id="matchesMeta" class="ls-fold-meta"></span></h2>
+    <h2 id="matchesTitle" class="ls-panel-title"><span class="tab-same">📋 試合と結果</span> <span id="matchesMeta" class="ls-fold-meta"></span></h2>
     <p id="matchesEmpty" class="ls-hint" hidden>チームを2つ以上入れると、組み合わせができます。</p>
     <!-- 試合表の見方：順番（時刻・何試合目）・コート別・チーム別 -->
     <div class="match-bar">
