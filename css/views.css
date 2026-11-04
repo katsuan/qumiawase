@@ -114,7 +114,11 @@
 
   /* トーナメント表は1ページに入る大きさに（32チームでも） */
   .print-area .bracket {
+    display: grid;
+    grid-auto-columns: minmax(0, 1fr);
+    grid-auto-flow: column;
     gap: 16px;
+    overflow: visible;
     font-size: 8.5pt;
   }
 
@@ -156,14 +160,6 @@
     font-size: 13pt;
     break-after: avoid;
   }
-
-  .print-area .bracket {
-    display: grid;
-    grid-auto-columns: minmax(0, 1fr);
-    grid-auto-flow: column;
-    overflow: visible;
-  }
-
 
   .print-table {
     width: 100%;
