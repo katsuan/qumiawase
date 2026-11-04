@@ -330,9 +330,10 @@ body {
   min-height: 34px;
 }
 
-/* 次の試合：濃いふちで目立たせる（色の面や光はつけない） */
+/* 次の試合：太いふちと色で目立たせる */
 .match.is-next {
-  border-color: var(--ls-text);
+  border-color: var(--ls-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ls-accent) 22%, transparent);
 }
 
 .next-badge,
@@ -345,8 +346,8 @@ body {
 }
 
 .next-badge {
-  background: var(--ls-text);
-  color: var(--ls-surface);
+  background: var(--ls-accent);
+  color: #fff;
 }
 
 .done-badge {
@@ -375,8 +376,8 @@ body {
 
 .jump-next {
   justify-self: start;
-  border-color: var(--ls-line-strong);
-  color: var(--ls-text);
+  border-color: var(--ls-accent);
+  color: var(--ls-accent-ink);
 }
 
 .match-head {
@@ -553,7 +554,7 @@ body {
 /* 試合のカードの審判（点の行の下）：ラベルとチーム名・選ぶ欄をまん中そろえ */
 .match .referee-row {
   grid-template-columns: auto minmax(0, 14em);
-  justify-content: start;
+  justify-content: center;
 }
 
 /* 文字だけ（ふだんのカード）は、ラベルと名前の幅だけにして、まん中に */
@@ -758,8 +759,8 @@ body {
 /* チーム別で選んでいるチーム（トーナメント表・順位表） */
 .bracket-match .is-mine,
 .standing-table tr.is-mine td {
-  background: var(--ls-surface-sub);
-  color: var(--ls-text);
+  background: var(--ls-accent-soft);
+  color: var(--ls-accent-ink);
   font-weight: 800;
 }
 
@@ -988,9 +989,8 @@ body {
 
 .cross-table tr.is-mine .team,
 .cross-table tr.is-mine td {
-  background: var(--ls-surface-sub);
-  color: var(--ls-text);
-  font-weight: 800;
+  background: var(--ls-accent-soft);
+  color: var(--ls-accent-ink);
 }
 
 /* トーナメント表：押せる試合（2チームが決まったもの） */
@@ -1079,28 +1079,6 @@ body {
   overflow: hidden;
   clip: rect(0 0 0 0);
   white-space: nowrap;
-}
-
-/* ---- Q キットの部品の上書き（Q キットがそろえたら消す） ----
- * 見出しの下の一言はうすい字。何もないときの知らせは左にそろえる。選んでいるチップは、色の面ではなく濃いふちと字で（色は「試合へ」などのボタンだけ）
- */
-.ls-brand-copy {
-  color: var(--ls-subtext);
-  font-weight: 500;
-}
-
-.ls-empty {
-  justify-items: start;
-  text-align: left;
-}
-
-.ls-chip[aria-pressed="true"]:not(.color),
-.ls-chip[aria-checked="true"]:not(.color),
-.ls-chip.is-active:not(.color),
-.ls-chip:has(input:checked):not(.color) {
-  border-color: var(--ls-text);
-  background: var(--ls-surface);
-  color: var(--ls-text);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -1504,7 +1482,6 @@ body.is-view #schedFold {
   justify-content: space-between;
   gap: 8px;
   padding-block: 8px;
-  
 }
 
 .live-bar-text {
@@ -1640,11 +1617,11 @@ body.is-view #schedFold {
 
 .group-title {
   margin: 0;
-  
+  padding: 4px 8px;
   justify-self: start;
-  
-  
-  color: var(--ls-text);
+  border-radius: 999px;
+  background: var(--ls-accent);
+  color: #fff;
   font-size: 15px;
   font-weight: 800;
 }

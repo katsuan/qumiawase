@@ -53,8 +53,7 @@ export function renderFormat() {
   $("leagueRules").hidden = t.format === "knockout";
   $("koRules").hidden = t.format === "league";
   $("leagueRulesTitle").textContent = t.format === "groups" ? "📊 グループの総当たりの決まり" : "📊 総当たりの決まり";
-  // トーナメントの決まりは中身が1つ（3位決定戦）なので見出しを置かず、読み上げの名前だけ
-  $("koRules").setAttribute("aria-label", t.format === "groups" ? "決勝トーナメントの決まり" : "トーナメントの決まり");
+  $("koRulesTitle").textContent = t.format === "groups" ? "🗺️ 決勝トーナメントの決まり" : "🗺️ トーナメントの決まり";
   $("thirdPlace").checked = opts.thirdPlace;
   document.querySelectorAll("[data-legs]").forEach((b) => b.setAttribute("aria-checked", String(Number(b.dataset.legs) === opts.legs)));
   const maxGroups = Math.max(1, Math.floor(t.teams.length / 2));
