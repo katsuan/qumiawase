@@ -1,0 +1,118 @@
+/* くみあわせ：大会の色と、大会の欄（style.css から読む） */
+:root {
+  --ls-accent: #d9622b;
+  --ls-accent-strong: #b84e1c;
+  --ls-accent-soft: #fbe6d9;
+  --ls-accent-ink: #8a3a14;
+  --qa-win: #1f8a4c;
+  --ls-tabs-bg: #eeeae6; /* 切りかえタブの帯：色をつけない（色は「試合へ」などのボタンだけ） */
+  background: var(--ls-bg, #fff8f1);
+}
+
+body {
+  background: var(--ls-bg, #fff8f1);
+}
+
+/* ---- 大会 ---- */
+.event-panel {
+  padding: 8px;
+}
+
+.event-bar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 52px;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 大会の名前：押すと名前を変える */
+.event-name {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--ls-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.event-name:active {
+  background: var(--ls-accent-soft);
+}
+
+.event-name-label {
+  color: var(--ls-subtext);
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.event-name-text {
+  overflow: hidden;
+  font-size: 16px;
+  font-weight: 800;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.event-name-text.is-untitled {
+  color: var(--ls-subtext);
+  font-weight: 700;
+}
+
+.event-name-edit {
+  font-size: 14px;
+  opacity: 0.7;
+}
+
+.event-menu {
+  min-height: 48px;
+  padding: 0;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+/* 「…」のシートの中の大会の一覧と、することのボタン */
+.event-sheet-list {
+  display: grid;
+  gap: 8px;
+  max-height: 40vh;
+  overflow: auto;
+}
+
+.event-sheet-list .ls-button,
+.event-sheet-actions .ls-button {
+  justify-content: flex-start;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.event-sheet-list .ls-button[aria-current="true"] {
+  border-color: var(--ls-accent);
+  background: var(--ls-accent-soft);
+  color: var(--ls-accent-ink);
+}
+
+.event-sheet-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+}
+
+.event-sheet-sub {
+  margin: 0;
+  color: var(--ls-subtext);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.view-banner {
+  border: 1px solid var(--ls-line-strong);
+}

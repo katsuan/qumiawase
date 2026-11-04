@@ -1,0 +1,67 @@
+/* くみあわせ：送る・保存・Q キットの部品の上書き・暗い表示・見る人用（style.css から読む） */
+/* ---- 送る・保存 ---- */
+.share-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+}
+
+/* 画像の保存の画面 */
+.image-sheet img {
+  display: block;
+  width: 100%;
+  max-height: 60vh;
+  border-radius: var(--ls-radius-md);
+  object-fit: contain;
+  background: #fff;
+}
+
+/* 試合のページ：上のタブが出ているときは、欄の見出し（タブと同じ言葉）を見せない（読み上げには残す。試合の数は残す） */
+.play-tabs:not([hidden]) ~ .ls-panel .tab-same {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* 文の頭・見出しの中の線アイコン：字との間（ボタン・チップの中は Q キットの gap） */
+.in-text {
+  margin-right: 4px;
+}
+
+/* ---- Q キットの部品の上書き（Q キットがそろえたら消す） ----
+ * 選んでいるチップは、色の面ではなく濃いふちと字で（Q キットはまだツールの色。ユーザーが選んだ形。Q キットがそろえたら消す）
+ */
+.ls-chip[aria-pressed="true"]:not(.color),
+.ls-chip[aria-checked="true"]:not(.color),
+.ls-chip.is-active:not(.color),
+.ls-chip:has(input:checked):not(.color) {
+  border-color: var(--ls-text);
+  background: var(--ls-surface);
+  color: var(--ls-text);
+}
+
+/* ---- 暗い表示（index.html の data-ls-dark="auto"。Q キットの色は ui.css が暗くする） ---- */
+@media (prefers-color-scheme: dark) {
+  :root[data-ls-dark="auto"] {
+    --ls-accent: #f08a55;
+    --ls-accent-strong: #ffa576;
+    --ls-accent-soft: color-mix(in srgb, #f08a55 22%, #1c1b21);
+    --ls-accent-ink: #ffd2bb;
+    --qa-win: #6fd59a;
+    background: var(--ls-bg, #16151a);
+  }
+
+  :root[data-ls-dark="auto"] body {
+    background: var(--ls-bg, #16151a);
+  }
+}
+
+/* 見る人用のリンクで開いたとき：見るだけ（チーム・形・日程の編集の欄は出さない） */
+body.is-view #teamsFold,
+body.is-view #formatFold,
+body.is-view #schedFold {
+  display: none;
+}

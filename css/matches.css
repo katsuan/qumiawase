@@ -1,0 +1,325 @@
+/* くみあわせ：試合のカード（style.css から読む） */
+/* ---- 試合のカード ---- */
+.round-head {
+  margin: 8px 0 0;
+  color: var(--ls-subtext);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.match {
+  display: grid;
+  gap: 8px;
+  padding: 8px 16px;
+  border: 2px solid var(--ls-line);
+  border-radius: var(--ls-radius-md);
+  background: var(--ls-surface);
+}
+
+/* 終わった試合は控えめに（点は読めるまま） */
+.match.is-done {
+  gap: 4px;
+  padding: 8px 16px;
+  border-width: 1px;
+  background: var(--ls-surface-2, color-mix(in srgb, var(--ls-surface) 92%, var(--ls-subtext)));
+}
+
+.match.is-done .match-sides .score-stepper button {
+  min-height: 34px;
+}
+
+/* 次の試合：濃いふちで目立たせる（色の面や光はつけない） */
+.match.is-next {
+  border-color: var(--ls-text);
+}
+
+.next-badge,
+.done-badge {
+  margin-right: 8px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.next-badge {
+  background: var(--ls-text);
+  color: var(--ls-surface);
+}
+
+.done-badge {
+  background: color-mix(in srgb, var(--qa-win) 16%, transparent);
+  color: var(--qa-win);
+}
+
+.match-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.match-bar .match-views {
+  margin-bottom: 0;
+}
+
+.match-head .clear-chip {
+  min-height: 32px;
+  margin-left: 8px;
+  padding: 0 8px;
+  font-size: 12px;
+}
+
+.jump-next {
+  justify-self: start;
+  border-color: var(--ls-line-strong);
+  color: var(--ls-text);
+}
+
+.match-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 8px;
+  color: var(--ls-subtext);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+/* 2チームを左右に（左がホーム・右がアウェイ）。名前の下に点 */
+.match-sides,
+.pk-row .pk-steppers {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: end;
+  gap: 8px;
+}
+
+.match-vs {
+  align-self: end;
+  padding-bottom: 8px;
+  color: var(--ls-subtext);
+  font-weight: 800;
+}
+
+.match-side {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.match-side > .score-stepper,
+.match-side > b {
+  grid-column: 1 / -1;
+}
+
+.match-side > b {
+  min-height: 32px;
+  font-size: 22px;
+  text-align: center;
+}
+
+/* 右のチームは、名前を右に寄せて色の丸を右に */
+.match-sides > .match-side:last-child {
+  grid-template-columns: minmax(0, 1fr) 18px;
+}
+
+.match-side > .score-stepper,
+.match-side > b {
+  grid-row: 2;
+}
+
+.match-sides > .match-side:last-child .dot {
+  grid-row: 1;
+  grid-column: 2;
+}
+
+.match-sides > .match-side:last-child .name {
+  grid-row: 1;
+  grid-column: 1;
+}
+
+.match-sides > .match-side:last-child .name {
+  text-align: right;
+}
+
+.match-side .score-stepper,
+.pk-row .score-stepper {
+  grid-template-columns: minmax(36px, 1fr) 40px minmax(36px, 1fr);
+}
+
+.match-side .dot {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #c9c4bd;
+  border-radius: 999px;
+}
+
+.match-side .name {
+  overflow: hidden;
+  font-weight: 700;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.match-side.is-win .name {
+  color: var(--qa-win);
+  font-weight: 800;
+}
+
+.match-side.is-tbd .name {
+  color: var(--ls-faint);
+  font-weight: 600;
+}
+
+.score-stepper {
+  display: grid;
+  grid-template-columns: 40px 44px 40px;
+  align-items: stretch;
+  overflow: hidden;
+  border: 2px solid var(--ls-line-strong);
+  border-radius: 12px;
+  background: var(--ls-surface);
+}
+
+.score-stepper button {
+  min-height: 40px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ls-subtext);
+  font: inherit;
+  font-size: 20px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.score-stepper button:active {
+  background: var(--ls-accent-soft);
+}
+
+.score-stepper output {
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+/* まん中の数（押すと 0 から入る）は、字の幅だけでなく欄いっぱいを押せるように */
+.score-stepper .score-now {
+  width: 100%;
+}
+
+/* まだ点を入れていないときの「–」は薄く（− ボタンと見分けやすく） */
+.score-stepper.is-empty output {
+  color: var(--ls-faint);
+  font-weight: 600;
+}
+
+/* PK：見出しを上に1行、その下に左右のチームの下にそろえて2つ */
+.pk-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--ls-line);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+
+
+.referee-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  color: var(--ls-subtext);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.referee-row b {
+  color: var(--ls-text);
+  text-align: right;
+}
+
+/* 試合のカードの審判（点の行の下）：ラベルとチーム名・選ぶ欄をまん中そろえ */
+.match .referee-row {
+  grid-template-columns: auto minmax(0, 14em);
+  justify-content: center;
+}
+
+/* 文字だけ（ふだんのカード）は、ラベルと名前の幅だけにして、まん中に */
+.match div.referee-row {
+  grid-template-columns: auto auto;
+}
+
+.match .referee-row b {
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 審判の選択。iPhone で拡大されないよう 16px */
+.referee-row select {
+  width: 100%;
+  min-width: 0;
+  min-height: 36px;
+  padding: 4px 32px 4px 8px;
+  border: 2px solid var(--ls-line-strong);
+  border-radius: 10px;
+  background: var(--ls-surface);
+  color: var(--ls-text);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.referee-row.is-clash select {
+  border-color: #d9622b;
+}
+
+/* 試合のカード：押すと入力中（− ＋・PK・審判・結果を消す・さくせん盤やろくが）。ふだんは点だけ */
+.match.is-tappable {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.match.is-active {
+  border-color: var(--ls-accent);
+  border-style: dashed;
+  background: var(--ls-surface);
+}
+
+.match-side > b.is-empty {
+  color: var(--ls-faint);
+}
+
+.match-head[data-tap]:focus-visible {
+  outline: 2px solid var(--ls-accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.match-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.match-actions .ls-chip {
+  min-height: 36px;
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.bye-note {
+  color: var(--ls-subtext);
+  font-size: 13px;
+}

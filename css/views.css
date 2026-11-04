@@ -1,0 +1,190 @@
+/* くみあわせ：見こみ・試合表の見方・チーム別・印刷（style.css から読む） */
+/* ---- 見こみ・試合表の見方・チーム別 ---- */
+.estimate {
+  margin: 0;
+  padding: 8px 8px;
+  border-radius: var(--ls-radius-md);
+  background: var(--ls-surface-sub);
+  color: var(--ls-text);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.estimate:empty {
+  display: none;
+}
+
+.match-views,
+.team-pick {
+  margin-bottom: 4px;
+}
+
+.team-pick .ls-chip {
+  gap: 8px;
+}
+
+.team-pick .dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px #c9c4bd;
+}
+
+.team-tools-row .ls-chip {
+  text-decoration: none;
+}
+
+.path-note {
+  margin: 0;
+  padding: 8px 8px;
+  border: 2px dashed var(--ls-line);
+  border-radius: var(--ls-radius-md);
+  color: var(--ls-subtext);
+  font-size: 14px;
+}
+
+/* チーム別：審判をする試合（自分の試合よりひかえめに。左に黄色の線） */
+.ref-duty {
+  margin: 0;
+  padding: 8px 8px;
+  border: 1px solid var(--ls-line);
+  border-left: 5px solid #f2c200;
+  border-radius: var(--ls-radius-md);
+  background: var(--ls-surface-sub);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.ref-duty.is-done {
+  opacity: 0.6;
+}
+
+.share-row a.ls-button {
+  text-align: center;
+  text-decoration: none;
+  line-height: 1.3;
+}
+
+/* ---- 印刷・PDF（大会のまとめだけを出す） ---- */
+.print-area {
+  display: none;
+}
+
+@media print {
+  body > main,
+  body > .ls-sheet,
+  body > .ls-toast {
+    display: none !important;
+  }
+
+  /* 端末が暗い表示でも、紙には明るい色で（うすい文字・線が消えないように） */
+  .print-area {
+    --ls-surface: #ffffff;
+    --ls-surface-sub: #f8f7fb;
+    --ls-text: #1f1f1c;
+    --ls-subtext: #6b6a63;
+    --ls-faint: #8a8982;
+    --ls-line: rgba(31, 31, 28, 0.18);
+    --ls-line-strong: rgba(31, 31, 28, 0.45);
+    display: block;
+    color: #1f1f1c;
+    font-size: 11pt;
+  }
+
+  /* ページの区切り：チーム・トーナメント表・グループごとの順位表は途中で切らない。見出しだけがページの最後に残らないように */
+  .print-area .print-keep,
+  .print-area .table-wrap,
+  .print-area .cross-table,
+  .print-area .bracket {
+    break-inside: avoid;
+  }
+
+  .print-area h2 + * {
+    break-before: avoid;
+  }
+
+  .print-table tr {
+    break-inside: avoid;
+  }
+
+  .print-table thead {
+    display: table-header-group;
+  }
+
+  /* トーナメント表は1ページに入る大きさに（32チームでも） */
+  .print-area .bracket {
+    gap: 16px;
+    font-size: 8.5pt;
+  }
+
+  .print-area .bracket-slot {
+    padding: 4px 0;
+  }
+
+  .print-area .bracket-match {
+    border-width: 1px;
+    background: none;
+    font-size: inherit;
+  }
+
+  .print-area .bracket-match > div {
+    min-height: 16pt;
+    padding: 0 4px;
+  }
+
+  .print-area .bracket-pair::after {
+    right: -7px;
+  }
+
+  .print-area .bracket-col:not(:last-child) .bracket-match::after {
+    right: -7px;
+    width: 6px;
+  }
+
+  .print-area .bracket-col + .bracket-col .bracket-match::before {
+    left: -7px;
+    width: 6px;
+  }
+
+  .print-area h1 {
+    font-size: 18pt;
+  }
+
+  .print-area h2 {
+    margin: 14pt 0 4pt;
+    font-size: 13pt;
+    break-after: avoid;
+  }
+
+  .print-area .bracket {
+    display: grid;
+    grid-auto-columns: minmax(0, 1fr);
+    grid-auto-flow: column;
+    overflow: visible;
+  }
+
+
+  .print-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .print-table th,
+  .print-table td {
+    padding: 3pt 4pt;
+    border-bottom: 0.5pt solid #ccc;
+    text-align: left;
+  }
+
+  .print-table .score {
+    font-weight: 800;
+    white-space: nowrap;
+  }
+
+  .print-foot {
+    margin-top: 12pt;
+    color: #888;
+    font-size: 9pt;
+  }
+}

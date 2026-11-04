@@ -1,0 +1,181 @@
+/* くみあわせ：ページのタブ・試合の種類・試合のタブの見出し（style.css から読む） */
+/* ---- ページのタブ・試合の種類・試合のタブの見出し ---- */
+.page-tabs {
+  margin-bottom: 0;
+  padding: 4px;
+  border-radius: 16px;
+  background: var(--ls-tabs-bg, var(--ls-accent-soft));
+}
+
+/* 試合の種類：横に1列で、はみ出すぶんは横にスクロール */
+.preset-tabs {
+  position: relative;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.preset-tabs .ls-chip {
+  flex: none;
+}
+
+.preset-tabs .ls-chip[aria-selected="true"] {
+  border-color: var(--ls-text);
+  background: var(--ls-surface);
+  color: var(--ls-text);
+}
+
+.play-title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.play-sub {
+  margin: 4px 0 0;
+  color: var(--ls-subtext);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.play-head {
+  gap: 4px;
+  padding-block: 8px;
+}
+
+/* たたみ欄の見出し：名前は折らない。右の中身は1行で、入りきらなければ「…」 */
+.fold-title {
+  flex: none;
+  white-space: nowrap;
+}
+
+.ls-fold {
+  min-width: 0;
+}
+
+.ls-fold > summary .ls-fold-meta {
+  flex: 1 1 0;
+  width: 0;
+  min-width: 0;
+  text-align: right;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* 準備のおわりの「試合へ」 */
+.go-play {
+  min-height: 52px;
+  font-size: 17px;
+}
+
+/* 送る・保存のボタンは1行に（折れて「見る／人用のリンク」にならないように） */
+.share-row .ls-button {
+  padding-inline: 8px;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+/* 試合のページの、見せる中身のタブ（ページのタブの下に、貼りつけない） */
+.play-tabs {
+  position: static;
+  margin-bottom: 0;
+  padding: 4px;
+  border-radius: 16px;
+  background: var(--ls-tabs-bg, var(--ls-accent-soft));
+}
+
+.play-tabs .ls-tab {
+  font-size: 13px;
+}
+
+/* 総当たりの決まり・トーナメントの決まりの箱 */
+.rule-box {
+  display: grid;
+  gap: 8px;
+  padding: 8px 16px 16px;
+  border: 1px solid var(--ls-line-strong);
+  border-radius: var(--ls-radius-md);
+  background: var(--ls-surface-sub);
+}
+
+.rule-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+/* 順位の決め方（↑↓で並べかえ） */
+.rank-order {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rank-order li {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 4px 0 8px;
+  border: 1px solid var(--ls-line);
+  border-radius: 10px;
+  background: var(--ls-surface);
+}
+
+.rank-order .rank-no {
+  color: var(--ls-subtext);
+  font-weight: 800;
+}
+
+.rank-order .rank-name {
+  font-weight: 700;
+}
+
+.rank-order small {
+  grid-column: 3 / -1;
+  padding-right: 8px;
+  color: var(--ls-subtext);
+  font-size: 12px;
+}
+
+.rank-order .ls-chip {
+  min-width: 44px;
+  min-height: 36px;
+  justify-content: center;
+}
+
+.rank-order .ls-chip[disabled] {
+  opacity: 0.35;
+}
+
+.rule-box .ls-hint {
+  margin: 0;
+}
+
+/* 形と試合の種類の枠の中の小見出し */
+.sub-head {
+  margin: 0;
+  color: var(--ls-subtext);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+/* 審判の枠：自動で入れる（大きく）と全部消す（小さく） */
+#refereeFold .team-tools-row {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+}
+
+.referee-hint {
+  margin: 0;
+}
+
+#autoReferees {
+  justify-self: stretch;
+}

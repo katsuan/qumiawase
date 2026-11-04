@@ -1,4 +1,4 @@
-// くみあわせ：「📷 画像で保存」の画像を描く（見出し・トーナメント表・順位表・試合の一覧）。canvas を返すだけで、保存の画面は js/share-ui.js
+// くみあわせ：「画像で保存」の画像を描く（見出し・トーナメント表・順位表・試合の一覧）。canvas を返すだけで、保存の画面は js/share-ui.js
 // js/share-ui.js から読む（import）
 import { TOOL } from "./settings.js?v=202611012034";
 import { roundName } from "./pairing.js?v=202611012034";

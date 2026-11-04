@@ -1,7 +1,7 @@
-// くみあわせ：「📡 みんなで入れる」の画面（くらぶボットにのせる・合言葉・点を送る・🔄 更新で読む・共有リンク・つなぐのをやめる）
+// くみあわせ：「みんなで入れる」の画面（くらぶボットにのせる・合言葉・点を送る・更新で読む・共有リンク・つなぐのをやめる）
 // app.js から読む（import）。合言葉から key を作る・ボットを呼ぶ・形を確かめるのは js/live.js（画面には触らない）
 //
-// つないでいない大会は、これまでどおり端末の中だけ。つないだ大会だけ、点を1試合ずつ送り、ほかの端末の点は「🔄 更新」で読みなおす
+// つないでいない大会は、これまでどおり端末の中だけ。つないだ大会だけ、点を1試合ずつ送り、ほかの端末の点は「更新」で読みなおす
 import { TOOL } from "./settings.js?v=202611012034";
 import { blankTournament, newId, saveAll } from "./store.js?v=202611012034";
 import { adminKey, botUrlIn, fromServer, inputKey, liveCall, liveError, liveUrl, newLiveId, overlay, PASS_MAX, PASS_MIN, queue, sessionKey, setSessionKey, toServer } from "./live.js?v=202611012034";
@@ -122,7 +122,7 @@ async function liveFlush() {
   } finally {
     liveBusy = false;
   }
-  renderLive(); // ほかの人の点は読まない（GAS を呼ぶのは 🔄 だけ）
+  renderLive(); // ほかの人の点は読まない（GAS を呼ぶのは「更新」だけ）
 }
 
 // 運営：組み合わせを変えたので、大会をまるごと送る（ほかの人が先に点を入れていたら、読みなおしてから送りなおす）
@@ -278,7 +278,7 @@ async function liveSetBot() {
   renderLive();
 }
 
-// 「📡 みんなで入れる」の欄と、試合のページの上の知らせを描きなおす
+// 「みんなで入れる」の欄と、試合のページの上の知らせを描きなおす
 export function renderLive() {
   const t = current();
   const role = liveRole(t);
@@ -331,7 +331,7 @@ export function renderLive() {
   }
 }
 
-// 「📡 みんなで入れる」のボタン
+// 「みんなで入れる」のボタン
 async function onLiveAction(kind) {
   const t = current();
   if (kind === "bot") return liveSetBot();
@@ -381,7 +381,7 @@ export function startLivePolling() {
     liveShadow[t.live.id] = resultText(overlay(t, []));
     livePlanSent[t.live.id] = planText(t);
   }
-  // GAS をあまり呼ばないよう、ほかの人の点を読むのは「🔄 更新」だけ。電波がもどったら、送れていない点だけ送る
+  // GAS をあまり呼ばないよう、ほかの人の点を読むのは「更新」だけ。電波がもどったら、送れていない点だけ送る
   window.addEventListener("online", () => {
     const t = current();
     if (t.live && !viewing && t.live.pending.length && liveRole(t)) liveFlush();

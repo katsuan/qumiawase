@@ -1,0 +1,232 @@
+/* くみあわせ：順位表（style.css から読む） */
+/* ---- 順位表 ---- */
+.standing-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.standing-table caption {
+  margin-bottom: 4px;
+  font-weight: 800;
+  text-align: left;
+}
+
+.standing-table th,
+.standing-table td {
+  padding: 8px 4px;
+  border-bottom: 1px solid var(--ls-line);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.standing-table th {
+  color: var(--ls-subtext);
+  font-size: 12px;
+}
+
+.standing-table .team {
+  overflow: hidden;
+  max-width: 9em;
+  text-align: left;
+  text-overflow: ellipsis;
+}
+
+.standing-table .team .dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 8px;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px #c9c4bd;
+  vertical-align: middle;
+}
+
+.standing-table .pts {
+  font-weight: 800;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+/* 総当たり表（星取表）：チームの列は左に貼りつけ、マスは横にずらせる */
+.cross-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.cross-table caption {
+  margin-bottom: 4px;
+  font-weight: 800;
+  text-align: left;
+}
+
+.cross-table th,
+.cross-table td {
+  min-width: 52px;
+  padding: 4px;
+  border-bottom: 1px solid var(--ls-line);
+  border-left: 1px solid var(--ls-line);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.cross-table thead th {
+  color: var(--ls-subtext);
+  font-size: 12px;
+}
+
+.cross-table thead th .dot,
+.cross-table .team .dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  margin-right: 4px;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px #c9c4bd;
+  vertical-align: middle;
+}
+
+.cross-table .team {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  max-width: 8.5em;
+  overflow: hidden;
+  padding-right: 8px;
+  border-left: 0;
+  background: var(--ls-surface);
+  font-weight: 700;
+  text-align: left;
+  text-overflow: ellipsis;
+}
+
+.cross-table thead th:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  border-left: 0;
+  background: var(--ls-surface);
+}
+
+.cross-self {
+  background: var(--ls-surface-sub);
+}
+
+.cross-item {
+  display: block;
+  width: 100%;
+  min-height: 36px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.cross-item + .cross-item {
+  border-top: 1px dashed var(--ls-line);
+  border-radius: 0;
+}
+
+.cross-item i {
+  margin-right: 4px;
+  font-style: normal;
+}
+
+.cross-item small {
+  display: block;
+  margin-top: -4px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.cross-item.is-win {
+  font-weight: 800;
+}
+
+.cross-item.is-win i {
+  color: #d9622b;
+}
+
+.cross-item.is-loss {
+  color: var(--ls-subtext);
+}
+
+.cross-item.is-wait {
+  color: var(--ls-subtext);
+  font-size: 12px;
+}
+
+.cross-table tr.is-mine .team,
+.cross-table tr.is-mine td {
+  background: var(--ls-surface-sub);
+  color: var(--ls-text);
+  font-weight: 800;
+}
+
+/* トーナメント表：押せる試合（2チームが決まったもの） */
+.bracket-match.is-tappable {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.bracket-match.is-tappable:hover,
+.bracket-match.is-tappable:focus-visible {
+  border-color: var(--ls-accent);
+  outline: none;
+}
+
+.score-sheet .pk-row {
+  margin-top: 8px;
+}
+
+/* 総当たり表から開く「点を入れる」窓 */
+.score-sheet-sub {
+  margin: -4px 0 8px;
+  color: var(--ls-subtext);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.score-sheet-sides {
+  display: grid;
+  gap: 8px;
+}
+
+.score-sheet-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+/* 総当たり表から動いてきた試合を少し光らせる */
+.match.is-flash {
+  animation: match-flash 1.6s ease-out;
+}
+
+@keyframes match-flash {
+  0%,
+  30% {
+    box-shadow: 0 0 0 4px var(--ls-accent);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .match.is-flash {
+    animation: none;
+    outline: 3px solid var(--ls-accent);
+  }
+}

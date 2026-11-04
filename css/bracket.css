@@ -1,0 +1,195 @@
+/* くみあわせ：トーナメント表（style.css から読む） */
+/* ---- トーナメント表（横にスクロール） ---- */
+.bracket {
+  display: grid;
+  grid-auto-columns: minmax(150px, 1fr);
+  grid-auto-flow: column;
+  gap: 16px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.bracket-col {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 4px;
+}
+
+/* 列の中の試合は、上下に同じだけあけて並べる（次の回の試合が、前の2試合のまん中に来る） */
+.bracket-col-body,
+.bracket-pair {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
+.bracket-slot {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  padding: 4px 0;
+}
+
+/* 2試合の組：右に縦の線（上の試合のまん中から下の試合のまん中まで） */
+.bracket-pair {
+  position: relative;
+}
+
+.bracket-pair::after {
+  position: absolute;
+  top: 25%;
+  right: -8px;
+  bottom: 25%;
+  border-right: 2px solid var(--ls-line-strong);
+  content: "";
+}
+
+.bracket-col h3 {
+  margin: 0 0 4px;
+  color: var(--ls-subtext);
+  font-size: 13px;
+}
+
+.bracket-match {
+  display: grid;
+  overflow: hidden;
+  border: 2px solid var(--ls-line);
+  border-radius: 10px;
+  background: var(--ls-surface);
+  font-size: 13px;
+}
+
+.bracket-match > div {
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 30px;
+  padding: 0 8px;
+}
+
+.bracket-match > div + div {
+  border-top: 1px solid var(--ls-line);
+}
+
+.bracket-match .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px #c9c4bd;
+}
+
+.bracket-match .name {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.bracket-match .is-win {
+  font-weight: 800;
+}
+
+.bracket-match .is-tbd {
+  color: var(--ls-faint);
+}
+
+/* 勝ち上がりの線：試合の右から縦の線まで、縦の線から次の回の試合の左まで */
+.bracket-col + .bracket-col .bracket-match,
+.bracket-col:not(:last-child) .bracket-match {
+  position: relative;
+  overflow: visible;
+}
+
+.bracket-col:not(:last-child) .bracket-match::after,
+.bracket-col + .bracket-col .bracket-match::before {
+  position: absolute;
+  top: 50%;
+  border-top: 2px solid var(--ls-line-strong);
+  content: "";
+}
+
+.bracket-col:not(:last-child) .bracket-match::after {
+  right: -9px;
+  width: 7px;
+}
+
+.bracket-col + .bracket-col .bracket-match::before {
+  left: -8px;
+  width: 6px;
+}
+
+.bracket-match > div:first-child {
+  border-radius: 8px 8px 0 0;
+}
+
+.bracket-match > div:last-child {
+  border-radius: 0 0 8px 8px;
+}
+
+/* チーム別で選んでいるチーム（トーナメント表・順位表） */
+.bracket-match .is-mine,
+.standing-table tr.is-mine td {
+  background: var(--ls-surface-sub);
+  color: var(--ls-text);
+  font-weight: 800;
+}
+
+.champion {
+  display: grid;
+  gap: 4px;
+  padding: 8px 16px;
+  border-radius: var(--ls-radius-md);
+  background: var(--ls-accent-soft);
+  color: var(--ls-accent-ink);
+  font-weight: 800;
+}
+
+.champion p {
+  margin: 0;
+}
+
+.champion p:first-child {
+  font-size: 17px;
+}
+
+/* トーナメント表の試合の箱：上に時刻とコート */
+.bracket-match .bracket-when {
+  margin: 0;
+  padding: 4px 8px 0;
+  color: var(--ls-subtext);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* 3位決定戦（決勝の列の下）。どの列にも同じ高さの下の段をつけて、線の高さをそろえる */
+.bracket-col.has-foot {
+  grid-template-rows: auto 1fr auto;
+}
+
+.bracket-foot {
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  height: 124px;
+  padding-top: 8px;
+}
+
+.bracket-third-title {
+  margin: 0;
+  color: var(--ls-subtext);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.bracket-foot .bracket-slot {
+  padding: 0;
+}
+
+/* 3位決定戦は線でつながない */
+.bracket-foot .bracket-match::before,
+.bracket-foot .bracket-match::after {
+  display: none;
+}

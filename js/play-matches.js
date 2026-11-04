@@ -1,4 +1,4 @@
-// くみあわせ：試合の表（試合のカード・入力中の試合・審判・時刻を手で直す・⏱ 遅れ・時刻ごとのまとまり・コート別・チーム別）
+// くみあわせ：試合の表（試合のカード・入力中の試合・審判・時刻を手で直す・遅れ・時刻ごとのまとまり・コート別・チーム別）
 // app.js から読む（import。描きなおしは renderMatches、ボタンと入力は bindMatches）
 import { addMinutes, autoReferees, refereeOptions, roundName } from "./pairing.js?v=202611012034";
 import { outcome } from "./stats.js?v=202611012034";
@@ -23,7 +23,7 @@ function toggleActive(mid) {
   card?.focus({ preventScroll: true });
 }
 
-// ⏱ 遅れ：次の試合（まだの、いちばん早い試合）から、まとめて後ろへ。どこからずらしたかを覚える（あとで結果を入れても戻らない）
+// 遅れ：次の試合（まだの、いちばん早い試合）から、まとめて後ろへ。どこからずらしたかを覚える（あとで結果を入れても戻らない）
 function renderDelay(c) {
   const { t, plan } = c;
   const show = t.sched.on && !viewing && !planLocked() && plan.length > 0;
@@ -212,9 +212,9 @@ export function renderMatches(c) {
   $("matches").innerHTML = parts.join("");
 }
 
-// 押す・入力を受けるしかけ（⏱ 遅れ・点・PK・結果を消す・時刻を直す・審判・見方・次の試合へ）を付ける（app.js の init から1回）
+// 押す・入力を受けるしかけ（遅れ・点・PK・結果を消す・時刻を直す・審判・見方・次の試合へ）を付ける（app.js の init から1回）
 export function bindMatches() {
-  // ⏱ 遅れ
+  // 遅れ
   $("delayMinus").addEventListener("click", () => addDelay(-5));
   $("delayPlus").addEventListener("click", () => addDelay(5));
   $("delayClear").addEventListener("click", () => {

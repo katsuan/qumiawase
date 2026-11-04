@@ -1,4 +1,4 @@
-// くみあわせ：送る・保存（おくるんのカード・📷 画像・🔗 見る人用のリンク・📄 大会のまとめ（印刷・PDF・文でコピー））
+// くみあわせ：送る・保存（おくるんのカード・画像・見る人用のリンク・大会のまとめ（印刷・PDF・文でコピー））
 // app.js から読む（import。ボタンは bindShare）。カードの中身は js/card.js、画像は js/image.js
 import { TOOL } from "./settings.js?v=202611012034";
 import { table } from "./stats.js?v=202611012034";
@@ -36,7 +36,7 @@ function showImageSheet(blob) {
 }
 
 let savingImage = false; // 画像を作っているあいだ（二重押しで画面がふえないように）
-// 📷 画像で保存：組み合わせ表・順位表・試合の一覧の画像を作り、保存の画面を出す
+// 画像で保存：組み合わせ表・順位表・試合の一覧の画像を作り、保存の画面を出す
 async function saveImage() {
   if (savingImage) return;
   savingImage = true;
@@ -52,7 +52,7 @@ async function saveImage() {
   }
 }
 
-// 🔗 見る人用のリンクを、共有メニューで渡す（使えなければコピー）
+// 見る人用のリンクを、共有メニューで渡す（使えなければコピー）
 async function shareView() {
   const url = viewUrl(current());
   const title = current().name || TOOL.name;
@@ -95,7 +95,7 @@ function printSummary(c) {
     <p class="print-foot">${esc(TOOL.name)}（${esc(TOOL.en)}）で作りました</p>`;
 }
 
-// 📄 大会のまとめ：印刷・PDF に保存するか、文でコピーするかを選ぶ窓を出す
+// 大会のまとめ：印刷・PDF に保存するか、文でコピーするかを選ぶ窓を出す
 function openSummary() {
   const c = compute();
   if (!c.gen.matches.length) return toast("チームを2つ以上入れると作れます");

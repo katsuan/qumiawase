@@ -1,0 +1,182 @@
+/* くみあわせ：チームの行・形と日程の設定（style.css から読む） */
+/* ---- チーム ---- */
+.team-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.team-row {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) 44px 44px;
+  align-items: center;
+  gap: 8px;
+}
+
+/* つまみ：押したまま上下に動かすと並べかえ（スクロールにしない） */
+.drag-handle {
+  touch-action: none;
+  cursor: grab;
+  font-size: 20px;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.team-row.is-dragging {
+  position: relative;
+  z-index: 2;
+  opacity: 0.9;
+}
+
+.team-row.is-dragging .ls-pickfield {
+  border-color: var(--ls-accent);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+}
+
+.team-no {
+  color: var(--ls-subtext);
+  font-size: 13px;
+  font-weight: 800;
+  text-align: right;
+}
+
+.team-row .ls-picker {
+  grid-column: 2 / -1;
+  margin-top: 4px;
+}
+
+/* 色の丸（ls-pickfield のボタンの中・選択肢）。白でも見えるよう、うすい灰色のふち */
+.swatch {
+  position: relative;
+  display: block;
+  width: 26px;
+  height: 26px;
+  border: 2px solid #c9c4bd;
+  border-radius: 999px;
+}
+
+.swatch.is-custom {
+  overflow: hidden;
+  border: 0;
+  background: radial-gradient(circle, var(--c, transparent) 52%, transparent 53%), conic-gradient(#e5484d, #f5a524, #30a46c, #3e7bfa, #6c47ff, #e5484d);
+}
+
+.swatch.is-custom input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.bulk-box textarea {
+  font-size: 16px;
+}
+
+/* ---- 形・日程の設定 ---- */
+.option-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 15px;
+}
+
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.check-row input {
+  width: 22px;
+  height: 22px;
+  accent-color: var(--ls-accent);
+}
+
+.stepper {
+  display: flex;
+  align-items: center;
+  border: 2px solid var(--ls-line-strong);
+  border-radius: 999px;
+  background: var(--ls-surface);
+}
+
+.stepper button {
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--ls-text);
+  font: inherit;
+  font-size: 20px;
+  font-weight: 800;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.stepper button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.stepper output {
+  min-width: 2.2em;
+  font-weight: 800;
+  text-align: center;
+}
+
+/* 押して直接打ちこめる数字（1試合の時間・空き時間）。iPhone で拡大されないよう 16px 以上 */
+.stepper input {
+  width: 3.2em;
+  min-width: 0;
+  padding: 4px 0;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--ls-text);
+  font: inherit;
+  font-size: 17px;
+  font-weight: 800;
+  text-align: center;
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.stepper input::-webkit-outer-spin-button,
+.stepper input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.stepper input:focus {
+  outline: 2px solid var(--ls-accent);
+  background: var(--ls-surface-2, transparent);
+}
+
+/* iPhone で日付・時刻の欄がずれないように（ほかのツールと同じ） */
+.when-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+}
+
+.when-row input {
+  min-width: 0;
+  width: 100%;
+  font-size: 16px;
+  -webkit-appearance: none;
+  appearance: none;
+}
