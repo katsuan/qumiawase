@@ -6,16 +6,6 @@
   gap: 8px;
 }
 
-/* 画像の保存の画面 */
-.image-sheet img {
-  display: block;
-  width: 100%;
-  max-height: 60vh;
-  border-radius: var(--ls-radius-md);
-  object-fit: contain;
-  background: #fff;
-}
-
 /* 試合のページ：上のタブが出ているときは、欄の見出し（タブと同じ言葉）を見せない（読み上げには残す。試合の数は残す） */
 .play-tabs:not([hidden]) ~ .ls-panel .tab-same {
   position: absolute;

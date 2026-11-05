@@ -8,33 +8,6 @@ import { drawTournament } from "./image.js?v=202611012034";
 import { $, copy, esc, icon, toast } from "./dom.js?v=202611012034";
 import { compute, current } from "./state.js?v=202611012034";
 
-// 画像の保存の画面（長押しで保存・共有・ダウンロード）を出す
-function showImageSheet(blob) {
-  const url = URL.createObjectURL(blob);
-  const file = new File([blob], `${current().name || TOOL.name}.png`, { type: "image/png" });
-  const sheet = document.createElement("div");
-  sheet.className = "ls-sheet image-sheet";
-  sheet.innerHTML = `<div class="ls-sheet-card" role="dialog" aria-modal="true" aria-label="画像"><img alt="組み合わせの画像"><p class="ls-hint">画像を長押しすると保存できます。</p><div class="ls-stack actions"></div><button class="ls-button" type="button" data-close>閉じる</button></div>`;
-  sheet.querySelector("img").src = url;
-  const actions = sheet.querySelector(".actions");
-  if (navigator.canShare?.({ files: [file] })) {
-    const share = Object.assign(document.createElement("button"), { type: "button", className: "ls-button is-primary is-block", textContent: "共有・保存" });
-    window.LineShareUI?.icon && share.prepend(window.LineShareUI.icon("share"));
-    share.addEventListener("click", () => navigator.share({ files: [file] }).catch(() => {}));
-    actions.append(share);
-  }
-  const download = Object.assign(document.createElement("a"), { className: "ls-button is-block", href: url, download: file.name, textContent: "ダウンロード" });
-  window.LineShareUI?.icon && download.prepend(window.LineShareUI.icon("save"));
-  actions.append(download);
-  // 画面を閉じる（画像の中身も手放す）
-  const close = () => {
-    sheet.remove();
-    URL.revokeObjectURL(url);
-  };
-  sheet.addEventListener("click", (e) => (e.target === sheet || e.target.closest("[data-close]")) && close());
-  document.body.append(sheet);
-}
-
 let savingImage = false; // 画像を作っているあいだ（二重押しで画面がふえないように）
 // 画像で保存：組み合わせ表・順位表・試合の一覧の画像を作り、保存の画面を出す
 async function saveImage() {
@@ -46,7 +19,8 @@ async function saveImage() {
     const canvas = drawTournament(c.t, c.gen, c.resolved, c.sched);
     const blob = await new Promise((r) => canvas.toBlob(r, "image/png"));
     if (!blob) return toast("画像を作れませんでした。少し待って、もう一度押してね");
-    showImageSheet(blob);
+    // 保存の窓は Q キットのもの（長押しで保存・共有・ダウンロード）
+    window.LineShareUI?.imageSheet(blob, { name: `${current().name || TOOL.name}.png`, alt: "組み合わせの画像" });
   } finally {
     savingImage = false;
   }
