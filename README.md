@@ -61,7 +61,7 @@ https://katsuan.github.io/qumiawase/ （確認中のため、検索には出し�
 | `js/card.js` | おくるんのカードの中身・大会のまとめの文と、試合や順位の言い方 |
 | `js/image.js` | 「画像で保存」の画像 |
 | `sw.js`・`manifest.webmanifest` | 電波がないときに開く仕組みと、ホーム画面に置くときの設定 |
-| `test/` | テスト（`node --test test/`。みんなで入れるの中身は `test/live.test.mjs`。さくせん盤・ろくがとの受けわたしは、となりの q-saqsen・q-roqga があるときだけ） |
+| テスト | テストは、公開しない別の所に置いています（公開の前に GitHub Actions が読んで動かします） |
 | `tools/icon.py` | アイコン・ロゴ・OGP を作る（おくるんの tools/brandkit.py を使う） |
 
 公開は GitHub Actions（`.github/workflows/pages.yml`。中身は Q 共通の line-share の `q-pages.yml`）。push すると、テストと check-code が通ったときだけ Pages に出す。読みこむ JS・CSS の `?v=` は公開のときに付くので、手で付けなくてよい。
