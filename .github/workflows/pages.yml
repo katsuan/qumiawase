@@ -25,4 +25,4 @@ jobs:
     with:
       dev: true
       folder: q-qumiawase
-      siblings: q-saqsen=katsuan/soccer q-roqga=katsuan/score-recorder q-qronos=katsuan/countdown
+      siblings: q-saqsen=katsuan/soccer q-roqga=katsuan/score-recorder q-qronos=katsuan/qronos
