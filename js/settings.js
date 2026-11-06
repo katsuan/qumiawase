@@ -11,8 +11,8 @@ export const TOOL = {
 };
 
 // ほかのツールの URL（さくせん盤・ろくが）
-export const SAQSEN_URL = "https://katsuan.github.io/soccer/";
-export const ROQGA_URL = "https://katsuan.github.io/score-recorder/";
+export const SAQSEN_URL = "https://katsuan.github.io/saqsen/";
+export const ROQGA_URL = "https://katsuan.github.io/roqga/";
 export const QRONOS_URL = "https://katsuan.github.io/qronos/"; // くろのす（カウントダウン）
 
 // チームの色：さくせん盤・ろくがと同じ8色（並びも同じ）。ほかの色はカスタムで
