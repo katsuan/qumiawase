@@ -64,7 +64,7 @@ https://katsuan.github.io/qumiawase/ （確認中のため、検索には出し�
 | テスト | テストは、公開しない別の所に置いています（公開の前に GitHub Actions が読んで動かします） |
 | `tools/icon.py` | アイコン・ロゴ・OGP を作る（おくるんの tools/brandkit.py を使う） |
 
-公開は GitHub Actions（`.github/workflows/pages.yml`。中身は Q 共通の line-share の `q-pages.yml`）。push すると、テストと check-code が通ったときだけ Pages に出す。読みこむ JS・CSS の `?v=` は公開のときに付くので、手で付けなくてよい。
+公開は GitHub Actions（`.github/workflows/pages.yml`。中身は Q 共通の oqrn の `q-pages.yml`）。push すると、テストと check-code が通ったときだけ Pages に出す。読みこむ JS・CSS の `?v=` は公開のときに付くので、手で付けなくてよい。
 
 ## ローカルでの確認
 
