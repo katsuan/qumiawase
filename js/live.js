@@ -8,6 +8,7 @@
 //   入力の合言葉 → PBKDF2（SHA-256・塩 "qumiawase:" + 大会の番号・10万回・32バイト）。ジェンダーリビールと同じ考え
 //   運営の合言葉 → SHA-256("qumiawase:admin:" + 合言葉)（ボットのスクリプト プロパティにあるものとくらべる）
 //   できた key は、そのタブの sessionStorage にだけ置く（タブを閉じれば消える。読みこみなおしでは聞きなおさない）
+import { Q_NAMES } from "./settings.js?v=202611012034";
 import { cleanTournament, isObj, resultIn } from "./store.js?v=202611012034";
 
 // くらぶボットの URL（GAS のウェブアプリ …/exec だけ。Q キットの shared/qlove-bot.js と同じ形）
@@ -154,14 +155,14 @@ export const LIVE_ERRORS = {
   net: "つながりませんでした。電波のよいところで、もう一度ためしてね（入れた点は、この端末にためてあります）",
   pass: "合言葉がちがいます",
   many: "合言葉を何回もまちがえたので、10分ほど待ってからためしてね",
-  off: "くらぶボットに運営の合言葉がまだありません（ボットを作った人が、スクリプト プロパティ TOURNAMENT_ADMIN_KEY に書きます）",
-  auth: "くらぶボットに「🏆 大会」の機能がないか、切ってあります（ボットのライブラリの版を上げてね）",
-  none: "この大会は、くらぶボットにありません（消されたかもしれません）",
-  full: "くらぶボットに置ける大会の数（50件）をこえました。ボットのシート「大会」から古いものを消してね",
+  off: `${Q_NAMES.qlove.name}ボットに運営の合言葉がまだありません（ボットを作った人が、スクリプト プロパティ TOURNAMENT_ADMIN_KEY に書きます）`,
+  auth: `${Q_NAMES.qlove.name}ボットに「🏆 大会」の機能がないか、切ってあります（ボットのライブラリの版を上げてね）`,
+  none: `この大会は、${Q_NAMES.qlove.name}ボットにありません（消されたかもしれません）`,
+  full: `${Q_NAMES.qlove.name}ボットに置ける大会の数（50件）をこえました。ボットのシート「大会」から古いものを消してね`,
   stale: "ほかの人が先に書きかえました。読みなおしてから、もう一度送ります",
   bad: "送った中身の形がちがいました",
   fail: "うまくいきませんでした。時間をおいて、もう一度ためしてね",
-  nourl: "くらぶボットの URL がありません"
+  nourl: `${Q_NAMES.qlove.name}ボットの URL がありません`
 };
 export const liveError = (res) => LIVE_ERRORS[res && res.error] || LIVE_ERRORS.fail;
 

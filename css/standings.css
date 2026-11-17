@@ -9,7 +9,7 @@
 
 .standing-table caption {
   margin-bottom: 4px;
-  font-weight: 800;
+  font-weight: 700;
   text-align: left;
 }
 
@@ -44,7 +44,7 @@
 }
 
 .standing-table .pts {
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .table-wrap {
@@ -61,7 +61,7 @@
 
 .cross-table caption {
   margin-bottom: 4px;
-  font-weight: 800;
+  font-weight: 700;
   text-align: left;
 }
 
@@ -148,7 +148,7 @@
 }
 
 .cross-item.is-win {
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .cross-item.is-win i {
@@ -168,7 +168,7 @@
 .cross-table tr.is-mine td {
   background: var(--ls-surface-sub);
   color: var(--ls-text);
-  font-weight: 800;
+  font-weight: 700;
 }
 
 /* トーナメント表：押せる試合（2チームが決まったもの） */

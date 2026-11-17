@@ -2,7 +2,7 @@
 // app.js から読む（import）。合言葉から key を作る・ボットを呼ぶ・形を確かめるのは js/live.js（画面には触らない）
 //
 // つないでいない大会は、これまでどおり端末の中だけ。つないだ大会だけ、点を1試合ずつ送り、ほかの端末の点は「更新」で読みなおす
-import { TOOL } from "./settings.js?v=202611012034";
+import { Q_NAMES, TOOL } from "./settings.js?v=202611012034";
 import { blankTournament, newId, saveAll } from "./store.js?v=202611012034";
 import { adminKey, botUrlIn, fromServer, inputKey, liveCall, liveError, liveUrl, newLiveId, overlay, PASS_MAX, PASS_MIN, queue, sessionKey, setSessionKey, toServer } from "./live.js?v=202611012034";
 import { $, copy, esc, icon, seasonal, toast } from "./dom.js?v=202611012034";
@@ -217,7 +217,7 @@ async function liveUnlock(form) {
 async function liveStart(form) {
   const t = current();
   const bot = window.QloveBotLink?.get() || "";
-  if (!bot) return toast("先に、くらぶボットの URL を入れてね");
+  if (!bot) return toast(`先に、${Q_NAMES.qlove.name}ボットの URL を入れてね`);
   const admin = passOf(form, "admin");
   if (!admin) return;
   const input = passOf(form, "input");
@@ -256,7 +256,7 @@ async function liveChangeInput(form) {
 async function liveLeave() {
   const t = current();
   if (!t.live) return;
-  const yes = await window.LineShareUI?.ask({ title: "つなぐのをやめる", text: "この端末の大会は、ふつうの大会（端末の中だけ）にもどります。くらぶボットの大会と、ほかの人の端末はそのままです。", ok: "やめる", cancel: "もどる" });
+  const yes = await window.LineShareUI?.ask({ title: "つなぐのをやめる", text: `この端末の大会は、ふつうの大会（端末の中だけ）にもどります。${Q_NAMES.qlove.name}ボットの大会と、ほかの人の端末はそのままです。`, ok: "やめる", cancel: "もどる" });
   if (!yes) return;
   if (t.live.pending.length) toast(`送れていない点が ${t.live.pending.length} 件ありました（この端末には入っています）`);
   rememberKey(t.live.id, null);
@@ -268,13 +268,13 @@ async function liveLeave() {
 // くらぶボットの URL を入れる（Q キットの QloveBotLink。🏆 大会の機能があるか確かめてから）
 async function liveSetBot() {
   const text = $("liveBotUrl").value.trim();
-  if (!botUrlIn(text)) return toast("くらぶボットの URL（https://script.google.com/macros/s/…/exec）を入れてね");
+  if (!botUrlIn(text)) return toast(`${Q_NAMES.qlove.name}ボットの URL（https://script.google.com/macros/s/…/exec）を入れてね`);
   const res = await liveCall(text, "get", { id: "00000000000000000000" });
   if (res.error === "net") return toast(liveError(res));
   if (res.error === "auth") return toast(liveError(res));
   const saved = window.QloveBotLink?.set(text);
   if (!saved?.ok) return toast("この端末に残せませんでした");
-  toast("くらぶボットとつなぎました");
+  toast(`${Q_NAMES.qlove.name}ボットとつなぎました`);
   renderLive();
 }
 
@@ -298,7 +298,7 @@ export function renderLive() {
   const bot = window.QloveBotLink?.get() || "";
   let html = "";
   if (t.live) {
-    html = `<p class="ls-hint">この大会は、くらぶボットで共有しています。点は1試合ずつ送り、ほかの人の点は「更新」を押したときに読みます（GAS をあまり呼ばないため）。電波がないときは、この端末にためて、つながったら送ります。</p>
+    html = `<p class="ls-hint">この大会は、${Q_NAMES.qlove.name}ボットで共有しています。点は1試合ずつ送り、ほかの人の点は「更新」を押したときに読みます（GAS をあまり呼ばないため）。電波がないときは、この端末にためて、つながったら送ります。</p>
       <div class="live-actions">
         <button class="ls-button is-primary" type="button" data-live="copy">${icon("link")}共有リンクをコピー</button>
 
@@ -308,21 +308,21 @@ export function renderLive() {
       <p class="ls-hint">共有リンクには合言葉は入りません。点を入れる人には、入力の合言葉を口で伝えてね。見る人は、リンクを開くだけ。</p>
       ${role === "admin" ? `<form class="ls-stack live-form" data-live-form="input">${passField("newinput", "入力の合言葉を変える", "前の合言葉では入れられなくなります")}${passShow}<button class="ls-button" type="submit">変える</button></form>` : ""}`;
   } else if (!window.QloveBotLink) {
-    html = `<p class="ls-hint">くらぶボットの部品を読めませんでした（電波を確かめてね）。</p>`;
+    html = `<p class="ls-hint">${Q_NAMES.qlove.name}ボットの部品を読めませんでした（電波を確かめてね）。</p>`;
   } else if (!bot) {
-    html = `<p class="ls-hint">くらぶボットとつなぐと、運営・コートの入力の人・見る人で、同じ結果を見られます（つながなくても、これまでどおり使えます）。</p>
-      <label class="ls-label" for="liveBotUrl">くらぶボットの URL</label>
+    html = `<p class="ls-hint">${Q_NAMES.qlove.name}ボットとつなぐと、運営・コートの入力の人・見る人で、同じ結果を見られます（つながなくても、これまでどおり使えます）。</p>
+      <label class="ls-label" for="liveBotUrl">${Q_NAMES.qlove.name}ボットの URL</label>
       <input id="liveBotUrl" class="ls-input" type="url" inputmode="url" autocomplete="off" placeholder="https://script.google.com/macros/s/…/exec">
       <button class="ls-button" type="button" data-live="bot">つなぐ</button>`;
   } else {
-    html = `<p class="ls-hint">くらぶボットにつないであります。この大会をのせると、運営・コートの入力の人・見る人で同じ結果を見られます（入れた点はすぐ送り、ほかの人の点を読みなおします）。</p>
+    html = `<p class="ls-hint">${Q_NAMES.qlove.name}ボットにつないであります。この大会をのせると、運営・コートの入力の人・見る人で同じ結果を見られます（入れた点はすぐ送り、ほかの人の点を読みなおします）。</p>
       <form class="ls-stack live-form" data-live-form="start">
-        ${passField("admin", "運営の合言葉", "くらぶボットを作った人（システム管理者）が決めたもの")}
+        ${passField("admin", "運営の合言葉", `${Q_NAMES.qlove.name}ボットを作った人（システム管理者）が決めたもの`)}
         ${passField("input", "入力の合言葉（新しく決める）", "コートで点を入れる人に、口で伝える合言葉（4文字以上）。リンクには入りません")}
         ${passShow}
         <button class="ls-button is-primary is-block" type="submit">${icon("share")}この大会をみんなで入れる</button>
       </form>
-      <button class="ls-chip" type="button" data-live="forget">くらぶボットの URL を変える</button>`;
+      <button class="ls-chip" type="button" data-live="forget">${Q_NAMES.qlove.name}ボットの URL を変える</button>`;
   }
   // 中身が同じなら描きなおさない（読みなおしのたびに、入れかけの合言葉が消えないように）
   if ($("liveBody").dataset.html !== html) {

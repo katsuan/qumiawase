@@ -49,14 +49,14 @@ body {
 .event-name-label {
   color: var(--ls-subtext);
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
   white-space: nowrap;
 }
 
 .event-name-text {
   overflow: hidden;
   font-size: 16px;
-  font-weight: 800;
+  font-weight: 700;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
@@ -75,7 +75,7 @@ body {
   min-height: 48px;
   padding: 0;
   font-size: 20px;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 /* 「…」のシートの中の大会の一覧と、することのボタン */
@@ -110,7 +110,7 @@ body {
   margin: 0;
   color: var(--ls-subtext);
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .view-banner {

@@ -4,7 +4,7 @@
 // 送る・保存は js/share-ui.js、みんなで入れるは js/live-ui.js。いまの大会と計算は js/state.js、画面の小さな道具は js/dom.js
 // 計算だけの部品（画面に触らない・テストで呼ぶ）：組み合わせは js/pairing.js、順位と勝ち上がりは js/stats.js、端末に残すのは js/store.js、
 // リンクは js/link.js、カードは js/card.js、画像は js/image.js、くらぶボットとのやりとりは js/live.js
-import { TOOL } from "./js/settings.js?v=202611012034";
+import { Q_NAMES, TOOL } from "./js/settings.js?v=202611012034";
 import { takeInbox } from "./js/store.js?v=202611012034";
 import { readResult } from "./js/link.js?v=202611012034";
 import { matchLine } from "./js/card.js?v=202611012034";
@@ -108,8 +108,8 @@ function applyIncoming(list) {
     const role = liveRole(t);
     if (role === "") {
       // みんなで入れる大会で、このタブはまだ見るだけ：合言葉を入れたら送る（それまでは端末で待つ）
-      window.LineShareUI?.toast(`さくせん盤から結果を入れました${line ? `：${line}` : ""}。みんなに送るには合言葉を入れてね`, { actionLabel: "合言葉を入れて送る", onAction: openUnlock });
-    } else toast(seasonal(`さくせん盤から結果を入れ${role ? "て、みんなに送り" : ""}ました${line ? `：${line}` : ""}`), undo);
+      window.LineShareUI?.toast(`${Q_NAMES.saqsen.name}から結果を入れました${line ? `：${line}` : ""}。みんなに送るには合言葉を入れてね`, { actionLabel: "合言葉を入れて送る", onAction: openUnlock });
+    } else toast(seasonal(`${Q_NAMES.saqsen.name}から結果を入れ${role ? "て、みんなに送り" : ""}ました${line ? `：${line}` : ""}`), undo);
   }
 }
 

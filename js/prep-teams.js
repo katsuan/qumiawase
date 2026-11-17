@@ -78,8 +78,9 @@ function bindTeamColor(li, team) {
     const custom = Object.assign(document.createElement("label"), { className: "ls-picker-item" });
     const isPreset = TEAM_COLORS.some((c) => c.hex === now);
     custom.setAttribute("aria-pressed", String(!isPreset));
-    const sw = Object.assign(document.createElement("span"), { className: "swatch is-custom" });
-    if (!isPreset) sw.style.setProperty("--c", now);
+    // カスタム：Q キットの ls-swatch is-custom（まだ選んでいないときはパレットの線アイコン、選んでいる間はその色）
+    const sw = Object.assign(document.createElement("span"), { className: `ls-swatch is-custom${isPreset ? "" : " is-selected"}` });
+    if (!isPreset) sw.style.setProperty("--swatch", now);
     const color = Object.assign(document.createElement("input"), { type: "color", value: now });
     color.setAttribute("aria-label", "カスタムの色");
     color.addEventListener("change", () => pick(color.value, false));

@@ -1,6 +1,6 @@
 // くみあわせ：試合の表の「チーム別」（そのチームの試合と勝ち進み・審判をする試合・最多の試合の数）と、くろのすのカウントダウンのリンク
 // js/play-matches.js から読む（import。描きなおしは renderViewTools、チームを選ぶボタンは bindTeamView）
-import { TOOL } from "./settings.js?v=202611012034";
+import { Q_NAMES, TOOL } from "./settings.js?v=202611012034";
 import { LINK_MAX, qronosUrl, viewUrl } from "./link.js?v=202611012034";
 import { matchTitle, sideLabel, teamName } from "./card.js?v=202611012034";
 import { $, esc, icon } from "./dom.js?v=202611012034";
@@ -129,8 +129,8 @@ export function renderViewTools(c) {
     const duty = refereeDuty(c, view.team).length;
     const refNote = duty ? `<p class="path-note">${icon("whistle", true)}審判 ${esc(duty)}試合（試合のあいだに入れています）</p>` : "";
     $("teamTools").innerHTML = most + refNote + (url
-      ? `<a class="ls-chip" href="${esc(url)}" target="_blank" rel="noopener">${icon("wait")}この試合をくろのすでカウントダウン</a>`
-      : `<p class="ls-hint">${icon("wait", true)}「時刻を入れる」で日にちとはじまりを入れると、このチームの試合をくろのすでカウントダウンできます。</p>`);
+      ? `<a class="ls-chip" href="${esc(url)}" target="_blank" rel="noopener">${icon("wait")}この試合を${Q_NAMES.qronos.name}でカウントダウン</a>`
+      : `<p class="ls-hint">${icon("wait", true)}「時刻を入れる」で日にちとはじまりを入れると、このチームの試合を${Q_NAMES.qronos.name}でカウントダウンできます。</p>`);
   }
   const all = allQronosUrl(c);
   $("qronosAll").hidden = !all;

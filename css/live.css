@@ -106,7 +106,7 @@
   min-height: 36px;
   color: var(--ls-text);
   font-size: 14px;
-  font-weight: 800;
+  font-weight: 700;
   cursor: pointer;
 }
 
@@ -149,7 +149,7 @@
   
   color: var(--ls-text);
   font-size: 15px;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .group-box .cross-table .team,
@@ -169,7 +169,7 @@
   flex: 1 1 100%;
   color: var(--ls-subtext);
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 /* 入力中のカードの時刻・コート（iPhone の時刻の欄がずれないように appearance を消す） */

@@ -29,7 +29,7 @@
 .play-title {
   margin: 0;
   font-size: 17px;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .play-sub {
@@ -103,7 +103,7 @@
 .rule-title {
   margin: 0;
   font-size: 14px;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 /* 順位の決め方（↑↓で並べかえ） */
@@ -129,7 +129,7 @@
 
 .rank-order .rank-no {
   color: var(--ls-subtext);
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .rank-order .rank-name {
@@ -162,7 +162,7 @@
   margin: 0;
   color: var(--ls-subtext);
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 /* 審判の枠：自動で入れる（大きく）と全部消す（小さく） */

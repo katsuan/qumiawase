@@ -1,6 +1,6 @@
 // くみあわせ：送る・保存（おくるんのカード・画像・見る人用のリンク・大会のまとめ（印刷・PDF・文でコピー））
 // app.js から読む（import。ボタンは bindShare）。カードの中身は js/card.js、画像は js/image.js
-import { TOOL } from "./settings.js?v=202611012034";
+import { Q_NAMES, TOOL } from "./settings.js?v=202611012034";
 import { table } from "./stats.js?v=202611012034";
 import { viewUrl } from "./link.js?v=202611012034";
 import { cardParams, dateLabel, formatLabel, matchTitle, sideLabel, summaryText, teamName } from "./card.js?v=202611012034";
@@ -104,7 +104,7 @@ function openSummary() {
 function sendCard() {
   const c = compute();
   if (!c.gen.matches.length) return toast("チームを2つ以上入れると送れます");
-  if (!window.OQRN) return toast("おくるんを読みこめませんでした。電波のあるところで、もう一度押してね");
+  if (!window.OQRN) return toast(`${Q_NAMES.oqrn.name}を読みこめませんでした。電波のあるところで、もう一度押してね`);
   location.href = window.OQRN.cardUrl(cardParams(c.t, c.gen, c.resolved));
 }
 

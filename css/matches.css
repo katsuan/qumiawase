@@ -4,7 +4,7 @@
   margin: 8px 0 0;
   color: var(--ls-subtext);
   font-size: 14px;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .match {
@@ -85,7 +85,7 @@
   gap: 4px 8px;
   color: var(--ls-subtext);
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 /* 2チームを左右に（左がホーム・右がアウェイ）。名前の下に点 */
@@ -101,7 +101,7 @@
   align-self: end;
   padding-bottom: 8px;
   color: var(--ls-subtext);
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .match-side {
@@ -161,7 +161,7 @@
 
 .match-side.is-win .name {
   color: var(--qa-win);
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .match-side.is-tbd .name {
@@ -199,7 +199,7 @@
   display: grid;
   place-items: center;
   font-size: 18px;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 /* まん中の数（押すと 0 から入る）は、字の幅だけでなく欄いっぱいを押せるように */
@@ -221,7 +221,7 @@
   padding-top: 8px;
   border-top: 1px dashed var(--ls-line);
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 
@@ -233,7 +233,7 @@
   gap: 8px;
   color: var(--ls-subtext);
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .referee-row b {

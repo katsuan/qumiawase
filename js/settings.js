@@ -1,6 +1,9 @@
 // くみあわせ：ツールの名前・色・数の上限などの決まり。名前を変えるときは、まずここ（ほかに index.html の meta・manifest・README）
 // app.js・js/ のほかの部品から読む（import）
 
+// 表示に出すサービスの名前（自分と Q のなかま）。画面の文に名前を直書きせず、ここから読む（q-oqrn の docs/structure.md「表示に出すサービスの名前」）。
+// なかまの名前の正本は q-oqrn の data/hub-links.json（テストが見比べ、かたまりの外の直書きも見つける）
+// <service-names>
 // ツールの名前（仮）。画面の見出し・カード・画像に出す
 export const TOOL = {
   key: "qumiawase", // 端末に残すキー・おくるんの from に使う（名前を変えても変えない）
@@ -9,6 +12,14 @@ export const TOOL = {
   copy: "トーナメントも総当たりも、すぐできる",
   url: "https://katsuan.github.io/qumiawase/"
 };
+// Q のなかま（くらぶボット・さくせん盤・くろのす・おくるん）
+export const Q_NAMES = {
+  qlove: { name: "くらぶ", en: "Qlove" },
+  saqsen: { name: "さくせん盤", en: "SAQSEN" },
+  qronos: { name: "くろのす", en: "Qronos" },
+  oqrn: { name: "おくるん", en: "OQRN" }
+};
+// </service-names>
 
 // ほかのツールの URL（さくせん盤・ろくが）
 export const SAQSEN_URL = "https://katsuan.github.io/saqsen/";
